@@ -2,6 +2,7 @@
 
 @section('title', 'Tables - Basic Tables')
 
+
 @section('content')
 <!-- Basic Bootstrap Table -->
 <div class="card">
@@ -19,109 +20,153 @@
       </thead>
       <tbody class="table-border-bottom-0">
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-2"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-2"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-2"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-2"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-2"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-2"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-2"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-2"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-2"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-2"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-2"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-2"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -132,7 +177,7 @@
 </div>
 <!--/ Basic Bootstrap Table -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Bootstrap Dark Table -->
 <div class="card overflow-hidden">
@@ -150,109 +195,153 @@
       </thead>
       <tbody>
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -263,7 +352,7 @@
 </div>
 <!--/ Bootstrap Dark Table -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Bootstrap Table with Header - Dark -->
 <div class="card">
@@ -281,109 +370,153 @@
       </thead>
       <tbody class="table-border-bottom-0">
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -394,7 +527,7 @@
 </div>
 <!--/ Bootstrap Table with Header Dark -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Bootstrap Table with Header - Light -->
 <div class="card">
@@ -412,109 +545,153 @@
       </thead>
       <tbody class="table-border-bottom-0">
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -525,7 +702,7 @@
 </div>
 <!-- Bootstrap Table with Header - Light -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Bootstrap Table with Header - Footer -->
 <div class="card">
@@ -543,109 +720,153 @@
       </thead>
       <tbody>
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -665,14 +886,16 @@
 </div>
 <!-- Bootstrap Table with Header - Footer -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Bootstrap Table with Caption -->
 <div class="card">
   <h5 class="card-header">Table Caption</h5>
   <div class="table-responsive text-nowrap">
     <table class="table">
-      <caption>List of Projects</caption>
+      <caption>
+        List of Projects
+      </caption>
       <thead>
         <tr>
           <th>Project</th>
@@ -684,109 +907,153 @@
       </thead>
       <tbody>
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -797,7 +1064,7 @@
 </div>
 <!-- Bootstrap Table with Caption -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Striped Rows -->
 <div class="card">
@@ -815,109 +1082,153 @@
       </thead>
       <tbody class="table-border-bottom-0">
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -928,7 +1239,7 @@
 </div>
 <!--/ Striped Rows -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Bordered Table -->
 <div class="card">
@@ -947,109 +1258,153 @@
         </thead>
         <tbody>
           <tr>
-            <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+            <td>
+              <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+              <span>Tours Project</span>
+            </td>
             <td>Albert Cook</td>
             <td>
               <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                  <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                  <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                  <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
               </ul>
             </td>
-            <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+            <td>
+              <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+            </td>
             <td>
               <div class="dropdown">
-                <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+                <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                  <i class="icon-base ri ri-more-2-line icon-18px"></i>
+                </button>
                 <div class="dropdown-menu">
-                  <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                  <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                  <a class="dropdown-item" href="javascript:void(0);">
+                    <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                    Edit</a>
+                  <a class="dropdown-item" href="javascript:void(0);">
+                    <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                    Delete</a>
                 </div>
               </div>
             </td>
           </tr>
           <tr>
-            <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+            <td>
+              <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+              <span>Sports Project</span>
+            </td>
             <td>Barry Hunter</td>
             <td>
               <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                  <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                  <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                  <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
               </ul>
             </td>
-            <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+            <td>
+              <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+            </td>
             <td>
               <div class="dropdown">
-                <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+                <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                  <i class="icon-base ri ri-more-2-line icon-18px"></i>
+                </button>
                 <div class="dropdown-menu">
-                  <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                  <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                  <a class="dropdown-item" href="javascript:void(0);">
+                    <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                    Edit</a>
+                  <a class="dropdown-item" href="javascript:void(0);">
+                    <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                    Delete</a>
                 </div>
               </div>
             </td>
           </tr>
           <tr>
-            <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+            <td>
+              <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+              <span>Greenhouse Project</span>
+            </td>
             <td>Trevor Baker</td>
             <td>
               <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                  <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                  <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                  <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
               </ul>
             </td>
-            <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+            <td>
+              <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+            </td>
             <td>
               <div class="dropdown">
-                <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+                <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                  <i class="icon-base ri ri-more-2-line icon-18px"></i>
+                </button>
                 <div class="dropdown-menu">
-                  <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                  <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                  <a class="dropdown-item" href="javascript:void(0);">
+                    <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                    Edit</a>
+                  <a class="dropdown-item" href="javascript:void(0);">
+                    <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                    Delete</a>
                 </div>
               </div>
             </td>
           </tr>
           <tr>
-            <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+            <td>
+              <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+              <span>Bank Project</span>
+            </td>
             <td>Jerry Milton</td>
             <td>
               <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                  <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                  <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
                 <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                  <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                  <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
                 </li>
               </ul>
             </td>
-            <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+            <td>
+              <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+            </td>
             <td>
               <div class="dropdown">
-                <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+                <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                  <i class="icon-base ri ri-more-2-line icon-18px"></i>
+                </button>
                 <div class="dropdown-menu">
-                  <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                  <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                  <a class="dropdown-item" href="javascript:void(0);">
+                    <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                    Edit</a>
+                  <a class="dropdown-item" href="javascript:void(0);">
+                    <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                    Delete</a>
                 </div>
               </div>
             </td>
@@ -1061,7 +1416,7 @@
 </div>
 <!--/ Bordered Table -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Borderless Table -->
 <div class="card">
@@ -1079,109 +1434,153 @@
       </thead>
       <tbody>
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -1192,7 +1591,7 @@
 </div>
 <!--/ Borderless Table -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Hoverable Table rows -->
 <div class="card">
@@ -1210,109 +1609,153 @@
       </thead>
       <tbody class="table-border-bottom-0">
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -1323,7 +1766,7 @@
 </div>
 <!--/ Hoverable Table rows -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Small table -->
 
@@ -1342,109 +1785,153 @@
       </thead>
       <tbody class="table-border-bottom-0">
         <tr>
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr>
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -1455,7 +1942,7 @@
 </div>
 <!--/ Small table -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Contextual Classes -->
 
@@ -1474,271 +1961,381 @@
       </thead>
       <tbody class="table-border-bottom-0">
         <tr class="table-default">
-          <td><i class="ri-palette-fill ri-22px text-warning me-4"></i><span>UI/UX Project</span></td>
+          <td>
+            <i class="icon-base ri ri-palette-fill icon-22px text-warning me-3"></i>
+            <span>UI/UX Project</span>
+          </td>
           <td>Ronnie Shane</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-active">
-          <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+          <td>
+            <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+            <span>Sports Project</span>
+          </td>
           <td>Barry Hunter</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-primary">
-          <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
           <td>Albert Cook</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-secondary">
-          <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+          <td>
+            <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+            <span>Greenhouse Project</span>
+          </td>
           <td>Trevor Baker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-success">
-          <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-danger">
-          <td><i class="ri-palette-fill ri-22px text-danger me-4"></i><span>UI/UX Project</span></td>
+          <td>
+            <i class="icon-base ri ri-palette-fill icon-22px text-danger me-3"></i>
+            <span>UI/UX Project</span>
+          </td>
           <td>Sarah Banks</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-warning">
-          <td><i class="ri-shield-user-line ri-22px text-info me-4"></i><span>Custom Security</span></td>
+          <td>
+            <i class="icon-base ri ri-shield-user-line icon-22px text-info me-3"></i>
+            <span>Custom Security</span>
+          </td>
           <td>Ted Richer</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-info">
-          <td><i class="ri-bootstrap-fill ri-22px text-primary me-4"></i><span>Latest Bootstrap</span></td>
+          <td>
+            <i class="icon-base ri ri-bootstrap-fill icon-22px text-primary me-3"></i>
+            <span>Latest Bootstrap</span>
+          </td>
           <td>Perry Parker</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-light">
-          <td><i class="ri-angularjs-fill ri-22px text-danger me-4"></i><span>Angular UI</span></td>
+          <td>
+            <i class="icon-base ri ri-angularjs-fill icon-22px text-danger me-3"></i>
+            <span>Angular UI</span>
+          </td>
           <td>Ana Bell</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td>
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
         </tr>
         <tr class="table-dark">
-          <td class="rounded-start-bottom"><i class="ri-pulse-line ri-22px text-success me-4"></i><span>Bootstrap UI</span></td>
+          <td class="rounded-start-bottom">
+            <i class="icon-base ri ri-pulse-line icon-22px text-success me-3"></i>
+            <span>Bootstrap UI</span>
+          </td>
           <td>Jerry Milton</td>
           <td>
             <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-                <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-                <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
               <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-                <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
               </li>
             </ul>
           </td>
-          <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+          <td>
+            <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+          </td>
           <td class="rounded-end-bottom">
             <div class="dropdown">
-              <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-line icon-18px"></i>
+              </button>
               <div class="dropdown-menu">
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-                <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                  Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);">
+                  <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                  Delete</a>
               </div>
             </div>
           </td>
@@ -1749,7 +2346,7 @@
 </div>
 <!--/ Contextual Classes -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Table within card -->
 <h5 class="mb-6">Table without Card</h5>
@@ -1766,109 +2363,153 @@
     </thead>
     <tbody class="table-border-bottom-0">
       <tr>
-        <td><i class="ri-suitcase-2-line ri-22px text-danger me-4"></i><span>Tours Project</span></td>
+        <td>
+          <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+          <span>Tours Project</span>
+        </td>
         <td>Albert Cook</td>
         <td>
           <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-              <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-              <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-              <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
           </ul>
         </td>
-        <td><span class="badge rounded-pill bg-label-primary me-1">Active</span></td>
+        <td>
+          <span class="badge rounded-pill bg-label-primary me-1">Active</span>
+        </td>
         <td>
           <div class="dropdown">
-            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+            <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+              <i class="icon-base ri ri-more-2-line icon-18px"></i>
+            </button>
             <div class="dropdown-menu">
-              <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-              <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+              <a class="dropdown-item" href="javascript:void(0);">
+                <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                Edit</a>
+              <a class="dropdown-item" href="javascript:void(0);">
+                <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                Delete</a>
             </div>
           </div>
         </td>
       </tr>
       <tr>
-        <td><i class="ri-basketball-fill ri-22px text-info me-4"></i><span>Sports Project</span></td>
+        <td>
+          <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+          <span>Sports Project</span>
+        </td>
         <td>Barry Hunter</td>
         <td>
           <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-              <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-              <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-              <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
           </ul>
         </td>
-        <td><span class="badge rounded-pill bg-label-success me-1">Completed</span></td>
+        <td>
+          <span class="badge rounded-pill bg-label-success me-1">Completed</span>
+        </td>
         <td>
           <div class="dropdown">
-            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+            <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+              <i class="icon-base ri ri-more-2-line icon-18px"></i>
+            </button>
             <div class="dropdown-menu">
-              <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-              <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+              <a class="dropdown-item" href="javascript:void(0);">
+                <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                Edit</a>
+              <a class="dropdown-item" href="javascript:void(0);">
+                <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                Delete</a>
             </div>
           </div>
         </td>
       </tr>
       <tr>
-        <td><i class="ri-leaf-fill ri-22px text-success me-4"></i><span>Greenhouse Project</span></td>
+        <td>
+          <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+          <span>Greenhouse Project</span>
+        </td>
         <td>Trevor Baker</td>
         <td>
           <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-              <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-              <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-              <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
           </ul>
         </td>
-        <td><span class="badge rounded-pill bg-label-info me-1">Scheduled</span></td>
+        <td>
+          <span class="badge rounded-pill bg-label-info me-1">Scheduled</span>
+        </td>
         <td>
           <div class="dropdown">
-            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+            <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+              <i class="icon-base ri ri-more-2-line icon-18px"></i>
+            </button>
             <div class="dropdown-menu">
-              <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-              <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+              <a class="dropdown-item" href="javascript:void(0);">
+                <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                Edit</a>
+              <a class="dropdown-item" href="javascript:void(0);">
+                <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                Delete</a>
             </div>
           </div>
         </td>
       </tr>
       <tr>
-        <td><i class="ri-bank-fill ri-22px text-primary me-4"></i><span>Bank Project</span></td>
+        <td>
+          <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+          <span>Bank Project</span>
+        </td>
         <td>Jerry Milton</td>
         <td>
           <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
-              <img src="{{asset('assets/img/avatars/5.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
-              <img src="{{asset('assets/img/avatars/6.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
             <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
-              <img src="{{asset('assets/img/avatars/7.png')}}" alt="Avatar" class="rounded-circle">
+              <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
             </li>
           </ul>
         </td>
-        <td><span class="badge rounded-pill bg-label-warning me-1">Pending</span></td>
+        <td>
+          <span class="badge rounded-pill bg-label-warning me-1">Pending</span>
+        </td>
         <td>
           <div class="dropdown">
-            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line"></i></button>
+            <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+              <i class="icon-base ri ri-more-2-line icon-18px"></i>
+            </button>
             <div class="dropdown-menu">
-              <a class="dropdown-item" href="javascript:void(0);"><i class="ri-pencil-line me-1"></i> Edit</a>
-              <a class="dropdown-item" href="javascript:void(0);"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+              <a class="dropdown-item" href="javascript:void(0);">
+                <i class="icon-base ri ri-pencil-line icon-18px me-1"></i>
+                Edit</a>
+              <a class="dropdown-item" href="javascript:void(0);">
+                <i class="icon-base ri ri-delete-bin-6-line icon-18px me-1"></i>
+                Delete</a>
             </div>
           </div>
         </td>
@@ -1878,7 +2519,7 @@
 </div>
 <!--/ Table within card -->
 
-<hr class="my-12">
+<hr class="my-12" />
 
 <!-- Responsive Table -->
 <div class="card">
@@ -1942,4 +2583,179 @@
 </div>
 <!--/ Responsive Table -->
 
+<hr class="my-12" />
+
+<!-- Nested table -->
+<div class="card overflow-hidden">
+  <h5 class="card-header">Nested table</h5>
+  <div class="table-responsive">
+    <table class="table table-dark">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Client</th>
+          <th>Users</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <i class="icon-base ri ri-suitcase-2-line icon-22px text-danger me-3"></i>
+            <span>Tours Project</span>
+          </td>
+          <td>Albert Cook</td>
+          <td>
+            <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
+              <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
+              </li>
+              <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
+              </li>
+              <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
+              </li>
+            </ul>
+          </td>
+          <td>
+            <span class="badge bg-label-primary me-1">Active</span>
+          </td>
+          <td>
+            <div class="dropdown">
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-fill"></i>
+              </button>
+              <div class="dropdown-menu">
+                <a class="dropdown-item" href="javascript:void(0);"><i class="icon-base ri ri-edit-box-line me-1"></i> Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);"><i class="icon-base ri ri-delete-bin-line me-1"></i> Delete</a>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="5">
+            <table class="table mb-0 table-light">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Client</th>
+                  <th>Users</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <i class="icon-base ri ri-basketball-fill icon-22px text-info me-3"></i>
+                    <span>Sports Project</span>
+                  </td>
+                  <td>Barry Hunter</td>
+                  <td>
+                    <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
+                      <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
+                        <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
+                      </li>
+                      <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
+                        <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
+                      </li>
+                      <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
+                        <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <span class="badge bg-label-success me-1">Completed</span>
+                  </td>
+                  <td>
+                    <div class="dropdown">
+                      <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                        <i class="icon-base ri ri-more-2-fill"></i>
+                      </button>
+                      <div class="dropdown-menu">
+                        <a class="dropdown-item" href="javascript:void(0);"><i class="icon-base ri ri-edit-box-line me-1"></i> Edit</a>
+                        <a class="dropdown-item" href="javascript:void(0);"><i class="icon-base ri ri-delete-bin-line me-1"></i> Delete</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <i class="icon-base ri ri-leaf-fill icon-22px text-success me-3"></i>
+                    <span>Greenhouse Project</span>
+                  </td>
+                  <td>Trevor Baker</td>
+                  <td>
+                    <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
+                      <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
+                        <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
+                      </li>
+                      <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
+                        <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
+                      </li>
+                      <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
+                        <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <span class="badge bg-label-info me-1">Scheduled</span>
+                  </td>
+                  <td>
+                    <div class="dropdown">
+                      <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                        <i class="icon-base ri ri-more-2-fill"></i>
+                      </button>
+                      <div class="dropdown-menu">
+                        <a class="dropdown-item" href="javascript:void(0);"><i class="icon-base ri ri-edit-box-line me-1"></i> Edit</a>
+                        <a class="dropdown-item" href="javascript:void(0);"><i class="icon-base ri ri-delete-bin-line me-1"></i> Delete</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <i class="icon-base ri ri-bank-fill icon-22px text-primary me-3"></i>
+            <span>Bank Project</span>
+          </td>
+          <td>Jerry Milton</td>
+          <td>
+            <ul class="list-unstyled m-0 avatar-group d-flex align-items-center">
+              <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Lilian Fuller">
+                <img src="{{ asset('assets/img/avatars/5.png') }}" alt="Avatar" class="rounded-circle" />
+              </li>
+              <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Sophia Wilkerson">
+                <img src="{{ asset('assets/img/avatars/6.png') }}" alt="Avatar" class="rounded-circle" />
+              </li>
+              <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" class="avatar avatar-xs pull-up" title="Christina Parker">
+                <img src="{{ asset('assets/img/avatars/7.png') }}" alt="Avatar" class="rounded-circle" />
+              </li>
+            </ul>
+          </td>
+          <td>
+            <span class="badge bg-label-warning me-1">Pending</span>
+          </td>
+          <td>
+            <div class="dropdown">
+              <button type="button" class="btn p-0 dropdown-toggle hide-arrow shadow-none" data-bs-toggle="dropdown">
+                <i class="icon-base ri ri-more-2-fill"></i>
+              </button>
+              <div class="dropdown-menu">
+                <a class="dropdown-item" href="javascript:void(0);"><i class="icon-base ri ri-edit-box-line me-1"></i> Edit</a>
+                <a class="dropdown-item" href="javascript:void(0);"><i class="icon-base ri ri-delete-bin-line me-1"></i> Delete</a>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<!--/ Nested table -->
 @endsection
