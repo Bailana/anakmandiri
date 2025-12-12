@@ -22,20 +22,37 @@
                 <!-- /Logo -->
 
                 <div class="card-body mt-1">
-                    <h4 class="mb-1">Welcome to {{ config('variables.templateName') }}! 👋🏻</h4>
-                    <p class="mb-5">Please sign-in to your account and start the adventure</p>
+                    <h4 class="mb-1">Selamat Datang di {{ config('variables.templateName') }}! 👋🏻</h4>
+                    <p class="mb-5">Silakan masuk ke akun Anda untuk melanjutkan</p>
 
-                    <form id="formAuthentication" class="mb-5" action="{{ url('/') }}" method="GET">
+                    @if ($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Login Gagal!</strong>
+                        @foreach ($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                        @endforeach
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    @endif
+
+                    <form id="formAuthentication" class="mb-5" action="{{ route('login.post') }}" method="POST">
+                        @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
-                            <input type="text" class="form-control" id="email" name="email-username" placeholder="Enter your email or username" autofocus />
-                            <label for="email">Email or Username</label>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="Masukkan email Anda" value="{{ old('email') }}" autofocus />
+                            <label for="email">Email</label>
+                            @error('email')
+                            <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
                         </div>
                         <div class="mb-5">
                             <div class="form-password-toggle form-control-validation">
                                 <div class="input-group input-group-merge">
                                     <div class="form-floating form-floating-outline">
-                                        <input type="password" id="password" class="form-control" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="password" />
+                                        <input type="password" id="password" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="password" />
                                         <label for="password">Password</label>
+                                        @error('password')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                        @enderror
                                     </div>
                                     <span class="input-group-text cursor-pointer"><i class="icon-base ri ri-eye-off-line icon-20px"></i></span>
                                 </div>
@@ -43,17 +60,27 @@
                         </div>
                         <div class="mb-5 pb-2 d-flex justify-content-between pt-2 align-items-center">
                             <div class="form-check mb-0">
-                                <input class="form-check-input" type="checkbox" id="remember-me" />
-                                <label class="form-check-label" for="remember-me"> Remember Me </label>
+                                <input class="form-check-input" type="checkbox" id="remember-me" name="remember" />
+                                <label class="form-check-label" for="remember-me"> Ingat Saya </label>
                             </div>
                             <a href="{{ url('auth/forgot-password-basic') }}" class="float-end mb-1">
-                                <span>Forgot Password?</span>
+                                <span>Lupa Password?</span>
                             </a>
                         </div>
                         <div class="mb-5">
-                            <button class="btn btn-primary d-grid w-100" type="submit">login</button>
+                            <button class="btn btn-primary d-grid w-100" type="submit">Masuk</button>
                         </div>
                     </form>
+
+                    <!-- Info Box untuk Demo -->
+                    <div class="alert alert-info" role="alert">
+                        <h6 class="alert-heading mb-2">🔑 Akun Demo</h6>
+                        <p class="mb-2"><strong>Admin:</strong> admin@example.com</p>
+                        <p class="mb-2"><strong>Guru:</strong> guru@example.com</p>
+                        <p class="mb-2"><strong>Konsultan:</strong> konsultan@example.com</p>
+                        <p class="mb-0"><strong>Terapis:</strong> terapis@example.com</p>
+                        <p class="mt-2 mb-0"><strong>Password untuk semua:</strong> password</p>
+                    </div>
 
                     <p class="text-center mb-5">
                         <span>New on our platform?</span>
