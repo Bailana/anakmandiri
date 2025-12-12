@@ -73,22 +73,8 @@ Route::get('/auth/forgot-password-basic', [ForgotPasswordBasic::class, 'index'])
 
 // Protected Routes
 Route::middleware(['auth'])->group(function () {
-  // Dashboard Routes berdasarkan Role
-  Route::middleware('role:admin')->group(function () {
-    Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard-analytics');
-  });
-
-  Route::middleware('role:guru')->group(function () {
-    Route::get('/dashboard', [GuruDashboard::class, 'index'])->name('dashboard-analytics');
-  });
-
-  Route::middleware('role:konsultan')->group(function () {
-    Route::get('/dashboard', [KonsultanDashboard::class, 'index'])->name('dashboard-analytics');
-  });
-
-  Route::middleware('role:terapis')->group(function () {
-    Route::get('/dashboard', [TerapisDashboard::class, 'index'])->name('dashboard-analytics');
-  });
+  // Dashboard Routes - menggunakan satu route yang handle semua role
+  Route::get('/dashboard', [Analytics::class, 'index'])->name('dashboard-analytics');
 
   // layout
   Route::get('/layouts/without-menu', [WithoutMenu::class, 'index'])->name('layouts-without-menu');
