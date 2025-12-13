@@ -13,6 +13,7 @@ use App\Http\Controllers\layouts\Fluid;
 use App\Http\Controllers\layouts\Container;
 use App\Http\Controllers\layouts\Blank;
 use App\Http\Controllers\pages\AccountSettingsAccount;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\pages\AccountSettingsNotifications;
 use App\Http\Controllers\pages\AccountSettingsConnections;
 use App\Http\Controllers\pages\MiscError;
@@ -62,14 +63,27 @@ Route::get('/', function () {
 Route::middleware(['guest'])->group(function () {
   Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
   Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+
+  // Forgot Password Routes
+  Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+  Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
+
+  // Reset Password Routes
+  Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+  Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
 Route::middleware(['auth'])->group(function () {
   Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+  // Profile Routes
+  Route::get('/my-profile', [ProfileController::class, 'show'])->name('profile.show');
+  Route::put('/my-profile', [ProfileController::class, 'update'])->name('profile.update');
+  Route::put('/my-profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
 });
 
 Route::get('/auth/register-basic', [RegisterBasic::class, 'index'])->name('auth-register-basic');
-Route::get('/auth/forgot-password-basic', [ForgotPasswordBasic::class, 'index'])->name('auth-reset-password-basic');
+Route::get('/auth/forgot-password-basic', [AuthController::class, 'showForgotPassword'])->name('auth-reset-password-basic');
 
 // Protected Routes
 Route::middleware(['auth'])->group(function () {
@@ -133,14 +147,28 @@ Route::middleware(['auth'])->group(function () {
   Route::get('/tables/basic', [TablesBasic::class, 'index'])->name('tables-basic');
 
   // Admin Only Routes
-  Route::middleware('role:admin')->group(function () {
-    // Anak Didik Routes
+  // Anak Didik Routes (admin & guru: index, admin: full)
+  Route::middleware(['auth', 'role:admin,guru'])->group(function () {
     Route::resource('anak-didik', 'App\Http\Controllers\AnakDidikController');
+    Route::get('anak-didik/{id}/export-pdf', [App\Http\Controllers\AnakDidikController::class, 'exportPdf'])->name('anak-didik.export-pdf');
+  });
 
-    // Karyawan Routes
+
+  // Karyawan, Konsultan, Program: tetap admin saja
+  Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('karyawan', 'App\Http\Controllers\KaryawanController');
-
-    // Konsultan Routes
     Route::resource('konsultan', 'App\Http\Controllers\KonsultanDataController');
+    Route::resource('program', 'App\Http\Controllers\ProgramController');
+    Route::post('program/{id}/approve', [App\Http\Controllers\ProgramController::class, 'approve'])->name('program.approve');
+  });
+
+  // Assessment: admin & guru (guru hanya index/show)
+  Route::middleware(['auth', 'role:admin,guru'])->group(function () {
+    Route::resource('assessment', 'App\Http\Controllers\AssessmentController');
+  });
+
+  // Guru Only: akses detail anak didik (view only)
+  Route::middleware(['role:guru'])->group(function () {
+    Route::get('anak-didik/{id}', [App\Http\Controllers\AnakDidikController::class, 'show'])->name('anak-didik.show.guru');
   });
 });

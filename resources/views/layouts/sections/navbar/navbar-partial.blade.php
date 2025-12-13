@@ -34,14 +34,17 @@ use Illuminate\Support\Facades\Route;
     <ul class="navbar-nav flex-row align-items-center ms-auto">
         <!-- Place this tag where you want the button to render. -->
         <li class="nav-item lh-1 me-4">
-            <a class="github-button" href="{{config('variables.repository')}}" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star themeselection/sneat-html-laravel-admin-template-free on GitHub">Star</a>
         </li>
 
         <!-- User -->
         <li class="nav-item navbar-dropdown dropdown-user dropdown">
             <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
                 <div class="avatar avatar-online">
-                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt="alt" class="rounded-circle" />
+                    @if(Auth::check() && Auth::user()->avatar)
+                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="rounded-circle" />
+                    @else
+                    <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="rounded-circle" />
+                    @endif
                 </div>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
@@ -50,12 +53,16 @@ use Illuminate\Support\Facades\Route;
                         <div class="d-flex">
                             <div class="flex-shrink-0 me-3">
                                 <div class="avatar avatar-online">
-                                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt="alt" class="w-px-40 h-auto rounded-circle" />
+                                    @if(Auth::check() && Auth::user()->avatar)
+                                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-px-40 h-auto rounded-circle" />
+                                    @else
+                                    <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="w-px-40 h-auto rounded-circle" />
+                                    @endif
                                 </div>
                             </div>
                             <div class="flex-grow-1">
-                                <h6 class="mb-0">John Doe</h6>
-                                <small class="text-body-secondary">Admin</small>
+                                <h6 class="mb-0">{{ Auth::check() ? Auth::user()->name : 'John Doe' }}</h6>
+                                <small class="text-body-secondary">{{ Auth::check() ? ucfirst(Auth::user()->role ?? 'User') : 'Admin' }}</small>
                             </div>
                         </div>
                     </a>
@@ -64,7 +71,7 @@ use Illuminate\Support\Facades\Route;
                     <div class="dropdown-divider my-1"></div>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="javascript:void(0);">
+                    <a class="dropdown-item" href="{{ route('profile.show') }}">
                         <i class="icon-base ri ri-user-3-line icon-md me-3"></i>
                         <span>My Profile</span>
                     </a>
@@ -75,12 +82,9 @@ use Illuminate\Support\Facades\Route;
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="javascript:void(0);">
-                        <span class="d-flex align-items-center align-middle">
-                            <i class="flex-shrink-0 icon-base ri ri-bank-card-line icon-md me-3"></i>
-                            <span class="flex-grow-1 align-middle ms-1">Billing Plan</span>
-                            <span class="flex-shrink-0 badge rounded-pill bg-danger">4</span>
-                        </span>
+                    <a class="dropdown-item" href="{{ route('auth-reset-password-basic') }}">
+                        <i class="icon-base ri ri-lock-password-line icon-md me-3"></i>
+                        <span>Reset Password</span>
                     </a>
                 </li>
                 <li>
@@ -88,10 +92,13 @@ use Illuminate\Support\Facades\Route;
                 </li>
                 <li>
                     <div class="d-grid px-4 pt-2 pb-1">
-                        <a class="btn btn-danger d-flex" href="javascript:void(0);">
-                            <small class="align-middle">Logout</small>
-                            <i class="ri ri-logout-box-r-line ms-2 icon-xs"></i>
-                        </a>
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-danger d-flex w-100">
+                                <small class="align-middle">Logout</small>
+                                <i class="ri ri-logout-box-r-line ms-2 icon-xs"></i>
+                            </button>
+                        </form>
                     </div>
                 </li>
             </ul>

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\AnakDidik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class Analytics extends Controller
 {
@@ -48,6 +50,22 @@ class Analytics extends Controller
       ->pluck('count', 'role')
       ->toArray();
 
+    // Data anak didik per bulan dalam 1 tahun
+    $currentYear = date('Y');
+    $anakDidikPerMonth = AnakDidik::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+      ->whereYear('created_at', $currentYear)
+      ->groupBy('month')
+      ->orderBy('month')
+      ->pluck('count', 'month')
+      ->toArray();
+
+    // Format data untuk 12 bulan
+    $monthlyData = [];
+    $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    for ($i = 1; $i <= 12; $i++) {
+      $monthlyData[] = $anakDidikPerMonth[$i] ?? 0;
+    }
+
     return [
       'title' => 'Admin Dashboard',
       'totalUsers' => $totalUsers,
@@ -55,11 +73,26 @@ class Analytics extends Controller
       'chartData' => [
         'categories' => ['Admin', 'Guru', 'Konsultan', 'Terapis'],
         'series' => [
-          $usersByRole['admin'] ?? 0,
-          $usersByRole['guru'] ?? 0,
-          $usersByRole['konsultan'] ?? 0,
-          $usersByRole['terapis'] ?? 0,
+          [
+            'name' => 'Jumlah Pengguna',
+            'data' => [
+              $usersByRole['admin'] ?? 0,
+              $usersByRole['guru'] ?? 0,
+              $usersByRole['konsultan'] ?? 0,
+              $usersByRole['terapis'] ?? 0,
+            ]
+          ]
         ]
+      ],
+      'lineChartData' => [
+        'categories' => $monthNames,
+        'series' => [
+          [
+            'name' => 'Anak Didik Masuk',
+            'data' => $monthlyData
+          ]
+        ],
+        'title' => 'Data Anak Didik Masuk per Bulan (' . $currentYear . ')'
       ],
       'stats' => [
         [
@@ -122,7 +155,12 @@ class Analytics extends Controller
       ],
       'chartData' => [
         'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        'series' => [18, 20, 22, 24, 25, 24],
+        'series' => [
+          [
+            'name' => 'Jumlah Siswa',
+            'data' => [18, 20, 22, 24, 25, 24]
+          ]
+        ],
         'title' => 'Performa Mengajar (6 Bulan Terakhir)'
       ]
     ];
@@ -160,7 +198,12 @@ class Analytics extends Controller
       ],
       'chartData' => [
         'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        'series' => [12, 14, 16, 18, 15, 20],
+        'series' => [
+          [
+            'name' => 'Jumlah Konsultasi',
+            'data' => [12, 14, 16, 18, 15, 20]
+          ]
+        ],
         'title' => 'Jumlah Konsultasi (6 Bulan Terakhir)'
       ]
     ];
@@ -198,7 +241,12 @@ class Analytics extends Controller
       ],
       'chartData' => [
         'categories' => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        'series' => [8, 10, 12, 14, 13, 15],
+        'series' => [
+          [
+            'name' => 'Jumlah Sesi',
+            'data' => [8, 10, 12, 14, 13, 15]
+          ]
+        ],
         'title' => 'Jumlah Sesi Terapi (6 Bulan Terakhir)'
       ]
     ];

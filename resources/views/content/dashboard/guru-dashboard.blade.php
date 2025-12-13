@@ -17,13 +17,19 @@
   <div class="col-md-12">
     <div class="card bg-success text-white">
       <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
+        <div class="d-flex align-items-center gap-3">
+          <div class="avatar avatar-xl">
+            @if(Auth::user()->avatar)
+            <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="rounded-circle" />
+            @else
+            <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="rounded-circle" />
+            @endif
+          </div>
           <div>
             <h5 class="card-title text-white mb-2">Halo {{ Auth::user()->name }}! 📚</h5>
             <p class="mb-2 text-white-50">Dashboard Guru Pembelajaran</p>
             <p class="mb-0 text-white-50">Kelola kelas dan pantau perkembangan siswa</p>
           </div>
-          <img src="{{ asset('assets/img/illustrations/girl-with-laptop-light.png') }}" class="img-fluid" width="120" alt="guru" />
         </div>
       </div>
     </div>
@@ -243,19 +249,18 @@
     const chartElement = document.getElementById('guruPerformanceChart');
     if (chartElement) {
       const options = {
-        series: [{
-          name: 'Jumlah Siswa Aktif',
-          data: @json($dashboardData['chartData']['series'])
-        }],
+        series: @json($dashboardData['chartData']['series']),
         chart: {
           type: 'area',
           height: 350,
-          stacked: false,
+          toolbar: {
+            show: true
+          }
         },
-        colors: ['#2ed8b6'],
+        colors: ['#28c76f'],
         stroke: {
           curve: 'smooth',
-          width: 2
+          width: 3
         },
         xaxis: {
           categories: @json($dashboardData['chartData']['categories']),
@@ -274,6 +279,16 @@
             opacityFrom: 0.6,
             opacityTo: 0.1
           }
+        },
+        markers: {
+          size: 5,
+          strokeWidth: 2,
+          hover: {
+            size: 7
+          }
+        },
+        grid: {
+          borderColor: '#f1f1f1'
         }
       };
       const chart = new ApexCharts(chartElement, options);

@@ -17,13 +17,19 @@
   <div class="col-md-12">
     <div class="card bg-warning text-white">
       <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
+        <div class="d-flex align-items-center gap-3">
+          <div class="avatar avatar-xl">
+            @if(Auth::user()->avatar)
+            <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="rounded-circle" />
+            @else
+            <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="rounded-circle" />
+            @endif
+          </div>
           <div>
             <h5 class="card-title text-white mb-2">Selamat Datang, {{ Auth::user()->name }}! 💡</h5>
             <p class="mb-2 text-white-50">Dashboard Konsultan Profesional</p>
             <p class="mb-0 text-white-50">Kelola konsultasi dan respon klien dengan efisien</p>
           </div>
-          <img src="{{ asset('assets/img/illustrations/man-with-tablet-light.png') }}" class="img-fluid" width="120" alt="konsultan" />
         </div>
       </div>
     </div>
@@ -246,25 +252,24 @@
     const chartElement = document.getElementById('konsultanTrendChart');
     if (chartElement) {
       const options = {
-        series: [{
-          name: 'Jumlah Konsultasi',
-          data: @json($dashboardData['chartData']['series'])
-        }],
+        series: @json($dashboardData['chartData']['series']),
         chart: {
           type: 'line',
           height: 350,
-          stacked: false,
+          toolbar: {
+            show: true
+          }
         },
-        colors: ['#ffa500'],
+        colors: ['#ff9f43'],
         stroke: {
           curve: 'smooth',
           width: 3
         },
         markers: {
-          size: 5,
-          strokeWidth: 0,
+          size: 6,
+          strokeWidth: 2,
           hover: {
-            size: 7
+            size: 8
           }
         },
         xaxis: {
@@ -277,6 +282,17 @@
         },
         dataLabels: {
           enabled: false
+        },
+        grid: {
+          borderColor: '#f1f1f1',
+          row: {
+            colors: ['transparent', 'transparent'],
+            opacity: 0.5
+          }
+        },
+        tooltip: {
+          shared: true,
+          intersect: false
         }
       };
       const chart = new ApexCharts(chartElement, options);

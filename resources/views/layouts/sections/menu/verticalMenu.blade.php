@@ -19,6 +19,23 @@ use Illuminate\Support\Facades\Route;
 
     <ul class="menu-inner py-1">
         @foreach ($menuData[0]->menu as $menu)
+        @php
+        $showMenu = true;
+        // Sembunyikan menu karyawan & konsultan pada sidebar jika bukan admin
+        if (
+        (isset($menu->slug) && $menu->slug === 'karyawan.index' && (!auth()->check() || auth()->user()->role !== 'admin')) ||
+        (isset($menu->slug) && $menu->slug === 'konsultan.index' && (!auth()->check() || auth()->user()->role !== 'admin')) ||
+        (isset($menu->slug) && $menu->slug === 'program.index' && (!auth()->check() || auth()->user()->role !== 'admin'))
+        ) {
+        $showMenu = false;
+        }
+
+        // Tampilkan menu assessment (penilaian anak) untuk admin dan guru saja
+        if (isset($menu->slug) && $menu->slug === 'assessment.index' && (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'guru']))) {
+        $showMenu = false;
+        }
+        @endphp
+        @if($showMenu)
 
         {{-- adding active and open class if child is active --}}
 
@@ -33,19 +50,23 @@ use Illuminate\Support\Facades\Route;
         @php
         $activeClass = null;
         $currentRouteName = Route::currentRouteName();
-
-        if ($currentRouteName === $menu->slug) {
-        $activeClass = 'active';
+        $currentUrl = request()->path();
+        // Cek slug menu utama
+        $mainSlugs = ['karyawan', 'anak-didik', 'konsultan', 'program', 'assessment'];
+        if (in_array($menu->slug, $mainSlugs)) {
+        if (request()->is($menu->slug) || request()->is($menu->slug.'/*')) {
+        $activeClass = 'active open';
         }
-        elseif (isset($menu->submenu)) {
+        } else if ($currentRouteName === $menu->slug) {
+        $activeClass = 'active';
+        } elseif (isset($menu->submenu)) {
         if (gettype($menu->slug) === 'array') {
         foreach($menu->slug as $slug){
         if (str_contains($currentRouteName,$slug) and strpos($currentRouteName,$slug) === 0) {
         $activeClass = 'active open';
         }
         }
-        }
-        else{
+        } else {
         if (str_contains($currentRouteName,$menu->slug) and strpos($currentRouteName,$menu->slug) === 0) {
         $activeClass = 'active open';
         }
@@ -55,21 +76,26 @@ use Illuminate\Support\Facades\Route;
 
         {{-- main menu --}}
         <li class="menu-item {{$activeClass}}">
-            <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}" class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if (isset($menu->target) and !empty($menu->target)) target="_blank" @endif>
-                @isset($menu->icon)
-                <i class="{{ $menu->icon }}"></i>
-                @endisset
-                <div>{{ isset($menu->name) ? __($menu->name) : '' }}</div>
-                @isset($menu->badge)
-                <div class="badge rounded-pill bg-{{ $menu->badge[0] }} rounded-pill ms-auto">{{ $menu->badge[1] }}</div>
-                @endisset
-            </a>
+            @if(isset($menu->slug) && $menu->slug === 'anak-didik.index' && auth()->user() && auth()->user()->role === 'admin')
+            <a href="{{ route('anak-didik.index') }}" class="menu-link">
+                @else
+                <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}" class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if (isset($menu->target) and !empty($menu->target)) target="_blank" @endif>
+                    @endif
+                    @isset($menu->icon)
+                    <i class="{{ $menu->icon }}"></i>
+                    @endisset
+                    <div>{{ isset($menu->name) ? __($menu->name) : '' }}</div>
+                    @isset($menu->badge)
+                    <div class="badge rounded-pill bg-{{ $menu->badge[0] }} rounded-pill ms-auto">{{ $menu->badge[1] }}</div>
+                    @endisset
+                </a>
 
-            {{-- submenu --}}
-            @isset($menu->submenu)
-            @include('layouts.sections.menu.submenu',['menu' => $menu->submenu])
-            @endisset
+                {{-- submenu --}}
+                @isset($menu->submenu)
+                @include('layouts.sections.menu.submenu',['menu' => $menu->submenu])
+                @endisset
         </li>
+        @endif
         @endif
         @endforeach
     </ul>

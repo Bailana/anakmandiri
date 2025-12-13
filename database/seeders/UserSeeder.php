@@ -33,17 +33,35 @@ class UserSeeder extends Seeder
 
     // Konsultan User
     User::create([
-      'name' => 'Konsultan',
-      'email' => 'konsultan@example.com',
+      'name' => 'Konsultan Pendidikan',
+      'email' => 'konsultan.pendidikan@example.com',
       'password' => Hash::make('password'),
       'role' => 'konsultan',
       'email_verified_at' => now(),
     ]);
 
-    // Terapis User
+    // Terapis Sensori Integrasi
     User::create([
-      'name' => 'Terapis',
-      'email' => 'terapis@example.com',
+      'name' => 'Terapis SI',
+      'email' => 'terapis.si@example.com',
+      'password' => Hash::make('password'),
+      'role' => 'terapis',
+      'email_verified_at' => now(),
+    ]);
+
+    // Terapis Wicara
+    User::create([
+      'name' => 'Terapis Wicara',
+      'email' => 'terapis.wicara@example.com',
+      'password' => Hash::make('password'),
+      'role' => 'terapis',
+      'email_verified_at' => now(),
+    ]);
+
+    // Terapis Perilaku
+    User::create([
+      'name' => 'Terapis Perilaku',
+      'email' => 'terapis.perilaku@example.com',
       'password' => Hash::make('password'),
       'role' => 'terapis',
       'email_verified_at' => now(),

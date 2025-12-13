@@ -23,15 +23,26 @@
                 <div class="card-body mt-1">
                     <h4 class="mb-1">Forgot Password? 🔒</h4>
                     <p class="mb-5">Enter your email and we'll send you instructions to reset your password</p>
-                    <form id="formAuthentication" class="mb-5" action="{{ url('/') }}" method="GET">
+
+                    @if (session('status'))
+                    <div class="alert alert-success" role="alert">
+                        {{ session('status') }}
+                    </div>
+                    @endif
+
+                    <form id="formAuthentication" class="mb-5" action="{{ route('password.email') }}" method="POST">
+                        @csrf
                         <div class="form-floating form-floating-outline mb-5 form-control-validation">
-                            <input type="text" class="form-control" id="email" name="email" placeholder="Enter your email" autofocus />
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="Enter your email" value="{{ old('email') }}" autofocus required />
                             <label>Email</label>
+                            @error('email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <button class="btn btn-primary d-grid w-100 mb-5">Send Reset Link</button>
+                        <button type="submit" class="btn btn-primary d-grid w-100 mb-5">Send Reset Link</button>
                     </form>
                     <div class="text-center">
-                        <a href="{{ url('auth/login-basic') }}" class="d-flex align-items-center justify-content-center">
+                        <a href="{{ route('login') }}" class="d-flex align-items-center justify-content-center">
                             <i class="icon-base ri ri-arrow-left-s-line scaleX-n1-rtl icon-20px me-1_5"></i>
                             Back to login
                         </a>

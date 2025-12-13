@@ -1,44 +1,55 @@
 {
   "menu": [
     {
-      "url": "/",
-      "name": "Dashboards",
+      "url": "/dashboard",
+      "name": "Dashboard",
       "icon": "menu-icon icon-base ri ri-home-smile-line",
-      "slug": "dashboard",
-      "badge": [
-        "danger",
-        "5"
-      ],
-      "submenu": [
-        {
-          "url": "/",
-          "name": "Dashboard",
-          "slug": "dashboard-analytics"
-        },
-        {
-          "url": "anak-didik",
-          "name": "Anak Didik",
-          "slug": "anak-didik",
-          "roles": [
-            "admin"
-          ]
-        },
-        {
-          "url": "karyawan",
-          "name": "Karyawan",
-          "slug": "karyawan",
-          "roles": [
-            "admin"
-          ]
-        },
-        {
-          "url": "konsultan",
-          "name": "Konsultan",
-          "slug": "konsultan",
-          "roles": [
-            "admin"
-          ]
-        }
+      "slug": "dashboard-analytics"
+    },
+    {
+      "url": "anak-didik",
+      "name": "Anak Didik",
+      "icon": "menu-icon icon-base ri ri-group-line",
+      "slug": "anak-didik.index",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "url": "karyawan",
+      "name": "Karyawan",
+      "icon": "menu-icon icon-base ri ri-team-line",
+      "slug": "karyawan.index",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "url": "konsultan",
+      "name": "Konsultan",
+      "icon": "menu-icon icon-base ri ri-briefcase-line",
+      "slug": "konsultan.index",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "url": "program",
+      "name": "Program Pembelajaran",
+      "icon": "menu-icon icon-base ri ri-book-open-line",
+      "slug": "program.index",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "url": "assessment",
+      "name": "Penilaian Anak",
+      "icon": "menu-icon icon-base ri ri-survey-line",
+      "slug": "assessment.index",
+      "roles": [
+        "admin",
+        "guru"
       ]
     },
     {
