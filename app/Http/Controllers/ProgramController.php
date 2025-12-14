@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Program;
 use App\Models\AnakDidik;
 use App\Models\Konsultan;
+use App\Models\Assessment;
+use App\Models\Karyawan;
+use App\Helpers\DateHelper;
 use App\Services\ActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,22 +15,58 @@ use Illuminate\Support\Facades\Auth;
 class ProgramController extends Controller
 {
   /**
+   * API: Riwayat Observasi/Evaluasi untuk Anak Didik tertentu
+   */
+  public function riwayatObservasi($anakDidikId)
+  {
+    $assessments = Assessment::with(['konsultan', 'anakDidik.guruFokus'])
+      ->where('anak_didik_id', $anakDidikId)
+      ->orderByDesc('tanggal_assessment')
+      ->get();
+
+    $riwayat = $assessments->map(function ($a) {
+      [$hari, $tanggal] = $a->tanggal_assessment
+        ? DateHelper::hariTanggal($a->tanggal_assessment->format('Y-m-d'))
+        : [null, null];
+      return [
+        'id' => $a->id,
+        'hari' => $hari,
+        'tanggal' => $tanggal,
+        'created_at' => $a->created_at ? $a->created_at->format('d-m-Y H:i') : '',
+        'guru_fokus' => $a->anakDidik && $a->anakDidik->guruFokus ? $a->anakDidik->guruFokus->nama : null,
+      ];
+    });
+    return response()->json([
+      'success' => true,
+      'riwayat' => $riwayat,
+    ]);
+  }
+
+  /**
+   * Hapus assessment (observasi/evaluasi) dari modal riwayat
+   */
+  public function destroyObservasi($id)
+  {
+    $assessment = Assessment::findOrFail($id);
+    $anakDidikId = $assessment->anak_didik_id;
+    $assessment->delete();
+    return response()->json([
+      'success' => true,
+      'anak_didik_id' => $anakDidikId,
+    ]);
+  }
+  /**
    * Display a listing of the resource.
    */
   public function index(Request $request)
   {
-    $query = Program::with('anakDidik', 'konsultan');
-
-    // Filter by konsultan for non-admin
     $user = Auth::user();
+    $query = Program::with('anakDidik.guruFokus', 'konsultan');
     if ($user->role === 'konsultan') {
-      $konsultan = Konsultan::where('user_id', $user->id)->first();
-      if ($konsultan) {
-        $query->where('konsultan_id', $konsultan->id);
-      }
+      // Filter hanya program yang dibuat oleh konsultan ini
+      $konsultanId = Konsultan::where('user_id', $user->id)->value('id');
+      $query->where('konsultan_id', $konsultanId);
     }
-
-    // Search by nama program atau nama anak
     if ($request->filled('search')) {
       $search = $request->search;
       $query->where(function ($q) use ($search) {
@@ -37,24 +76,27 @@ class ProgramController extends Controller
           });
       });
     }
-
-    // Filter by status approval
     if ($request->filled('is_approved')) {
       $query->where('is_approved', $request->is_approved === 'true');
     }
-
-    // Filter by kategori
+    // Guru Fokus filter
+    if ($request->filled('guru_fokus')) {
+      $guruFokusId = $request->guru_fokus;
+      $query->whereHas('anakDidik', function ($q) use ($guruFokusId) {
+        $q->where('guru_fokus_id', $guruFokusId);
+      });
+    }
     if ($request->filled('kategori')) {
       $query->where('kategori', $request->kategori);
     }
-
     $programs = $query->paginate(15)->appends($request->query());
-
+    // Guru Fokus options (Karyawan dengan posisi Guru Fokus saja)
+    $guruOptions = \App\Models\Karyawan::where('posisi', 'Guru Fokus')->orderBy('nama')->pluck('nama', 'id');
     $data = [
       'title' => 'Program Pembelajaran',
       'programs' => $programs,
+      'guruOptions' => $guruOptions,
     ];
-
     return view('content.program.index', $data);
   }
 
@@ -77,19 +119,45 @@ class ProgramController extends Controller
    */
   public function store(Request $request)
   {
-    $validated = $request->validate([
+    $user = Auth::user();
+    $isKonsultan = $user->role === 'konsultan';
+    $rules = [
       'anak_didik_id' => 'required|exists:anak_didiks,id',
-      'konsultan_id' => 'required|exists:konsultans,id',
-      'nama_program' => 'required|string|max:255',
       'deskripsi' => 'nullable|string',
-      'kategori' => 'required|in:bina_diri,akademik,motorik,perilaku,vokasi',
       'target_pembelajaran' => 'nullable|string',
       'tanggal_mulai' => 'nullable|date',
       'tanggal_selesai' => 'nullable|date',
       'catatan_konsultan' => 'nullable|string',
-    ]);
+      'kemampuan' => 'nullable|array',
+      'kemampuan.*.judul' => 'required_with:kemampuan|string',
+      'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:5',
+      'wawancara' => 'nullable|string',
+      'kemampuan_saat_ini' => 'nullable|string',
+      'saran_rekomendasi' => 'nullable|string',
+    ];
+    if (!$isKonsultan) {
+      $rules['konsultan_id'] = 'required|exists:konsultans,id';
+      $rules['nama_program'] = 'required|string|max:255';
+      $rules['kategori'] = 'required|in:bina_diri,akademik,motorik,perilaku,vokasi';
+    }
+    $validated = $request->validate($rules);
 
-    Program::create($validated);
+    $data = $validated;
+    if ($isKonsultan) {
+      // Set konsultan_id otomatis dari user login
+      $konsultan = \App\Models\Konsultan::where('user_id', $user->id)->first();
+      $data['konsultan_id'] = $konsultan ? $konsultan->id : null;
+      $data['nama_program'] = '';
+      $data['kategori'] = null;
+    }
+    if ($request->has('kemampuan')) {
+      $data['kemampuan'] = array_values($request->input('kemampuan'));
+    }
+    $data['wawancara'] = $request->input('wawancara');
+    $data['kemampuan_saat_ini'] = $request->input('kemampuan_saat_ini');
+    $data['saran_rekomendasi'] = $request->input('saran_rekomendasi');
+
+    Program::create($data);
 
     // Log activity
     ActivityService::logCreate('Program', null, 'Membuat program pembelajaran baru');
@@ -102,10 +170,17 @@ class ProgramController extends Controller
    */
   public function show(string $id)
   {
-    $program = Program::with('anakDidik', 'konsultan')->findOrFail($id);
+    $program = Program::with(['anakDidik.guruFokus', 'konsultan'])->findOrFail($id);
+    // Format data agar JS bisa langsung pakai
+    $data = $program->toArray();
+    // Format tanggal
+    $data['tanggal_mulai'] = $program->tanggal_mulai ? $program->tanggal_mulai->format('Y-m-d') : null;
+    $data['tanggal_selesai'] = $program->tanggal_selesai ? $program->tanggal_selesai->format('Y-m-d') : null;
+    // Sertakan nama guru fokus jika ada
+    $data['anak_didik']['guru_fokus_nama'] = $program->anakDidik && $program->anakDidik->guruFokus ? $program->anakDidik->guruFokus->nama : null;
     return response()->json([
       'success' => true,
-      'data' => $program
+      'data' => $data
     ]);
   }
 

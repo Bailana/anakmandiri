@@ -64,10 +64,10 @@
 
   <!-- Performance Chart -->
   @if(isset($dashboardData['chartData']))
-  <div class="col-lg-8">
+  <div class="col-12">
     <div class="card h-100">
       <div class="card-header">
-        <h5 class="card-title m-0">{{ $dashboardData['chartData']['title'] }}</h5>
+        <h5 class="card-title m-0">Perkembangan Anak Didik Berdasarkan 5 Kategori Penilaian</h5>
       </div>
       <div class="card-body">
         <div id="guruPerformanceChart"></div>
@@ -76,171 +76,9 @@
   </div>
   @endif
 
-  <!-- Quick Actions -->
-  <div class="col-lg-4">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">Aksi Cepat</h5>
-      </div>
-      <div class="card-body">
-        <div class="d-flex flex-column gap-2">
-          <a href="#" class="btn btn-sm btn-success d-flex align-items-center justify-content-between">
-            <span>Buat Kelas Baru</span>
-            <i class="ri-arrow-right-line"></i>
-          </a>
-          <a href="#" class="btn btn-sm btn-primary d-flex align-items-center justify-content-between">
-            <span>Lihat Siswa</span>
-            <i class="ri-arrow-right-line"></i>
-          </a>
-          <a href="#" class="btn btn-sm btn-info d-flex align-items-center justify-content-between">
-            <span>Berikan Tugas</span>
-            <i class="ri-arrow-right-line"></i>
-          </a>
-          <a href="#" class="btn btn-sm btn-warning d-flex align-items-center justify-content-between">
-            <span>Nilai Siswa</span>
-            <i class="ri-arrow-right-line"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Kelas Hari Ini -->
-  <div class="col-lg-6">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">📅 Kelas Hari Ini</h5>
-      </div>
-      <div class="card-body">
-        <div class="list-group list-group-flush">
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">Matematika - 08:00</h6>
-                <p class="text-muted small mb-0">Ruang 101 | 25 siswa</p>
-              </div>
-              <span class="badge bg-success">Akan Dimulai</span>
-            </div>
-          </div>
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">Bahasa Inggris - 10:30</h6>
-                <p class="text-muted small mb-0">Ruang 205 | 22 siswa</p>
-              </div>
-              <span class="badge bg-primary">Akan Dimulai</span>
-            </div>
-          </div>
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">IPA - 13:00</h6>
-                <p class="text-muted small mb-0">Laboratorium | 20 siswa</p>
-              </div>
-              <span class="badge bg-info">Akan Dimulai</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Tugas Pending -->
-  <div class="col-lg-6">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">✋ Tugas Menunggu Penilaian</h5>
-      </div>
-      <div class="card-body">
-        <div class="list-group list-group-flush">
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">Essay Matematika</h6>
-                <p class="text-muted small mb-0">3 siswa | Batas: 2 jam lagi</p>
-              </div>
-              <span class="badge bg-warning">Pending</span>
-            </div>
-          </div>
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">Presentasi Bahasa Inggris</h6>
-                <p class="text-muted small mb-0">5 siswa | Batas: 1 hari lagi</p>
-              </div>
-              <span class="badge bg-warning">Pending</span>
-            </div>
-          </div>
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">Proyek Grup IPA</h6>
-                <p class="text-muted small mb-0">2 grup | Batas: 3 hari lagi</p>
-              </div>
-              <span class="badge bg-warning">Pending</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Siswa Terbaik -->
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="card-title m-0">⭐ Siswa dengan Performa Terbaik</h5>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>No</th>
-              <th>Nama Siswa</th>
-              <th>Kelas</th>
-              <th>Rata-rata Nilai</th>
-              <th>Kehadiran</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>Ahmad Rizki</td>
-              <td>X-1</td>
-              <td><strong>95</strong></td>
-              <td>100%</td>
-              <td><span class="badge bg-success">Sangat Baik</span></td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td>Siti Fatimah</td>
-              <td>X-1</td>
-              <td><strong>93</strong></td>
-              <td>98%</td>
-              <td><span class="badge bg-success">Sangat Baik</span></td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td>Budi Santoso</td>
-              <td>X-2</td>
-              <td><strong>91</strong></td>
-              <td>96%</td>
-              <td><span class="badge bg-success">Sangat Baik</span></td>
-            </tr>
-            <tr>
-              <td>4</td>
-              <td>Dewi Kusuma</td>
-              <td>X-2</td>
-              <td><strong>88</strong></td>
-              <td>94%</td>
-              <td><span class="badge bg-info">Baik</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
 </div>
 
 @if(isset($dashboardData['chartData']))
@@ -267,7 +105,7 @@
         },
         yaxis: {
           title: {
-            text: 'Jumlah Siswa'
+            text: 'Nilai Perkembangan'
           }
         },
         dataLabels: {

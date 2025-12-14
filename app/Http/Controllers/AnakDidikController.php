@@ -33,11 +33,9 @@ class AnakDidikController extends Controller
       $query->where('jenis_kelamin', $request->jenis_kelamin);
     }
 
-    // Filter by guru fokus
+    // Filter by guru fokus (menggunakan field guru_fokus_id pada tabel anak didik)
     if ($request->filled('guru_fokus')) {
-      $query->whereHas('guruAssignments', function ($q) {
-        $q->where('user_id', request('guru_fokus'));
-      });
+      $query->where('guru_fokus_id', $request->guru_fokus);
     }
 
     $anakDidiks = $query->paginate(15)->appends($request->query());

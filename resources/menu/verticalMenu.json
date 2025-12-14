@@ -12,7 +12,8 @@
       "icon": "menu-icon icon-base ri ri-group-line",
       "slug": "anak-didik.index",
       "roles": [
-        "admin"
+        "admin",
+        "konsultan"
       ]
     },
     {
@@ -34,12 +35,22 @@
       ]
     },
     {
+      "url": "pengguna",
+      "name": "Pengguna",
+      "icon": "menu-icon icon-base ri ri-user-settings-line",
+      "slug": "pengguna.index",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
       "url": "program",
-      "name": "Program Pembelajaran",
+      "name": "Observasi & Evaluasi",
       "icon": "menu-icon icon-base ri ri-book-open-line",
       "slug": "program.index",
       "roles": [
-        "admin"
+        "admin",
+        "konsultan"
       ]
     },
     {

@@ -17,10 +17,12 @@ class Assessment extends Model
     'rekomendasi',
     'saran',
     'tanggal_assessment',
+    'kemampuan', // array json
   ];
 
   protected $casts = [
     'tanggal_assessment' => 'date',
+    'kemampuan' => 'array',
   ];
 
   public function anakDidik()

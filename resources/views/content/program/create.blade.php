@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Tambah Program Pembelajaran')
+@section('title', 'Tambah Observasi/Evaluasi')
 
 @section('page-style')
 @vite(['resources/assets/vendor/scss/pages/page-account-settings.scss'])
@@ -11,7 +11,7 @@
   <div class="col-md-12">
     <div class="card mb-4">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <h5 class="mb-0">Tambah Program Pembelajaran</h5>
+        <h5 class="mb-0">Tambah Observasi/Evaluasi</h5>
         <a href="{{ route('program.index') }}" class="btn btn-secondary btn-sm">
           <i class="ri-arrow-left-line me-2"></i>Kembali
         </a>
@@ -21,7 +21,7 @@
           @csrf
 
           <div class="row mb-3">
-            <div class="col-md-6">
+            <div class="col-md-12">
               <label class="form-label">Anak Didik <span class="text-danger">*</span></label>
               <select name="anak_didik_id" class="form-select @error('anak_didik_id') is-invalid @enderror" required>
                 <option value="">Pilih Anak Didik</option>
@@ -35,42 +35,108 @@
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Konsultan <span class="text-danger">*</span></label>
-              <select name="konsultan_id" class="form-select @error('konsultan_id') is-invalid @enderror" required>
-                <option value="">Pilih Konsultan</option>
-                @foreach($konsultans as $konsultan)
-                <option value="{{ $konsultan->id }}" {{ old('konsultan_id') == $konsultan->id ? 'selected' : '' }}>
-                  {{ $konsultan->nama }} ({{ $konsultan->spesialisasi }})
-                </option>
-                @endforeach
-              </select>
-              @error('konsultan_id')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
+          </div>
+
+          @php
+          $kemampuanList = [
+          'Kontak mata',
+          'Atensi',
+          'Simbolik play',
+          ];
+          @endphp
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label">Penilaian Kemampuan Anak</label>
+              <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width:40%">Kemampuan</th>
+                      <th colspan="5" class="text-center">Skala Penilaian</th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      <th class="text-center">1<br><small>Tidak Mampu</small></th>
+                      <th class="text-center">2<br><small>Kurang Mampu</small></th>
+                      <th class="text-center">3<br><small>Cukup Mampu</small></th>
+                      <th class="text-center">4<br><small>Mampu</small></th>
+                      <th class="text-center">5<br><small>Sangat Mampu</small></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @foreach($kemampuanList as $i => $kemampuan)
+                    <tr id="row-kemampuan-{{ $i }}">
+                      <td>
+                        <div class="input-group">
+                          <input type="text" name="kemampuan[{{ $i }}][judul]" value="{{ $kemampuan }}" class="form-control" required>
+                          <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan" onclick="window.hapusKemampuan({{ $i }})"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                      </td>
+                      @for($skala=1; $skala<=5; $skala++)
+                        <td class="text-center">
+                        <input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required>
+                        </td>
+                        @endfor
+                    </tr>
+                    @endforeach
+                    <!-- Baris kemampuan tambahan dinamis -->
+                    <tr id="row-tambah-kemampuan"></tr>
+                    <tr>
+                      <td colspan="6">
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn-tambah-kemampuan">
+                          <i class="ri-add-line"></i> Tambah Kemampuan Lainnya
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
+          @push('page-script')
+          <script>
+            window.hapusKemampuan = function(idx) {
+              const row = document.getElementById(`row-kemampuan-${idx}`);
+              if (row) row.remove();
+            };
+            document.addEventListener('DOMContentLoaded', function() {
+              let kemampuanIndex = {
+                {
+                  count($kemampuanList ?? ['Kontak mata', 'Atensi', 'Simbolik play'])
+                }
+              };
+              const btnTambah = document.getElementById('btn-tambah-kemampuan');
+              if (btnTambah) {
+                btnTambah.onclick = function() {
+                  const tbody = document.querySelector('table tbody');
+                  // Cari index terbesar yang masih ada
+                  const rows = Array.from(document.querySelectorAll('tr[id^="row-kemampuan-"]'));
+                  if (rows.length > 0) {
+                    const lastIdx = rows.map(row => parseInt(row.id.replace('row-kemampuan-', ''))).sort((a, b) => b - a)[0];
+                    kemampuanIndex = lastIdx + 1;
+                  }
+                  const tr = document.createElement('tr');
+                  tr.id = `row-kemampuan-${kemampuanIndex}`;
+                  let html = `<td><div class=\"input-group\"><input type=\"text\" name=\"kemampuan[${kemampuanIndex}][judul]\" class=\"form-control\" required><button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-hapus-kemampuan\" onclick=\"window.hapusKemampuan(${kemampuanIndex})\"><i class=\"ri-delete-bin-line\"></i></button></div></td>`;
+                  for (let skala = 1; skala <= 5; skala++) {
+                    html += `<td class=\"text-center\"><input type=\"radio\" name=\"kemampuan[${kemampuanIndex}][skala]\" value=\"${skala}\" required></td>`;
+                  }
+                  tr.innerHTML = html;
+                  tbody.insertBefore(tr, document.getElementById('row-tambah-kemampuan'));
+                  kemampuanIndex++;
+                };
+              }
+            });
+          </script>
+          @endpush
+
+
           <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Nama Program <span class="text-danger">*</span></label>
-              <input type="text" name="nama_program" class="form-control @error('nama_program') is-invalid @enderror"
-                placeholder="Nama program pembelajaran" value="{{ old('nama_program') }}" required>
-              @error('nama_program')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Kategori <span class="text-danger">*</span></label>
-              <select name="kategori" class="form-select @error('kategori') is-invalid @enderror" required>
-                <option value="">Pilih Kategori</option>
-                <option value="bina_diri" {{ old('kategori') === 'bina_diri' ? 'selected' : '' }}>Bina Diri</option>
-                <option value="akademik" {{ old('kategori') === 'akademik' ? 'selected' : '' }}>Akademik</option>
-                <option value="motorik" {{ old('kategori') === 'motorik' ? 'selected' : '' }}>Motorik</option>
-                <option value="perilaku" {{ old('kategori') === 'perilaku' ? 'selected' : '' }}>Perilaku</option>
-                <option value="vokasi" {{ old('kategori') === 'vokasi' ? 'selected' : '' }}>Vokasi</option>
-              </select>
-              @error('kategori')
+            <div class="col-md-12">
+              <label class="form-label">Wawancara</label>
+              <textarea name="wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara') }}</textarea>
+              @error('wawancara')
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>
@@ -78,10 +144,9 @@
 
           <div class="row mb-3">
             <div class="col-md-12">
-              <label class="form-label">Deskripsi</label>
-              <textarea name="deskripsi" class="form-control @error('deskripsi') is-invalid @enderror"
-                rows="3" placeholder="Deskripsi program">{{ old('deskripsi') }}</textarea>
-              @error('deskripsi')
+              <label class="form-label">Kemampuan Saat Ini</label>
+              <textarea name="kemampuan_saat_ini" class="form-control @error('kemampuan_saat_ini') is-invalid @enderror" rows="3" placeholder="Deskripsikan kemampuan anak saat ini">{{ old('kemampuan_saat_ini') }}</textarea>
+              @error('kemampuan_saat_ini')
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>
@@ -89,40 +154,9 @@
 
           <div class="row mb-3">
             <div class="col-md-12">
-              <label class="form-label">Target Pembelajaran</label>
-              <textarea name="target_pembelajaran" class="form-control @error('target_pembelajaran') is-invalid @enderror"
-                rows="3" placeholder="Target pembelajaran yang ingin dicapai">{{ old('target_pembelajaran') }}</textarea>
-              @error('target_pembelajaran')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Tanggal Mulai</label>
-              <input type="date" name="tanggal_mulai" class="form-control @error('tanggal_mulai') is-invalid @enderror"
-                value="{{ old('tanggal_mulai') }}">
-              @error('tanggal_mulai')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Tanggal Selesai</label>
-              <input type="date" name="tanggal_selesai" class="form-control @error('tanggal_selesai') is-invalid @enderror"
-                value="{{ old('tanggal_selesai') }}">
-              @error('tanggal_selesai')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
-            </div>
-          </div>
-
-          <div class="row mb-3">
-            <div class="col-md-12">
-              <label class="form-label">Catatan Konsultan</label>
-              <textarea name="catatan_konsultan" class="form-control @error('catatan_konsultan') is-invalid @enderror"
-                rows="3" placeholder="Catatan atau evaluasi dari konsultan">{{ old('catatan_konsultan') }}</textarea>
-              @error('catatan_konsultan')
+              <label class="form-label">Saran / Rekomendasi</label>
+              <textarea name="saran_rekomendasi" class="form-control @error('saran_rekomendasi') is-invalid @enderror" rows="3" placeholder="Saran atau rekomendasi untuk program berikutnya">{{ old('saran_rekomendasi') }}</textarea>
+              @error('saran_rekomendasi')
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>

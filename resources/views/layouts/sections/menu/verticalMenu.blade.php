@@ -21,15 +21,23 @@ use Illuminate\Support\Facades\Route;
         @foreach ($menuData[0]->menu as $menu)
         @php
         $showMenu = true;
-        // Sembunyikan menu karyawan & konsultan pada sidebar jika bukan admin
+        // Sembunyikan menu berdasarkan properti roles jika ada
+        if (isset($menu->roles) && is_array($menu->roles)) {
+        if (!auth()->check() || !in_array(auth()->user()->role, $menu->roles)) {
+        $showMenu = false;
+        }
+        }
+        // Sembunyikan menu karyawan & konsultan pada sidebar jika bukan admin (legacy, untuk menu lama)
         if (
         (isset($menu->slug) && $menu->slug === 'karyawan.index' && (!auth()->check() || auth()->user()->role !== 'admin')) ||
-        (isset($menu->slug) && $menu->slug === 'konsultan.index' && (!auth()->check() || auth()->user()->role !== 'admin')) ||
-        (isset($menu->slug) && $menu->slug === 'program.index' && (!auth()->check() || auth()->user()->role !== 'admin'))
+        (isset($menu->slug) && $menu->slug === 'konsultan.index' && (!auth()->check() || auth()->user()->role !== 'admin'))
         ) {
         $showMenu = false;
         }
-
+        // Tampilkan menu program untuk admin dan konsultan
+        if (isset($menu->slug) && $menu->slug === 'program.index' && (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'konsultan']))) {
+        $showMenu = false;
+        }
         // Tampilkan menu assessment (penilaian anak) untuk admin dan guru saja
         if (isset($menu->slug) && $menu->slug === 'assessment.index' && (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'guru']))) {
         $showMenu = false;

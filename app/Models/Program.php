@@ -17,12 +17,17 @@ class Program extends Model
     'tanggal_selesai',
     'catatan_konsultan',
     'is_approved',
+    'kemampuan',
+    'wawancara',
+    'kemampuan_saat_ini',
+    'saran_rekomendasi',
   ];
 
   protected $casts = [
     'tanggal_mulai' => 'date',
     'tanggal_selesai' => 'date',
     'is_approved' => 'boolean',
+    'kemampuan' => 'array',
   ];
 
   public function anakDidik()

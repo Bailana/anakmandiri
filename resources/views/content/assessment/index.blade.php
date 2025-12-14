@@ -1,3 +1,69 @@
+<!-- Modal Riwayat Observasi/Evaluasi -->
+<div class="modal fade" id="riwayatObservasiModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Riwayat Observasi/Evaluasi</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="riwayatObservasiTableWrapper">
+          <div class="text-center py-4 text-body-secondary">Memuat data...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@push('page-script')
+<script>
+  function showRiwayatObservasi(anakDidikId) {
+    const modal = new bootstrap.Modal(document.getElementById('riwayatObservasiModal'));
+    const wrapper = document.getElementById('riwayatObservasiTableWrapper');
+    wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Memuat data...</div>';
+    modal.show();
+    fetch(`/assessment/riwayat/${anakDidikId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success || !Array.isArray(data.riwayat) || data.riwayat.length === 0) {
+          wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Belum ada riwayat observasi/evaluasi.</div>';
+          return;
+        }
+        let html = `<div class='table-responsive'><table class='table table-bordered'><thead><tr><th>Hari, Tanggal</th><th>Guru Fokus</th><th>Aksi</th></tr></thead><tbody>`;
+        data.riwayat.forEach(item => {
+          html += `<tr><td>
+          ${item.hari}, ${item.tanggal}<br><small>${item.created_at}</small>
+        </td><td>${item.guru_fokus ?? '-'}</td><td>
+          <a href='/assessment/${item.id}/edit' class='btn btn-sm btn-warning me-1'><i class='ri-edit-line'></i> Edit</a>
+          <button class='btn btn-sm btn-danger' onclick='konfirmasiHapusObservasi(${item.id})'><i class='ri-delete-bin-line'></i> Hapus</button>
+        </td></tr>`;
+        });
+        html += '</tbody></table></div>';
+        wrapper.innerHTML = html;
+      });
+  }
+
+  function konfirmasiHapusObservasi(id) {
+    if (confirm('Yakin ingin menghapus observasi/evaluasi ini? Tindakan ini tidak dapat dibatalkan.')) {
+      fetch(`/assessment/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showRiwayatObservasi(data.anak_didik_id);
+          } else {
+            alert('Gagal menghapus observasi.');
+          }
+        });
+    }
+  }
+</script>
+@endpush
 @extends('layouts/contentNavbarLayout')
 
 @section('title', 'Penilaian Anak')
@@ -73,9 +139,10 @@
             <tr class="table-light">
               <th>No</th>
               <th>Anak Didik</th>
+              <th>Guru Fokus</th>
               <th>Program</th>
               <th>Kategori</th>
-              <th>Tanggal Penilaian</th>
+              <th>Tanggal Observasi/Evaluasi</th>
               <th>Penilaian Perkembangan</th>
               <th>Aksi</th>
             </tr>
@@ -87,6 +154,12 @@
               <td>
                 <strong>{{ $assessment->anakDidik->nama ?? '-' }}</strong><br>
                 <small class="text-body-secondary">{{ $assessment->anakDidik->nis ?? '-' }}</small>
+              </td>
+              <td>
+                @php
+                $guruFokus = $assessment->anakDidik && $assessment->anakDidik->guruFokus ? $assessment->anakDidik->guruFokus->nama : '-';
+                @endphp
+                {{ $guruFokus }}
               </td>
               <td>
                 @if($assessment->program_id && $assessment->program)
@@ -136,27 +209,10 @@
                 <div class="d-flex gap-2 align-items-center">
                   <button
                     type="button"
-                    class="btn btn-sm btn-icon btn-outline-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#detailModal"
-                    data-assessment-id="{{ $assessment->id }}"
-                    onclick="showDetail(this)"
-                    title="Lihat Detail">
-                    <i class="ri-eye-line"></i>
-                  </button>
-                  <a
-                    href="{{ route('assessment.edit', $assessment->id) }}"
-                    class="btn btn-sm btn-icon btn-outline-warning"
-                    title="Edit">
-                    <i class="ri-edit-line"></i>
-                  </a>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-icon btn-outline-danger"
-                    data-assessment-id="{{ $assessment->id }}"
-                    onclick="deleteData(this)"
-                    title="Hapus">
-                    <i class="ri-delete-bin-line"></i>
+                    class="btn btn-sm btn-outline-info"
+                    onclick="showRiwayatObservasi({{ $assessment->anakDidik->id ?? 0 }})"
+                    title="Riwayat Observasi/Evaluasi">
+                    <i class="ri-history-line"></i> Riwayat Observasi/Evaluasi
                   </button>
                 </div>
               </td>

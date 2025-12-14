@@ -125,8 +125,7 @@ Route::middleware(['auth'])->group(function () {
   Route::get('/ui/spinners', [Spinners::class, 'index'])->name('ui-spinners');
   Route::get('/ui/tabs-pills', [TabsPills::class, 'index'])->name('ui-tabs-pills');
   Route::get('/ui/toasts', [Toasts::class, 'index'])->name('ui-toasts');
-  Route::get('/ui/tooltips-popovers', [TooltipsPopovers::class, 'index'])->name('ui-tooltips-popovers');
-  Route::get('/ui/typography', [Typography::class, 'index'])->name('ui-typography');
+  Route::get('/ui/tooltips-popovers', [TooltipsPopovers::class, 'index'])->name('ui-typography');
 
   // extended ui
   Route::get('/extended/ui-perfect-scrollbar', [PerfectScrollbar::class, 'index'])->name('extended-ui-perfect-scrollbar');
@@ -147,19 +146,27 @@ Route::middleware(['auth'])->group(function () {
   Route::get('/tables/basic', [TablesBasic::class, 'index'])->name('tables-basic');
 
   // Admin Only Routes
-  // Anak Didik Routes (admin & guru: index, admin: full)
-  Route::middleware(['auth', 'role:admin,guru'])->group(function () {
-    Route::resource('anak-didik', 'App\Http\Controllers\AnakDidikController');
+  // Anak Didik Routes (admin & guru & konsultan: index/show, admin: full)
+  Route::middleware(['auth', 'role:admin,guru,konsultan'])->group(function () {
+    Route::get('anak-didik', [App\Http\Controllers\AnakDidikController::class, 'index'])->name('anak-didik.index');
+    Route::get('anak-didik/{id}', [App\Http\Controllers\AnakDidikController::class, 'show'])->name('anak-didik.show');
     Route::get('anak-didik/{id}/export-pdf', [App\Http\Controllers\AnakDidikController::class, 'exportPdf'])->name('anak-didik.export-pdf');
+  });
+  Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::resource('anak-didik', 'App\Http\Controllers\AnakDidikController')->except(['index', 'show']);
   });
 
 
-  // Karyawan, Konsultan, Program: tetap admin saja
+  // Karyawan, Konsultan: tetap admin saja. Program: admin full, konsultan create/index/show/store
   Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('karyawan', 'App\Http\Controllers\KaryawanController');
     Route::resource('konsultan', 'App\Http\Controllers\KonsultanDataController');
     Route::resource('program', 'App\Http\Controllers\ProgramController');
     Route::post('program/{id}/approve', [App\Http\Controllers\ProgramController::class, 'approve'])->name('program.approve');
+    Route::resource('pengguna', 'App\Http\Controllers\PenggunaController');
+  });
+  Route::middleware(['auth', 'role:konsultan'])->group(function () {
+    Route::resource('program', 'App\Http\Controllers\ProgramController')->only(['index', 'show', 'create', 'store']);
   });
 
   // Assessment: admin & guru (guru hanya index/show)
@@ -167,8 +174,11 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('assessment', 'App\Http\Controllers\AssessmentController');
   });
 
-  // Guru Only: akses detail anak didik (view only)
-  Route::middleware(['role:guru'])->group(function () {
+  // Guru & Konsultan: akses detail anak didik (view only)
+  Route::middleware(['role:guru,konsultan'])->group(function () {
     Route::get('anak-didik/{id}', [App\Http\Controllers\AnakDidikController::class, 'show'])->name('anak-didik.show.guru');
   });
 });
+
+// Tambahan route untuk API riwayat observasi/evaluasi anak didik di halaman program
+require_once __DIR__ . '/program_riwayat.php';

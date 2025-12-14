@@ -104,15 +104,101 @@
             @endif
           </div>
 
+
+          <!-- Penilaian Kemampuan Anak -->
           <div class="row mb-3">
-            <div class="col-12">
-              <label class="form-label">Aktivitas <span class="text-danger">*</span></label>
-              <textarea name="aktivitas" class="form-control @error('aktivitas') is-invalid @enderror" rows="4" style="min-height: 90px;" placeholder="Masukkan aktivitas yang dinilai" required>{{ old('aktivitas') }}</textarea>
-              @error('aktivitas')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
+            <div class="col-md-12">
+              <label class="form-label">Penilaian Kemampuan Anak</label>
+              <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width:40%">Kemampuan</th>
+                      <th colspan="5" class="text-center">Skala Penilaian</th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      <th class="text-center">1<br><small>Tidak Mampu</small></th>
+                      <th class="text-center">2<br><small>Kurang Mampu</small></th>
+                      <th class="text-center">3<br><small>Cukup Mampu</small></th>
+                      <th class="text-center">4<br><small>Mampu</small></th>
+                      <th class="text-center">5<br><small>Sangat Mampu</small></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @php
+                    $kemampuanList = old('kemampuan', [
+                    ['judul' => 'Kontak mata', 'skala' => ''],
+                    ['judul' => 'Atensi', 'skala' => ''],
+                    ['judul' => 'Simbolik play', 'skala' => ''],
+                    ]);
+                    @endphp
+                    @foreach($kemampuanList as $i => $kemampuan)
+                    <tr id="row-kemampuan-{{ $i }}">
+                      <td>
+                        <div class="input-group">
+                          <input type="text" name="kemampuan[{{ $i }}][judul]" value="{{ $kemampuan['judul'] }}" class="form-control" required>
+                          <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan" onclick="window.hapusKemampuan({{ $i }})"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                      </td>
+                      @for($skala=1; $skala<=5; $skala++)
+                        <td class="text-center">
+                        <input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" {{ (isset($kemampuan['skala']) && $kemampuan['skala']==$skala) ? 'checked' : '' }} required>
+                        </td>
+                        @endfor
+                    </tr>
+                    @endforeach
+                    <tr id="row-tambah-kemampuan"></tr>
+                    <tr>
+                      <td colspan="6">
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn-tambah-kemampuan">
+                          <i class="ri-add-line"></i> Tambah Kemampuan Lainnya
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+
+          @push('page-script')
+          <script>
+            // Fungsi hapusKemampuan harus global agar bisa dipanggil dari onclick HTML
+            window.hapusKemampuan = function(idx) {
+              const row = document.getElementById(`row-kemampuan-${idx}`);
+              if (row) row.remove();
+            };
+            document.addEventListener('DOMContentLoaded', function() {
+              let kemampuanIndex = {
+                {
+                  count($kemampuanList)
+                }
+              };
+              const btnTambah = document.getElementById('btn-tambah-kemampuan');
+              if (btnTambah) {
+                btnTambah.onclick = function() {
+                  const tbody = document.querySelector('table tbody');
+                  // Cari index terbesar yang masih ada
+                  const rows = Array.from(document.querySelectorAll('tr[id^="row-kemampuan-"]'));
+                  if (rows.length > 0) {
+                    const lastIdx = rows.map(row => parseInt(row.id.replace('row-kemampuan-', ''))).sort((a, b) => b - a)[0];
+                    kemampuanIndex = lastIdx + 1;
+                  }
+                  const tr = document.createElement('tr');
+                  tr.id = `row-kemampuan-${kemampuanIndex}`;
+                  let html = `<td><div class=\"input-group\"><input type=\"text\" name=\"kemampuan[${kemampuanIndex}][judul]\" class=\"form-control\" required><button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-hapus-kemampuan\" onclick=\"window.hapusKemampuan(${kemampuanIndex})\"><i class=\"ri-delete-bin-line\"></i></button></div></td>`;
+                  for (let skala = 1; skala <= 5; skala++) {
+                    html += `<td class=\"text-center\"><input type=\"radio\" name=\"kemampuan[${kemampuanIndex}][skala]\" value=\"${skala}\" required></td>`;
+                  }
+                  tr.innerHTML = html;
+                  tbody.insertBefore(tr, document.getElementById('row-tambah-kemampuan'));
+                  kemampuanIndex++;
+                };
+              }
+            });
+          </script>
+          @endpush
 
           @if(!(auth()->user() && auth()->user()->role === 'guru'))
           <div class="row mb-3">

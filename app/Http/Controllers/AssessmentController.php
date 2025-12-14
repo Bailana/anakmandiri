@@ -69,6 +69,7 @@ class AssessmentController extends Controller
    */
   public function store(Request $request)
   {
+
     $validated = $request->validate([
       'anak_didik_id' => 'required|exists:anak_didiks,id',
       'konsultan_id' => 'nullable|exists:konsultans,id',
@@ -80,7 +81,12 @@ class AssessmentController extends Controller
       'rekomendasi' => 'nullable|string',
       'saran' => 'nullable|string',
       'tanggal_assessment' => 'nullable|date',
+      'kemampuan' => 'required|array',
+      'kemampuan.*.judul' => 'required|string',
+      'kemampuan.*.skala' => 'required|in:1,2,3,4,5',
     ]);
+
+    $validated['kemampuan'] = array_values($request->input('kemampuan', []));
 
     Assessment::create($validated);
 
