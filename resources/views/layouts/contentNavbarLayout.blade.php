@@ -86,4 +86,5 @@ $container = ($container ?? 'container-xxl');
     </div>
     <!-- / Layout wrapper -->
 </div>
+@stack('scripts')
 @endsection

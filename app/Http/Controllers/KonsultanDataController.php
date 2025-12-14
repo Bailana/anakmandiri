@@ -90,7 +90,7 @@ class KonsultanDataController extends Controller
     ]);
 
     Konsultan::create($validated);
-    
+
     // Log activity
     ActivityService::logCreate('Konsultan', null, 'Membuat data konsultan baru');
 
@@ -148,7 +148,7 @@ class KonsultanDataController extends Controller
     ]);
 
     $konsultan->update($validated);
-    
+
     // Log activity
     ActivityService::logUpdate('Konsultan', $konsultan->id, 'Mengupdate data konsultan: ' . $konsultan->nama);
 
@@ -163,7 +163,7 @@ class KonsultanDataController extends Controller
   {
     $namaKonsultan = $konsultan->nama;
     $konsultan->delete();
-    
+
     // Log activity
     ActivityService::logDelete('Konsultan', $konsultan->id, 'Menghapus data konsultan: ' . $namaKonsultan);
 
