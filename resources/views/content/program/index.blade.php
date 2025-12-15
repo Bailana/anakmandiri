@@ -156,6 +156,74 @@
 
   @push('scripts')
   <script>
+    // Fungsi global agar tombol lihat pada modal dapat diakses
+    window.showDetailObservasi = function(id) {
+      fetch('/program/observasi-program/' + id)
+        .then(response => response.json())
+        .then(res => {
+          if (res.success && res.data) {
+            const program = res.data;
+            document.getElementById('detailNamaProgram').textContent = program.nama_program || '-';
+            document.getElementById('detailKategori').textContent = formatKategori(program.kategori) || '-';
+            // Anak Didik
+            let anakDidikNama = '-';
+            if (program.anak_didik && (program.anak_didik.nama || program.anak_didik_nama)) {
+              anakDidikNama = program.anak_didik.nama || program.anak_didik_nama;
+            } else if (program.anak_didik_nama) {
+              anakDidikNama = program.anak_didik_nama;
+            }
+            document.getElementById('detailAnakDidik').textContent = anakDidikNama;
+            // Guru Fokus
+            let guruFokusHtml = '-';
+            if (program.anak_didik && (program.anak_didik.guru_fokus_nama || (program.anak_didik.guruFokus && program.anak_didik.guruFokus.nama))) {
+              const namaGuru = program.anak_didik.guru_fokus_nama || (program.anak_didik.guruFokus ? program.anak_didik.guruFokus.nama : '');
+              guruFokusHtml = `<span class="badge bg-label-primary" style="background-color: #ede9fe; color: #7c3aed; font-weight: 500; font-size: 0.95rem; padding: 0.18em 0.7em; border-radius: 0.4em;">${namaGuru}</span>`;
+            } else if (program.guru_fokus_nama) {
+              guruFokusHtml = `<span class=\"badge bg-label-primary\" style=\"background-color: #ede9fe; color: #7c3aed; font-weight: 500; font-size: 0.95rem; padding: 0.18em 0.7em; border-radius: 0.4em;\">${program.guru_fokus_nama}</span>`;
+            }
+            document.getElementById('detailGuruFokus').innerHTML = guruFokusHtml;
+            // Konsultan
+            let konsultanNama = '-';
+            if (program.konsultan && program.konsultan.nama) {
+              konsultanNama = program.konsultan.nama;
+            } else if (program.konsultan_nama) {
+              konsultanNama = program.konsultan_nama;
+            }
+            document.getElementById('detailKonsultan').textContent = konsultanNama;
+            document.getElementById('detailTanggalMulai').textContent = program.tanggal_mulai ? formatDate(program.tanggal_mulai) : '-';
+            document.getElementById('detailTanggalSelesai').textContent = program.tanggal_selesai ? formatDate(program.tanggal_selesai) : '-';
+            document.getElementById('detailDeskripsi').textContent = program.deskripsi || '-';
+            document.getElementById('detailTargetPembelajaran').textContent = program.target_pembelajaran || '-';
+            document.getElementById('detailCatatanKonsultan').textContent = program.catatan_konsultan || '-';
+            document.getElementById('detailStatus').innerHTML = program.is_approved ?
+              '<span class="badge bg-success"><i class="ri-check-line me-1"></i>Disetujui</span>' :
+              '<span class="badge bg-warning"><i class="ri-time-line me-1"></i>Menunggu Approval</span>';
+            // Kemampuan
+            let kemampuanHtml = '';
+            if (Array.isArray(program.kemampuan) && program.kemampuan.length > 0) {
+              kemampuanHtml += '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:40%">Kemampuan</th><th class="text-center">1</th><th class="text-center">2</th><th class="text-center">3</th><th class="text-center">4</th><th class="text-center">5</th></tr></thead><tbody>';
+              program.kemampuan.forEach(item => {
+                kemampuanHtml += `<tr><td>${item.judul}</td>`;
+                for (let skala = 1; skala <= 5; skala++) {
+                  kemampuanHtml += `<td class=\"text-center\">${parseInt(item.skala) === skala ? '<i class=\\"ri-check-line text-success\\"></i>' : ''}</td>`;
+                }
+                kemampuanHtml += '</tr>';
+              });
+              kemampuanHtml += '</tbody></table></div>';
+            } else {
+              kemampuanHtml = '<em>Tidak ada data kemampuan</em>';
+            }
+            document.getElementById('detailKemampuan').innerHTML = kemampuanHtml;
+            document.getElementById('detailWawancara').textContent = program.wawancara || '-';
+            document.getElementById('detailKemampuanSaatIni').textContent = program.kemampuan_saat_ini || '-';
+            document.getElementById('detailSaranRekomendasi').textContent = program.saran_rekomendasi || '-';
+            // Tampilkan modal detail
+            var detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+            detailModal.show();
+          }
+        });
+    }
+
     function loadRiwayatObservasi(btn) {
       var programId = btn.getAttribute('data-program-id');
       var listDiv = document.getElementById('riwayatObservasiList');
@@ -172,13 +240,14 @@
           let html = '<ul class="list-group">';
           res.riwayat.forEach(item => {
             html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-            <span><b>${item.hari}</b>, ${item.tanggal} <span class="badge bg-label-primary ms-2">${item.nama_program || '-'}</span></span>
+            <span><b>${item.hari}</b>, ${item.tanggal}</span>
             <span>
-              <button class="btn btn-sm btn-info me-1" onclick="lihatObservasi(${item.id})">Lihat</button>
-              <button class="btn btn-sm btn-warning me-1" onclick="editObservasi(${item.id})">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="hapusObservasi(${item.id})">Hapus</button>
+              <button class="btn btn-sm btn-outline-info me-1" onclick="showDetailObservasi(${item.id})" title="Lihat"><i class='ri-eye-line'></i></button>
+              <button class="btn btn-sm btn-outline-warning me-1" onclick="editObservasi(${item.id})" title="Edit"><i class='ri-edit-line'></i></button>
+              <button class="btn btn-sm btn-outline-danger" onclick="hapusObservasi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>
             </span>
           </li>`;
+
           });
           html += '</ul>';
           listDiv.innerHTML = html;
@@ -241,6 +310,51 @@
     }
 
     function hapusObservasi(id) {
+      // Fungsi global agar tombol lihat pada modal dapat diakses
+      window.showDetailObservasi = function(id) {
+        fetch('/program/observasi-program/' + id)
+          .then(response => response.json())
+          .then(res => {
+            if (res.success && res.data) {
+              const program = res.data;
+              document.getElementById('detailNamaProgram').textContent = program.nama_program || '-';
+              document.getElementById('detailKategori').textContent = formatKategori(program.kategori) || '-';
+              document.getElementById('detailAnakDidik').textContent = program.anak_didik_id || '-';
+              document.getElementById('detailGuruFokus').innerHTML = '-';
+              document.getElementById('detailKonsultan').textContent = program.konsultan_id || '-';
+              document.getElementById('detailTanggalMulai').textContent = program.tanggal_mulai || '-';
+              document.getElementById('detailTanggalSelesai').textContent = program.tanggal_selesai || '-';
+              document.getElementById('detailDeskripsi').textContent = program.deskripsi || '-';
+              document.getElementById('detailTargetPembelajaran').textContent = program.target_pembelajaran || '-';
+              document.getElementById('detailCatatanKonsultan').textContent = program.catatan_konsultan || '-';
+              document.getElementById('detailStatus').innerHTML = program.is_approved ?
+                '<span class="badge bg-success"><i class="ri-check-line me-1"></i>Disetujui</span>' :
+                '<span class="badge bg-warning"><i class="ri-time-line me-1"></i>Menunggu Approval</span>';
+              // Kemampuan
+              let kemampuanHtml = '';
+              if (Array.isArray(program.kemampuan) && program.kemampuan.length > 0) {
+                kemampuanHtml += '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:40%">Kemampuan</th><th class="text-center">1</th><th class="text-center">2</th><th class="text-center">3</th><th class="text-center">4</th><th class="text-center">5</th></tr></thead><tbody>';
+                program.kemampuan.forEach(item => {
+                  kemampuanHtml += `<tr><td>${item.judul}</td>`;
+                  for (let skala = 1; skala <= 5; skala++) {
+                    kemampuanHtml += `<td class=\"text-center\">${parseInt(item.skala) === skala ? '<i class=\\"ri-check-line text-success\\"></i>' : ''}</td>`;
+                  }
+                  kemampuanHtml += '</tr>';
+                });
+                kemampuanHtml += '</tbody></table></div>';
+              } else {
+                kemampuanHtml = '<em>Tidak ada data kemampuan</em>';
+              }
+              document.getElementById('detailKemampuan').innerHTML = kemampuanHtml;
+              document.getElementById('detailWawancara').textContent = program.wawancara || '-';
+              document.getElementById('detailKemampuanSaatIni').textContent = program.kemampuan_saat_ini || '-';
+              document.getElementById('detailSaranRekomendasi').textContent = program.saran_rekomendasi || '-';
+              // Tampilkan modal detail
+              var detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+              detailModal.show();
+            }
+          });
+      }
       if (confirm('Yakin ingin menghapus observasi ini?')) {
         fetch('/program/observasi-program/' + id, {
             method: 'DELETE',

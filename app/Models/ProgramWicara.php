@@ -17,8 +17,14 @@ class ProgramWicara extends Model
   protected $casts = [
     'kemampuan' => 'array',
   ];
+
   public function anakDidik()
   {
     return $this->belongsTo(AnakDidik::class);
+  }
+
+  public function konsultan()
+  {
+    return $this->belongsTo(\App\Models\Konsultan::class, 'konsultan_id');
   }
 }

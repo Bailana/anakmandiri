@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProgramWicara;
+use App\Models\Program;
 use App\Models\AnakDidik;
 use App\Models\Konsultan;
 use App\Models\Assessment;
@@ -14,6 +15,47 @@ use Illuminate\Support\Facades\Auth;
 
 class ProgramController extends Controller
 {
+  /**
+   * API: Detail Observasi/Evaluasi dari tabel program_wicara (untuk modal lihat)
+   */
+  public function showObservasiProgram($id)
+  {
+    $program = ProgramWicara::with([
+      'anakDidik.guruFokus',
+      'konsultan',
+    ])->findOrFail($id);
+
+    // Hari/tanggal observasi dari created_at
+    $createdAt = $program->created_at ? $program->created_at->format('Y-m-d') : null;
+    $hariTanggal = $createdAt ? \App\Helpers\DateHelper::hariTanggal($createdAt) : [null, null];
+
+    // Siapkan data kemampuan (tabel penilaian kemampuan)
+    $kemampuan = [];
+    if (is_array($program->kemampuan)) {
+      foreach ($program->kemampuan as $item) {
+        $kemampuan[] = [
+          'judul' => $item['judul'] ?? '-',
+          'skala' => $item['skala'] ?? null,
+        ];
+      }
+    }
+
+    return response()->json([
+      'success' => true,
+      'data' => [
+        'anak_didik_nama' => $program->anakDidik->nama ?? '-',
+        'guru_fokus_nama' => $program->anakDidik && $program->anakDidik->guruFokus ? $program->anakDidik->guruFokus->nama : '-',
+        'hari' => $hariTanggal[0],
+        'tanggal' => $hariTanggal[1],
+        'konsultan_nama' => $program->konsultan->nama ?? '-',
+        'kemampuan' => $kemampuan,
+        'wawancara' => $program->wawancara,
+        'kemampuan_saat_ini' => $program->kemampuan_saat_ini,
+        'saran_rekomendasi' => $program->saran_rekomendasi,
+      ]
+    ]);
+  }
+
   /**
    * API: Riwayat Observasi/Evaluasi untuk Anak Didik tertentu
    */
@@ -147,13 +189,13 @@ class ProgramController extends Controller
    */
   public function riwayatObservasiProgram($anakDidikId)
   {
-    $programs = Program::where('anak_didik_id', $anakDidikId)
-      ->orderByDesc('tanggal_mulai')
+    $programs = ProgramWicara::where('anak_didik_id', $anakDidikId)
+      ->orderByDesc('created_at')
       ->get();
 
     $riwayat = $programs->map(function ($p) {
-      if ($p->tanggal_mulai) {
-        $tanggalStr = is_string($p->tanggal_mulai) ? $p->tanggal_mulai : $p->tanggal_mulai->format('Y-m-d');
+      if ($p->created_at) {
+        $tanggalStr = is_string($p->created_at) ? $p->created_at : $p->created_at->format('Y-m-d');
         [$hari, $tanggal] = \App\Helpers\DateHelper::hariTanggal(date('Y-m-d', strtotime($tanggalStr)));
       } else {
         $hari = null;
@@ -163,9 +205,9 @@ class ProgramController extends Controller
         'id' => $p->id,
         'hari' => $hari,
         'tanggal' => $tanggal,
-        'nama_program' => $p->nama_program,
-        'kategori' => $p->kategori,
-        'catatan_konsultan' => $p->catatan_konsultan,
+        'jam' => $p->updated_at ? $p->updated_at->format('H:i') : '-',
+        'kategori' => $p->kategori ?? '-',
+        'catatan_konsultan' => $p->catatan_konsultan ?? '-',
         'created_at' => $p->created_at ? $p->created_at->format('d-m-Y H:i') : '',
       ];
     });
