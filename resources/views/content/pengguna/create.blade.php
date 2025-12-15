@@ -12,7 +12,12 @@
       @csrf
       <div class="mb-3">
         <label for="name" class="form-label">Nama</label>
-        <input type="text" class="form-control" id="name" name="name" required>
+        <select class="form-control" id="name" name="name" required>
+          <option value="">Pilih Nama</option>
+          @foreach($namaList ?? [] as $nama)
+          <option value="{{ $nama }}" {{ old('name') == $nama ? 'selected' : '' }}>{{ $nama }}</option>
+          @endforeach
+        </select>
       </div>
       <div class="mb-3">
         <label for="email" class="form-label">Email</label>

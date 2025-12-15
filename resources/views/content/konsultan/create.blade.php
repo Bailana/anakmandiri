@@ -110,7 +110,13 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label class="form-label" for="spesialisasi">Spesialisasi <span class="text-danger">*</span></label>
-              <input type="text" class="form-control @error('spesialisasi') is-invalid @enderror" id="spesialisasi" name="spesialisasi" placeholder="Contoh: Psikologi, Terapi Fisik" value="{{ old('spesialisasi') }}" required>
+              <select class="form-select @error('spesialisasi') is-invalid @enderror" id="spesialisasi" name="spesialisasi" required>
+                <option value="">Pilih Spesialisasi</option>
+                <option value="Pendidikan" {{ old('spesialisasi') == 'Pendidikan' ? 'selected' : '' }}>Pendidikan</option>
+                <option value="Psikologi" {{ old('spesialisasi') == 'Psikologi' ? 'selected' : '' }}>Psikologi</option>
+                <option value="Wicara" {{ old('spesialisasi') == 'Wicara' ? 'selected' : '' }}>Wicara</option>
+                <option value="Sensori Integrasi" {{ old('spesialisasi') == 'Sensori Integrasi' ? 'selected' : '' }}>Sensori Integrasi</option>
+              </select>
               @error('spesialisasi')
               <div class="invalid-feedback">{{ $message }}</div>
               @enderror
@@ -146,7 +152,7 @@
 
           <div class="row mb-3">
             <div class="col-md-6">
-              <label class="form-label" for="status_hubungan">Status Hubungan</label>
+              <label class="form-label" for="status_hubungan">Status</label>
               <select class="form-select @error('status_hubungan') is-invalid @enderror" id="status_hubungan" name="status_hubungan">
                 <option value="">Pilih Status</option>
                 <option value="aktif" {{ old('status_hubungan') === 'aktif' ? 'selected' : '' }}>Aktif</option>
@@ -172,7 +178,15 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label class="form-label" for="pendidikan_terakhir">Pendidikan Terakhir</label>
-              <input type="text" class="form-control @error('pendidikan_terakhir') is-invalid @enderror" id="pendidikan_terakhir" name="pendidikan_terakhir" placeholder="Contoh: S1, S2, S3" value="{{ old('pendidikan_terakhir') }}">
+              <select class="form-select @error('pendidikan_terakhir') is-invalid @enderror" id="pendidikan_terakhir" name="pendidikan_terakhir">
+                <option value="">Pilih Pendidikan Terakhir</option>
+                <option value="SMA" {{ old('pendidikan_terakhir') == 'SMA' ? 'selected' : '' }}>SMA</option>
+                <option value="D3" {{ old('pendidikan_terakhir') == 'D3' ? 'selected' : '' }}>D3</option>
+                <option value="D4" {{ old('pendidikan_terakhir') == 'D4' ? 'selected' : '' }}>D4</option>
+                <option value="S1" {{ old('pendidikan_terakhir') == 'S1' ? 'selected' : '' }}>S1</option>
+                <option value="S2" {{ old('pendidikan_terakhir') == 'S2' ? 'selected' : '' }}>S2</option>
+                <option value="S3" {{ old('pendidikan_terakhir') == 'S3' ? 'selected' : '' }}>S3</option>
+              </select>
               @error('pendidikan_terakhir')
               <div class="invalid-feedback">{{ $message }}</div>
               @enderror

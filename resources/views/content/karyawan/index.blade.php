@@ -285,7 +285,8 @@
 
 @endsection
 
-@section('page-script')
+
+@push('scripts')
 <script>
   const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -357,28 +358,36 @@
   // Delete Data
   function deleteData(button) {
     const karyawanId = button.getAttribute('data-karyawan-id');
-
+    console.log('Delete karyawanId:', karyawanId);
+    if (!karyawanId) {
+      alert('ID karyawan tidak ditemukan. Tidak dapat menghapus.');
+      return;
+    }
     if (confirm('Apakah Anda yakin ingin menghapus karyawan ini?')) {
+      // Ambil CSRF token dari meta tag
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
       fetch(`/karyawan/${karyawanId}`, {
           method: 'DELETE',
           headers: {
             'X-CSRF-TOKEN': csrfToken,
             'X-Requested-With': 'XMLHttpRequest',
-          }
+            'Accept': 'application/json',
+          },
+          credentials: 'same-origin'
         })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
+        .then(response => {
+          if (response.ok) {
             location.reload();
           } else {
-            alert(data.message);
+            return response.json().then(data => {
+              throw new Error(data.message || 'Gagal menghapus data');
+            });
           }
         })
         .catch(error => {
-          console.error('Error:', error);
-          alert('Terjadi kesalahan');
+          alert(error.message);
         });
     }
   }
 </script>
-@endsection
+@endpush

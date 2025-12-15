@@ -28,7 +28,11 @@ class PenggunaController extends Controller
 
   public function create()
   {
-    return view('content.pengguna.create');
+    $karyawanList = \App\Models\Karyawan::pluck('nama')->toArray();
+    $konsultanList = \App\Models\Konsultan::pluck('nama')->toArray();
+    $namaList = array_unique(array_merge($karyawanList, $konsultanList));
+    sort($namaList);
+    return view('content.pengguna.create', compact('namaList'));
   }
 
   public function store(Request $request)

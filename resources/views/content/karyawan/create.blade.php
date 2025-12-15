@@ -117,14 +117,31 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label class="form-label" for="posisi">Posisi <span class="text-danger">*</span></label>
-              <input type="text" class="form-control @error('posisi') is-invalid @enderror" id="posisi" name="posisi" placeholder="Posisi kerja" value="{{ old('posisi') }}" required>
+              <select class="form-select @error('posisi') is-invalid @enderror" id="posisi" name="posisi" required>
+                <option value="">Pilih Posisi</option>
+                <option value="Kepala Sekolah" {{ old('posisi') == 'Kepala Sekolah' ? 'selected' : '' }}>Kepala Sekolah</option>
+                <option value="Bendahara" {{ old('posisi') == 'Bendahara' ? 'selected' : '' }}>Bendahara</option>
+                <option value="Guru Fokus" {{ old('posisi') == 'Guru Fokus' ? 'selected' : '' }}>Guru Fokus</option>
+                <option value="Administrasi" {{ old('posisi') == 'Administrasi' ? 'selected' : '' }}>Administrasi</option>
+                <option value="Wakil Kepala Kurikulum" {{ old('posisi') == 'Wakil Kepala Kurikulum' ? 'selected' : '' }}>Wakil Kepala Kurikulum</option>
+                <option value="Wakil Kepala Sarana Prasarana" {{ old('posisi') == 'Wakil Kepala Sarana Prasarana' ? 'selected' : '' }}>Wakil Kepala Sarana Prasarana</option>
+                <option value="Kepala Klinik" {{ old('posisi') == 'Kepala Klinik' ? 'selected' : '' }}>Kepala Klinik</option>
+                <option value="Kepala IT" {{ old('posisi') == 'Kepala IT' ? 'selected' : '' }}>Kepala IT</option>
+                <option value="Staff IT" {{ old('posisi') == 'Staff IT' ? 'selected' : '' }}>Staff IT</option>
+                <option value="Terapis" {{ old('posisi') == 'Terapis' ? 'selected' : '' }}>Terapis</option>
+              </select>
               @error('posisi')
               <div class="invalid-feedback">{{ $message }}</div>
               @enderror
             </div>
             <div class="col-md-6">
               <label class="form-label" for="departemen">Departemen <span class="text-danger">*</span></label>
-              <input type="text" class="form-control @error('departemen') is-invalid @enderror" id="departemen" name="departemen" placeholder="Departemen" value="{{ old('departemen') }}" required>
+              <select class="form-select @error('departemen') is-invalid @enderror" id="departemen" name="departemen" required>
+                <option value="">Pilih Departemen</option>
+                <option value="Sekolah" {{ old('departemen') == 'Sekolah' ? 'selected' : '' }}>Sekolah</option>
+                <option value="Klinik" {{ old('departemen') == 'Klinik' ? 'selected' : '' }}>Klinik</option>
+                <option value="Vokasi" {{ old('departemen') == 'Vokasi' ? 'selected' : '' }}>Vokasi</option>
+              </select>
               @error('departemen')
               <div class="invalid-feedback">{{ $message }}</div>
               @enderror
@@ -136,9 +153,9 @@
               <label class="form-label" for="status_kepegawaian">Status Kepegawaian</label>
               <select class="form-select @error('status_kepegawaian') is-invalid @enderror" id="status_kepegawaian" name="status_kepegawaian">
                 <option value="">Pilih Status</option>
-                <option value="tetap" {{ old('status_kepegawaian') === 'tetap' ? 'selected' : '' }}>Tetap</option>
-                <option value="kontrak" {{ old('status_kepegawaian') === 'kontrak' ? 'selected' : '' }}>Kontrak</option>
-                <option value="honorer" {{ old('status_kepegawaian') === 'honorer' ? 'selected' : '' }}>Honorer</option>
+                <option value="Tetap" {{ old('status_kepegawaian') == 'Tetap' ? 'selected' : '' }}>Tetap</option>
+                <option value="Training" {{ old('status_kepegawaian') == 'Training' ? 'selected' : '' }}>Training</option>
+                <!-- Removed Honorer option -->
               </select>
               @error('status_kepegawaian')
               <div class="invalid-feedback">{{ $message }}</div>
@@ -170,7 +187,15 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label class="form-label" for="pendidikan_terakhir">Pendidikan Terakhir</label>
-              <input type="text" class="form-control @error('pendidikan_terakhir') is-invalid @enderror" id="pendidikan_terakhir" name="pendidikan_terakhir" placeholder="Contoh: S1, S2" value="{{ old('pendidikan_terakhir') }}">
+              <select class="form-select @error('pendidikan_terakhir') is-invalid @enderror" id="pendidikan_terakhir" name="pendidikan_terakhir">
+                <option value="">Pilih Pendidikan Terakhir</option>
+                <option value="SMA" {{ old('pendidikan_terakhir') == 'SMA' ? 'selected' : '' }}>SMA</option>
+                <option value="D3" {{ old('pendidikan_terakhir') == 'D3' ? 'selected' : '' }}>D3</option>
+                <option value="D4" {{ old('pendidikan_terakhir') == 'D4' ? 'selected' : '' }}>D4</option>
+                <option value="S1" {{ old('pendidikan_terakhir') == 'S1' ? 'selected' : '' }}>S1</option>
+                <option value="S2" {{ old('pendidikan_terakhir') == 'S2' ? 'selected' : '' }}>S2</option>
+                <option value="S3" {{ old('pendidikan_terakhir') == 'S3' ? 'selected' : '' }}>S3</option>
+              </select>
               @error('pendidikan_terakhir')
               <div class="invalid-feedback">{{ $message }}</div>
               @enderror

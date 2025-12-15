@@ -85,7 +85,7 @@ class KaryawanController extends Controller
       'email' => 'nullable|email|unique:karyawans',
       'posisi' => 'nullable|string',
       'departemen' => 'nullable|string',
-      'status_kepegawaian' => 'nullable|in:tetap,kontrak,honorer',
+      'status_kepegawaian' => 'nullable|in:Tetap,Training',
       'tanggal_bergabung' => 'nullable|date',
       'pendidikan_terakhir' => 'nullable|string',
       'institusi_pendidikan' => 'nullable|string',
@@ -170,6 +170,9 @@ class KaryawanController extends Controller
     // Log activity
     ActivityService::logDelete('Karyawan', $karyawan->id, 'Menghapus data karyawan: ' . $namaKaryawan);
 
+    if (request()->wantsJson() || request()->ajax()) {
+      return response()->json(['success' => true, 'message' => 'Data karyawan berhasil dihapus']);
+    }
     return redirect()->route('karyawan.index')
       ->with('success', 'Data karyawan berhasil dihapus');
   }
