@@ -148,12 +148,16 @@ Route::middleware(['auth'])->group(function () {
   // Admin Only Routes
   // Anak Didik Routes (admin & guru & konsultan: index/show, admin: full)
   // Semua user bisa akses daftar & detail anak didik
+
   Route::get('anak-didik', [App\Http\Controllers\AnakDidikController::class, 'index'])->name('anak-didik.index');
-  Route::get('anak-didik/{id}', [App\Http\Controllers\AnakDidikController::class, 'show'])->name('anak-didik.show');
-  Route::get('anak-didik/{id}/export-pdf', [App\Http\Controllers\AnakDidikController::class, 'exportPdf'])->name('anak-didik.export-pdf');
+  // Resource route harus sebelum show manual agar edit tidak bentrok
   Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('anak-didik', 'App\Http\Controllers\AnakDidikController')->except(['index', 'show', 'show']);
   });
+  Route::get('anak-didik/{anak_didik}', [App\Http\Controllers\AnakDidikController::class, 'show'])
+    ->where('anak_didik', '[0-9]+')
+    ->name('anak-didik.show');
+  Route::get('anak-didik/{anak_didik}/export-pdf', [App\Http\Controllers\AnakDidikController::class, 'exportPdf'])->name('anak-didik.export-pdf');
 
 
   // Karyawan, Konsultan: tetap admin saja. Program: admin full, konsultan create/index/show/store

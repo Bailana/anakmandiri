@@ -69,7 +69,7 @@
               <th>Jenis Kelamin</th>
               <th>No. Telp Orang Tua</th>
               <th>Guru Fokus</th>
-              <th>Konsultan</th>
+              <!-- <th>Konsultan</th> -->
               <th>Aksi</th>
             </tr>
           </thead>
@@ -100,6 +100,7 @@
                 -
                 @endif
               </td>
+              <!--
               <td>
                 @if($program->konsultan)
                 <span class="fw-semibold">{{ $program->konsultan->nama }}</span>
@@ -109,6 +110,7 @@
                 -
                 @endif
               </td>
+              -->
               <td>
                 <button
                   type="button"

@@ -41,9 +41,10 @@ class AnakDidikController extends Controller
     $anakDidiks = $query->paginate(15)->appends($request->query());
 
     // Get unique values for filter dropdowns
-    $guruOptions = \App\Models\User::where('role', 'guru')
-      ->orderBy('name')
-      ->pluck('name', 'id');
+    // Ambil semua karyawan dengan posisi Guru Fokus
+    $guruOptions = \App\Models\Karyawan::where('posisi', 'Guru Fokus')
+      ->orderBy('nama')
+      ->pluck('nama', 'id');
 
     $data = [
       'title' => 'Anak Didik',
