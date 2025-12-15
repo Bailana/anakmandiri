@@ -147,13 +147,12 @@ Route::middleware(['auth'])->group(function () {
 
   // Admin Only Routes
   // Anak Didik Routes (admin & guru & konsultan: index/show, admin: full)
-  Route::middleware(['auth', 'role:admin,guru,konsultan'])->group(function () {
-    Route::get('anak-didik', [App\Http\Controllers\AnakDidikController::class, 'index'])->name('anak-didik.index');
-    Route::get('anak-didik/{id}', [App\Http\Controllers\AnakDidikController::class, 'show'])->name('anak-didik.show');
-    Route::get('anak-didik/{id}/export-pdf', [App\Http\Controllers\AnakDidikController::class, 'exportPdf'])->name('anak-didik.export-pdf');
-  });
+  // Semua user bisa akses daftar & detail anak didik
+  Route::get('anak-didik', [App\Http\Controllers\AnakDidikController::class, 'index'])->name('anak-didik.index');
+  Route::get('anak-didik/{id}', [App\Http\Controllers\AnakDidikController::class, 'show'])->name('anak-didik.show');
+  Route::get('anak-didik/{id}/export-pdf', [App\Http\Controllers\AnakDidikController::class, 'exportPdf'])->name('anak-didik.export-pdf');
   Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::resource('anak-didik', 'App\Http\Controllers\AnakDidikController')->except(['index', 'show']);
+    Route::resource('anak-didik', 'App\Http\Controllers\AnakDidikController')->except(['index', 'show', 'show']);
   });
 
 
@@ -172,11 +171,7 @@ Route::middleware(['auth'])->group(function () {
   // Assessment: admin & guru (guru hanya index/show)
   Route::middleware(['auth', 'role:admin,guru'])->group(function () {
     Route::resource('assessment', 'App\Http\Controllers\AssessmentController');
-  });
-
-  // Guru & Konsultan: akses detail anak didik (view only)
-  Route::middleware(['role:guru,konsultan'])->group(function () {
-    Route::get('anak-didik/{id}', [App\Http\Controllers\AnakDidikController::class, 'show'])->name('anak-didik.show.guru');
+    Route::get('assessment/{id}/export-pdf', [App\Http\Controllers\AssessmentController::class, 'exportPdf'])->name('assessment.export-pdf');
   });
 });
 

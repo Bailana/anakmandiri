@@ -13,4 +13,7 @@ Route::middleware(['auth', 'role:admin,konsultan'])->group(function () {
   Route::get('/program/riwayat-observasi-program/{anakDidikId}', [ProgramController::class, 'riwayatObservasiProgram'])->name('program.riwayat-observasi-program');
   Route::get('/program/observasi-program/{id}', [ProgramController::class, 'showObservasiProgram'])->name('program.observasi-program.show');
   Route::delete('/program/observasi-program/{id}', [ProgramController::class, 'destroyObservasiProgram'])->name('program.observasi-program.destroy');
+
+  // Export PDF for ProgramWicara (observasi/evaluasi)
+  Route::get('/program/{id}/export-pdf', [ProgramController::class, 'exportPdf'])->name('program.export-pdf');
 });

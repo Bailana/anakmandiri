@@ -12,9 +12,9 @@
     <div class="card mb-4">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Detail Anak Didik</h5>
-        <div>
-          <a href="{{ route('anak-didik.edit', $anakDidik->id) }}" class="btn btn-warning btn-sm me-2">
-            <i class="ri-edit-line me-2"></i>Edit
+        <div class="d-flex gap-2">
+          <a href="{{ route('anak-didik.export-pdf', $anakDidik->id) }}" class="btn btn-danger btn-sm" target="_blank">
+            <i class="ri-file-pdf-line me-1"></i> Export PDF
           </a>
           <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary btn-sm">
             <i class="ri-arrow-left-line me-2"></i>Kembali
@@ -22,81 +22,298 @@
         </div>
       </div>
       <div class="card-body">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <h6 class="text-muted mb-2">Nama Lengkap</h6>
-            <p class="mb-0"><strong>{{ $anakDidik->nama }}</strong></p>
+        <!-- Nav Tabs -->
+        <ul class="nav nav-tabs mb-3" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="data-diri-tab" data-bs-toggle="tab" data-bs-target="#data-diri"
+              type="button" role="tab" aria-controls="data-diri" aria-selected="true">
+              <i class="ri-user-line me-2"></i>Data Diri
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="data-keluarga-tab" data-bs-toggle="tab" data-bs-target="#data-keluarga"
+              type="button" role="tab" aria-controls="data-keluarga" aria-selected="false">
+              <i class="ri-home-heart-line me-2"></i>Data Keluarga
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="data-kesehatan-tab" data-bs-toggle="tab" data-bs-target="#data-kesehatan"
+              type="button" role="tab" aria-controls="data-kesehatan" aria-selected="false">
+              <i class="ri-heart-pulse-line me-2"></i>Data Kesehatan
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
+              type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
+              <i class="ri-book-line me-2"></i>Data Pendidikan
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="dokumen-tab" data-bs-toggle="tab" data-bs-target="#dokumen"
+              type="button" role="tab" aria-controls="dokumen" aria-selected="false">
+              <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="terapi-tab" data-bs-toggle="tab" data-bs-target="#terapi"
+              type="button" role="tab" aria-controls="terapi" aria-selected="false">
+              <i class="ri-hospital-line me-2"></i>Program Terapi
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Data Diri Tab -->
+          <div class="tab-pane fade show active" id="data-diri" role="tabpanel" aria-labelledby="data-diri-tab">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Nama Lengkap</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->nama }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">NIS</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->nis }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Guru Fokus</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->guruFokus ? $anakDidik->guruFokus->nama : '-' }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Jenis Kelamin</label>
+                <input type="text" class="form-control" value="{{ ucfirst($anakDidik->jenis_kelamin) }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Tanggal Lahir</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->tanggal_lahir ? $anakDidik->tanggal_lahir->format('d-m-Y') : '-' }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Tempat Lahir</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->tempat_lahir }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">NIK (Nomor Identitas)</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->nik }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-12">
+                <label class="form-label">Alamat</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->alamat }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">No. Telepon</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->no_telepon }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->email }}" readonly>
+              </div>
+            </div>
           </div>
-          <div class="col-md-6">
-            <h6 class="text-muted mb-2">NIS</h6>
-            <p class="mb-0"><strong>{{ $anakDidik->nis }}</strong></p>
+
+          <!-- Data Keluarga Tab -->
+          <div class="tab-pane fade" id="data-keluarga" role="tabpanel" aria-labelledby="data-keluarga-tab">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Nomor KK (Kartu Keluarga)</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->no_kk }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">No. Akta Kelahiran</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->no_akta_kelahiran }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Nama Orang Tua/Wali</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->nama_orang_tua }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">No. Telepon Orang Tua</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->no_telepon_orang_tua }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Jumlah Saudara Kandung</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->jumlah_saudara_kandung }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Anak Ke-</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->anak_ke }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-12">
+                <label class="form-label">Tinggal Bersama</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->tinggal_bersama }}" readonly>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Kesehatan Tab -->
+          <div class="tab-pane fade" id="data-kesehatan" role="tabpanel" aria-labelledby="data-kesehatan-tab">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Tinggi Badan (cm)</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->tinggi_badan }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Berat Badan (kg)</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->berat_badan }}" readonly>
+              </div>
+            </div>
+
+            <div class="alert alert-info" role="alert">
+              <i class="ri-information-line me-2"></i>
+              <strong>Catatan:</strong> Data kesehatan dan pengukuran dapat diperbarui secara berkala seiring perkembangan anak.
+            </div>
+          </div>
+
+          <!-- Data Pendidikan Tab -->
+          <div class="tab-pane fade" id="data-pendidikan" role="tabpanel" aria-labelledby="data-pendidikan-tab">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Pendidikan Terakhir</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->pendidikan_terakhir }}" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Asal Sekolah</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->asal_sekolah }}" readonly>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-12">
+                <label class="form-label">Tanggal Pendaftaran</label>
+                <input type="text" class="form-control" value="{{ $anakDidik->tanggal_pendaftaran ? $anakDidik->tanggal_pendaftaran->format('d-m-Y') : '-' }}" readonly>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dokumen Tab -->
+          <div class="tab-pane fade" id="dokumen" role="tabpanel" aria-labelledby="dokumen-tab">
+            <!-- <div class="alert alert-info mb-4" role="alert">
+              <i class="ri-information-line me-2"></i>
+              <strong>Kelengkapan Dokumen:</strong> Centang setiap dokumen yang telah diterima dan disimpan.
+            </div> -->
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="kk" disabled {{ $anakDidik->kk ? 'checked' : '' }}>
+                  <label class="form-check-label" for="kk">Kartu Keluarga (KK)</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="ktp_orang_tua" disabled {{ $anakDidik->ktp_orang_tua ? 'checked' : '' }}>
+                  <label class="form-check-label" for="ktp_orang_tua">KTP Orang Tua</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="akta_kelahiran" disabled {{ $anakDidik->akta_kelahiran ? 'checked' : '' }}>
+                  <label class="form-check-label" for="akta_kelahiran">Akta Kelahiran</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="foto_anak" disabled {{ $anakDidik->foto_anak ? 'checked' : '' }}>
+                  <label class="form-check-label" for="foto_anak">Foto Anak</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="pemeriksaan_tes_rambut" disabled {{ $anakDidik->pemeriksaan_tes_rambut ? 'checked' : '' }}>
+                  <label class="form-check-label" for="pemeriksaan_tes_rambut">Pemeriksaan Tes Rambut</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="anamnesa" disabled {{ $anakDidik->anamnesa ? 'checked' : '' }}>
+                  <label class="form-check-label" for="anamnesa">Anamnesa</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="tes_iq" disabled {{ $anakDidik->tes_iq ? 'checked' : '' }}>
+                  <label class="form-check-label" for="tes_iq">Tes IQ</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="pemeriksaan_dokter_lab" disabled {{ $anakDidik->pemeriksaan_dokter_lab ? 'checked' : '' }}>
+                  <label class="form-check-label" for="pemeriksaan_dokter_lab">Pemeriksaan Dokter / Lab</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="surat_pernyataan" disabled {{ $anakDidik->surat_pernyataan ? 'checked' : '' }}>
+                  <label class="form-check-label" for="surat_pernyataan">Surat Pernyataan</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Program Terapi Tab -->
+          <div class="tab-pane fade" id="terapi" role="tabpanel" aria-labelledby="terapi-tab">
+            <div class="alert alert-info mb-4" role="alert">
+              <i class="ri-information-line me-2"></i>
+              <strong>Program Terapi:</strong> Informasi tentang program terapi yang sedang diikuti oleh anak.
+            </div>
+
+            @if($anakDidik->therapyPrograms && $anakDidik->therapyPrograms->count() > 0)
+            <div class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th>Jenis Terapi</th>
+                    <th>Tanggal Mulai</th>
+                    <th>Tanggal Selesai</th>
+                    <th>Status</th>
+                    <th>Catatan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach($anakDidik->therapyPrograms as $therapy)
+                  <tr>
+                    <td>
+                      @if($therapy->type_therapy === 'si')
+                      <span class="badge bg-label-primary">Sensori Integrasi</span>
+                      @elseif($therapy->type_therapy === 'wicara')
+                      <span class="badge bg-label-success">Terapi Wicara</span>
+                      @elseif($therapy->type_therapy === 'perilaku')
+                      <span class="badge bg-label-info">Terapi Perilaku</span>
+                      @endif
+                    </td>
+                    <td>{{ $therapy->tanggal_mulai?->format('d/m/Y') ?? '-' }}</td>
+                    <td>{{ $therapy->tanggal_selesai?->format('d/m/Y') ?? '-' }}</td>
+                    <td>
+                      @if($therapy->is_active)
+                      <span class="badge bg-success">Aktif</span>
+                      @else
+                      <span class="badge bg-danger">Tidak Aktif</span>
+                      @endif
+                    </td>
+                    <td><small>{{ $therapy->notes ?? '-' }}</small></td>
+                  </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+            @else
+            <div class="alert alert-warning" role="alert">
+              <i class="ri-alert-line me-2"></i>
+              Belum ada program terapi yang terdaftar untuk anak ini.
+            </div>
+            @endif
           </div>
         </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <h6 class="text-muted mb-2">Jenis Kelamin</h6>
-            <p class="mb-0">
-              <span class="badge {{ $anakDidik->jenis_kelamin === 'laki-laki' ? 'bg-info' : 'bg-pink' }}">
-                {{ ucfirst($anakDidik->jenis_kelamin) }}
-              </span>
-            </p>
-          </div>
-          <div class="col-md-6">
-            <h6 class="text-muted mb-2">Tanggal Lahir</h6>
-            <p class="mb-0"><strong>{{ $anakDidik->tanggal_lahir ? \Carbon\Carbon::parse($anakDidik->tanggal_lahir)->format('d-m-Y') : '-' }}</strong></p>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-12">
-            <h6 class="text-muted mb-2">Alamat</h6>
-            <p class="mb-0">{{ $anakDidik->alamat ?? '-' }}</p>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <h6 class="text-muted mb-2">No. Telepon</h6>
-            <p class="mb-0">{{ $anakDidik->no_telepon ?? '-' }}</p>
-          </div>
-          <div class="col-md-6">
-            <h6 class="text-muted mb-2">Email</h6>
-            <p class="mb-0">{{ $anakDidik->email ?? '-' }}</p>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <h6 class="text-muted mb-2">Nama Orang Tua/Wali</h6>
-            <p class="mb-0">{{ $anakDidik->nama_orang_tua ?? '-' }}</p>
-          </div>
-          <div class="col-md-6">
-            <h6 class="text-muted mb-2">No. Telepon Orang Tua</h6>
-            <p class="mb-0">{{ $anakDidik->no_telepon_orang_tua ?? '-' }}</p>
-          </div>
-        </div>
-
-        <hr class="my-4">
-
-        <div class="row">
-          <div class="col-12">
-            <h6 class="text-muted mb-3">Aksi</h6>
-            <a href="{{ route('anak-didik.edit', $anakDidik->id) }}" class="btn btn-warning me-2">
-              <i class="ri-edit-line me-2"></i>Edit Data
-            </a>
-            <form action="{{ route('anak-didik.destroy', $anakDidik->id) }}" method="POST" style="display: inline;">
-              @csrf
-              @method('DELETE')
-              <button type="submit" class="btn btn-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
-                <i class="ri-delete-bin-line me-2"></i>Hapus
-              </button>
-            </form>
-            <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary">
-              <i class="ri-arrow-left-line me-2"></i>Kembali
-            </a>
-          </div>
-        </div>
+        <!-- End of detail view, no form tag -->
       </div>
     </div>
   </div>

@@ -509,9 +509,9 @@
           </div>
           <div class="row mt-3">
             <div class="col-12 text-end">
-              <button type="button" class="btn btn-outline-info" id="btnCetakProgram" onclick="cetakProgram()">
-                <i class="ri-printer-line me-2"></i>Cetak
-              </button>
+              <a id="exportPdfBtn" href="#" class="btn btn-danger" target="_blank">
+                <i class="ri-file-pdf-line me-2"></i>Export PDF
+              </a>
             </div>
           </div>
         </div>
@@ -584,36 +584,8 @@
           }
         });
     }
-    // html += `<h2>Program Pembelajaran Anak</h2>`;
-    // html += `<b>Nama Program:</b> ${program.nama_program}<br>`;
-    // html += `<b>Kategori:</b> ${formatKategori(program.kategori)}<br>`;
-    // html += `<b>Anak Didik:</b> ${program.anak_didik?.nama || '-'}<br>`;
-    // html += `<b>Konsultan:</b> ${program.konsultan?.nama || '-'}<br>`;
-    // html += `<b>Tanggal Mulai:</b> ${program.tanggal_mulai ? formatDate(program.tanggal_mulai) : '-'}<br>`;
-    // html += `<b>Tanggal Selesai:</b> ${program.tanggal_selesai ? formatDate(program.tanggal_selesai) : '-'}<br><br>`;
-    // html += `<b>Penilaian Kemampuan:</b><br>`;
-    // if (Array.isArray(program.kemampuan) && program.kemampuan.length > 0) {
-    //   html += '<table><thead><tr><th>Kemampuan</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody>';
-    //   program.kemampuan.forEach(item => {
-    //     html += `<tr><td>${item.judul}</td>`;
-    //     for (let skala = 1; skala <= 5; skala++) {
-    //       html += `<td>${parseInt(item.skala) === skala ? '✔️' : ''}</td>`;
-    //     }
-    //     html += '</tr>';
-    //   });
-    //   html += '</tbody></table>';
-    // } else {
-    //   html += '<em>Tidak ada data kemampuan</em>';
-    // }
-    // html += `<br><b>Wawancara:</b><br>${program.wawancara || '-'}<br><br>`;
-    // html += `<b>Kemampuan Saat Ini:</b><br>${program.kemampuan_saat_ini || '-'}<br><br>`;
-    // html += `<b>Saran / Rekomendasi:</b><br>${program.saran_rekomendasi || '-'}<br><br>`;
-    // html += `<b>Status Persetujuan:</b> ${program.is_approved ? 'Disetujui' : 'Menunggu Approval'}<br>`;
-    // html += '</body></html>';
-    // win.document.write(html);
-    // win.document.close();
-    // win.print();
-    // });
+    // Set export PDF button link in modal
+    document.getElementById('exportPdfBtn').href = `/program/${window._lastProgramWicaraId}/export-pdf`;
 
 
 

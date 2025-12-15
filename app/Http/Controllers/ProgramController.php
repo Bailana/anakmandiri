@@ -16,6 +16,14 @@ use Illuminate\Support\Facades\Auth;
 class ProgramController extends Controller
 {
   /**
+   * Export detail ProgramWicara (observasi/evaluasi) to PDF view
+   */
+  public function exportPdf($id)
+  {
+    $program = ProgramWicara::with(['anakDidik.guruFokus', 'konsultan'])->findOrFail($id);
+    return view('content.program.pdf', compact('program'));
+  }
+  /**
    * API: Detail Observasi/Evaluasi dari tabel program_wicara (untuk modal lihat)
    */
   public function showObservasiProgram($id)

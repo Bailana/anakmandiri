@@ -119,17 +119,12 @@
               <td>{{ $anak->no_telepon_orang_tua ?? '-' }}</td>
               <td>
                 <div class="d-flex gap-2 align-items-center">
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-icon btn-outline-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#detailModal"
-                    data-anak-id="{{ $anak->id }}"
-                    data-bs-title="Detail Anak"
-                    title="Lihat Detail"
-                    onclick="showDetail(this)">
-                    <i class="ri-eye-line"></i>
-                  </button>
+                  <a
+                      href="{{ route('anak-didik.show', $anak->id) }}"
+                      class="btn btn-sm btn-icon btn-outline-primary"
+                      title="Lihat Detail">
+                      <i class="ri-eye-line"></i>
+                    </a>
                   @if(auth()->user() && auth()->user()->role === 'admin')
                   <a
                     href="{{ route('anak-didik.edit', $anak->id) }}"
@@ -146,13 +141,13 @@
                     <i class="ri-delete-bin-line"></i>
                   </button>
                   @endif
-                  <a
+                  <!-- <a
                     href="{{ route('anak-didik.export-pdf', $anak->id) }}"
                     class="btn btn-sm btn-icon btn-outline-info"
                     title="Export PDF"
                     target="_blank">
                     <i class="ri-file-pdf-line"></i>
-                  </a>
+                  </a> -->
                 </div>
               </td>
             </tr>

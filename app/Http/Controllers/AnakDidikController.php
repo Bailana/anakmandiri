@@ -112,10 +112,33 @@ class AnakDidikController extends Controller
    */
   public function show(string $id)
   {
-    $anakDidik = AnakDidik::findOrFail($id);
-    return response()->json([
-      'success' => true,
-      'data' => $anakDidik
+    $anakDidik = AnakDidik::with(['guruFokus', 'therapyPrograms'])->findOrFail($id);
+
+    if (request()->wantsJson() || request()->ajax()) {
+      return response()->json([
+        'success' => true,
+        'data' => [
+          'id' => $anakDidik->id,
+          'nama' => $anakDidik->nama,
+          'nis' => $anakDidik->nis,
+          'jenis_kelamin' => $anakDidik->jenis_kelamin,
+          'tanggal_lahir' => $anakDidik->tanggal_lahir,
+          'tempat_lahir' => $anakDidik->tempat_lahir,
+          'alamat' => $anakDidik->alamat,
+          'no_telepon' => $anakDidik->no_telepon,
+          'email' => $anakDidik->email,
+          'nama_orang_tua' => $anakDidik->nama_orang_tua,
+          'no_telepon_orang_tua' => $anakDidik->no_telepon_orang_tua,
+          'guru_fokus' => $anakDidik->guruFokus ? $anakDidik->guruFokus->nama : null,
+        ]
+      ]);
+    }
+
+    // Ambil semua guru fokus (karyawan dengan posisi Guru Fokus)
+    $guruFokusList = \App\Models\Karyawan::where('posisi', 'Guru Fokus')->orderBy('nama')->pluck('nama', 'id');
+    return view('content.anak-didik.show', [
+      'anakDidik' => $anakDidik,
+      'guruFokusList' => $guruFokusList
     ]);
   }
 
@@ -205,7 +228,7 @@ class AnakDidikController extends Controller
    */
   public function exportPdf(string $id)
   {
-    $anakDidik = AnakDidik::with(['assessments', 'therapyPrograms', 'programs'])->findOrFail($id);
+    $anakDidik = AnakDidik::with(['assessments', 'therapyPrograms'])->findOrFail($id);
 
     return view('content.anak-didik.pdf', ['anakDidik' => $anakDidik]);
   }

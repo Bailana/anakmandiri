@@ -250,7 +250,12 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Detail Penilaian</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="d-flex gap-2 align-items-center">
+          <a id="exportPdfBtn" href="#" class="btn btn-danger btn-sm" target="_blank">
+            <i class="ri-file-pdf-line me-1"></i> Export PDF
+          </a>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
       </div>
       <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
         <div class="row mb-3">
@@ -314,6 +319,8 @@
         document.getElementById('detailHasil').textContent = assessment.hasil_penilaian || '-';
         document.getElementById('detailRekomendasi').textContent = assessment.rekomendasi || '-';
         document.getElementById('detailSaran').textContent = assessment.saran || '-';
+        // Set export PDF button link
+        document.getElementById('exportPdfBtn').href = `/assessment/${assessmentId}/export-pdf`;
       });
   }
 

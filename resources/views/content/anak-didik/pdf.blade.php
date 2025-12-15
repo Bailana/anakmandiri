@@ -432,46 +432,6 @@
   </div>
   @endif
 
-  <!-- Program Pembelajaran -->
-  @if($anakDidik->programs && $anakDidik->programs->count() > 0)
-  <div class="section">
-    <h2>Program Pembelajaran yang Diberikan</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Nama Program</th>
-          <th>Kategori</th>
-          <th>Konsultan</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        @foreach($anakDidik->programs as $program)
-        <tr>
-          <td>{{ $program->nama_program }}</td>
-          <td>
-            @php
-            $colors = ['bina_diri' => 'primary', 'akademik' => 'info', 'motorik' => 'success', 'perilaku' => 'warning', 'vokasi' => 'danger'];
-            $labels = ['bina_diri' => 'Bina Diri', 'akademik' => 'Akademik', 'motorik' => 'Motorik', 'perilaku' => 'Perilaku', 'vokasi' => 'Vokasi'];
-            @endphp
-            <span class="badge badge-{{ $colors[$program->kategori] ?? 'primary' }}">
-              {{ $labels[$program->kategori] ?? $program->kategori }}
-            </span>
-          </td>
-          <td>{{ $program->konsultan->nama ?? '-' }}</td>
-          <td>
-            @if($program->is_approved)
-            <span class="badge badge-success">Disetujui</span>
-            @else
-            <span class="badge badge-warning">Menunggu</span>
-            @endif
-          </td>
-        </tr>
-        @endforeach
-      </tbody>
-    </table>
-  </div>
-  @endif
 
   <div class="footer">
     <p>Dokumen ini adalah laporan resmi perkembangan anak didik yang dihasilkan otomatis oleh sistem.</p>
