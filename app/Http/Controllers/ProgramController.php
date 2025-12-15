@@ -103,9 +103,17 @@ class ProgramController extends Controller
   public function index(Request $request)
   {
     $user = Auth::user();
+    // Ambil hanya anak didik yang masih punya riwayat observasi/evaluasi
     $sub = ProgramWicara::selectRaw('MAX(id) as id')
       ->groupBy('anak_didik_id');
-    $query = ProgramWicara::with('anakDidik')->whereIn('id', $sub);
+    $query = ProgramWicara::with(['anakDidik.guruFokus', 'konsultan'])
+      ->whereIn('id', $sub)
+      ->whereHas('anakDidik') // pastikan relasi anak didik masih ada
+      ->whereExists(function ($q) {
+        $q->selectRaw(1)
+          ->from('program_wicara as pw2')
+          ->whereRaw('pw2.anak_didik_id = program_wicara.anak_didik_id');
+      });
     if ($request->filled('guru_fokus')) {
       $guruFokusId = $request->guru_fokus;
       $query->whereHas('anakDidik', function ($q) use ($guruFokusId) {
@@ -134,6 +142,16 @@ class ProgramController extends Controller
     return view('content.program.create', [
       'anakDidiks' => $anakDidiks,
       'konsultans' => $konsultans,
+    ]);
+  }
+
+  public function destroyObservasiProgram($id)
+  {
+    $program = \App\Models\ProgramWicara::findOrFail($id);
+    $program->delete();
+    return response()->json([
+      'success' => true,
+      'message' => 'Observasi/Evaluasi berhasil dihapus',
     ]);
   }
 
@@ -175,6 +193,13 @@ class ProgramController extends Controller
     $data = $validated;
     if ($request->has('kemampuan')) {
       $data['kemampuan'] = array_values($request->input('kemampuan'));
+    }
+    // Jika user adalah konsultan, isi konsultan_id otomatis
+    if ($isKonsultan) {
+      $konsultan = \App\Models\Konsultan::where('user_id', $user->id)->first();
+      if ($konsultan) {
+        $data['konsultan_id'] = $konsultan->id;
+      }
     }
     ProgramWicara::create($data);
 

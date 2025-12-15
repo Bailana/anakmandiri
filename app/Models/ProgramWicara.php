@@ -9,6 +9,7 @@ class ProgramWicara extends Model
   protected $table = 'program_wicara';
   protected $fillable = [
     'anak_didik_id',
+    'konsultan_id',
     'kemampuan',
     'wawancara',
     'kemampuan_saat_ini',
