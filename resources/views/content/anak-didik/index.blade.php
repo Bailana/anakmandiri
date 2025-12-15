@@ -120,11 +120,11 @@
               <td>
                 <div class="d-flex gap-2 align-items-center">
                   <a
-                      href="{{ route('anak-didik.show', $anak->id) }}"
-                      class="btn btn-sm btn-icon btn-outline-primary"
-                      title="Lihat Detail">
-                      <i class="ri-eye-line"></i>
-                    </a>
+                    href="{{ route('anak-didik.show', $anak->id) }}"
+                    class="btn btn-sm btn-icon btn-outline-primary"
+                    title="Lihat Detail">
+                    <i class="ri-eye-line"></i>
+                  </a>
                   @if(auth()->user() && auth()->user()->role === 'admin')
                   <a
                     href="{{ route('anak-didik.edit', $anak->id) }}"
@@ -134,7 +134,7 @@
                   </a>
                   <button
                     type="button"
-                    class="btn btn-sm btn-icon btn-outline-danger"
+                    class="btn btn-sm btn-icon btn-outline-danger btn-hapus-anak"
                     data-anak-id="{{ $anak->id }}"
                     title="Hapus Data"
                     onclick="deleteData(this)">
@@ -240,15 +240,10 @@
     </div>
   </div>
 </div>
-
-@endsection
-
-@section('page-script')
 <script>
-  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-  // Format Date
-  function formatDate(dateString) {
+  window.formatDate = function(dateString) {
     if (!dateString) return '-';
     const options = {
       year: 'numeric',
@@ -258,17 +253,14 @@
     return new Date(dateString).toLocaleDateString('id-ID', options);
   }
 
-  // Format Decimal
-  function formatDecimal(value) {
+  window.formatDecimal = function(value) {
     return value ? parseFloat(value).toFixed(2) : '-';
   }
 
-  // Show Detail
-  function showDetail(button) {
+  window.showDetail = function(button) {
     const anakId = button.getAttribute('data-anak-id');
-
     let url = `/anak-didik/${anakId}`;
-    @if(auth()->user()&& auth()->user()->role === 'guru')
+    @if(auth()-> user() && auth()-> user()-> role === 'guru')
     url = `{{ url('anak-didik') }}/${anakId}`;
     @endif
     fetch(url, {
@@ -280,25 +272,18 @@
       .then(response => response.json())
       .then(data => {
         const anak = data.data;
-
-        // Basic Info
         document.getElementById('detailNama').textContent = anak.nama || '-';
         document.getElementById('detailNis').textContent = anak.nis || '-';
-        document.getElementById('detailTl').textContent = formatDate(anak.tanggal_lahir);
+        document.getElementById('detailTl').textContent = window.formatDate(anak.tanggal_lahir);
         document.getElementById('detailTempatLahir').textContent = anak.tempat_lahir || '-';
         document.getElementById('detailAlamat').textContent = anak.alamat || '-';
         document.getElementById('detailTlp').textContent = anak.no_telepon_orang_tua || '-';
-
-        // Jenis Kelamin Badge
         const jkBadge = document.getElementById('detailJk');
         jkBadge.textContent = (anak.jenis_kelamin || '').charAt(0).toUpperCase() + (anak.jenis_kelamin || '').slice(1);
         jkBadge.className = anak.jenis_kelamin === 'laki-laki' ? 'badge bg-label-info' : 'badge bg-label-warning';
-
-        // Set Avatar with Proper Path
         const avatarNum = (anakId % 4) + 1;
         const avatarPath = '/assets/img/avatars/' + avatarNum + '.svg';
         document.getElementById('detailAvatar').src = avatarPath;
-        console.log('Avatar path:', avatarPath); // Debug
       })
       .catch(error => {
         console.error('Error:', error);
@@ -306,22 +291,43 @@
       });
   }
 
-  // Delete Data
-  function deleteData(button) {
+  window.deleteData = function(button) {
+    if (!button || typeof button.getAttribute !== 'function') {
+      console.error('deleteData: argumen button tidak valid', button);
+      alert('Tombol hapus tidak valid.');
+      return;
+    }
     const anakId = button.getAttribute('data-anak-id');
-
+    if (!anakId) {
+      console.error('deleteData: data-anak-id tidak ditemukan pada button', button);
+      alert('ID anak didik tidak ditemukan.');
+      return;
+    }
     if (confirm('Apakah Anda yakin ingin menghapus anak didik ini?')) {
       fetch(`/anak-didik/${anakId}`, {
           method: 'DELETE',
           headers: {
-            'X-CSRF-TOKEN': csrfToken,
+            'X-CSRF-TOKEN': window.csrfToken,
             'X-Requested-With': 'XMLHttpRequest',
           }
         })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            location.reload();
+            // Tampilkan alert success HTML di atas tabel
+            var alertHtml = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+              '<i class="ri-checkbox-circle-line me-2"></i>Data anak didik berhasil dihapus' +
+              '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+              '</div>';
+            var container = document.querySelector('.card.mb-4');
+            if (container) {
+              container.insertAdjacentHTML('afterend', alertHtml);
+            } else {
+              document.body.insertAdjacentHTML('afterbegin', alertHtml);
+            }
+            setTimeout(function() {
+              location.reload();
+            }, 2000);
           } else {
             alert(data.message);
           }

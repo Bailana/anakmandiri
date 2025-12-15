@@ -231,7 +231,7 @@
 @if ($errors->any())
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    @foreach($errors - > keys() as $field)
+    @foreach($errors-> keys() as $field)
     @if(in_array($field, ['nama', 'nik', 'email', 'no_telepon', 'jenis_kelamin', 'tanggal_lahir', 'tempat_lahir', 'alamat']))
     document.getElementById('data-pribadi-tab').click();
     @break
