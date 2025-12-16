@@ -54,6 +54,18 @@
       ]
     },
     {
+      "url": "program-anak",
+      "name": "Program Anak",
+      "icon": "menu-icon icon-base ri ri-graduation-cap-line",
+      "slug": "program-anak.index",
+      "roles": [
+        "admin",
+        "konsultan",
+        "guru",
+        "terapis"
+      ]
+    },
+    {
       "url": "assessment",
       "name": "Penilaian Anak",
       "icon": "menu-icon icon-base ri ri-survey-line",

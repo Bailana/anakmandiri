@@ -177,6 +177,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('assessment', 'App\Http\Controllers\AssessmentController');
     Route::get('assessment/{id}/export-pdf', [App\Http\Controllers\AssessmentController::class, 'exportPdf'])->name('assessment.export-pdf');
   });
+
+  Route::middleware(['auth', 'role:admin,konsultan'])->group(function () {
+    Route::resource('program-anak', App\Http\Controllers\ProgramAnakController::class)->except(['index', 'show']);
+  });
+  Route::middleware(['auth', 'role:admin,konsultan,guru,terapis'])->group(function () {
+    Route::resource('program-anak', App\Http\Controllers\ProgramAnakController::class)->only(['index', 'show']);
+  });
 });
 
 // Tambahan route untuk API riwayat observasi/evaluasi anak didik di halaman program
