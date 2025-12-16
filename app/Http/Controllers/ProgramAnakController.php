@@ -18,7 +18,8 @@ class ProgramAnakController extends Controller
   public function create()
   {
     $anakDidiks = AnakDidik::all();
-    return view('content.program-anak.create', compact('anakDidiks'));
+    $konsultans = \App\Models\Konsultan::all();
+    return view('content.program-anak.create', compact('anakDidiks', 'konsultans'));
   }
 
   public function store(Request $request)

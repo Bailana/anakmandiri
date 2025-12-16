@@ -48,13 +48,6 @@
             </div>
           </div>
 
-          @php
-          $kemampuanList = [
-          'Kontak mata',
-          'Atensi',
-          'Simbolik play',
-          ];
-          @endphp
           <div class="row mb-3">
             <div class="col-md-12">
               <label class="form-label">Penilaian Kemampuan Anak</label>
@@ -75,21 +68,20 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @foreach($kemampuanList as $i => $kemampuan)
-                    <tr id="row-kemampuan-{{ $i }}">
+                    <!-- Satu baris kemampuan kosong default -->
+                    <tr id="row-kemampuan-0">
                       <td>
                         <div class="input-group">
-                          <input type="text" name="kemampuan[{{ $i }}][judul]" value="{{ $kemampuan }}" class="form-control" required>
-                          <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan" onclick="window.hapusKemampuan({{ $i }})"><i class="ri-delete-bin-line"></i></button>
+                          <input type="text" name="kemampuan[0][judul]" class="form-control" required placeholder="Jenis kemampuan">
+                          <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </td>
-                      @for($skala=1; $skala<=5; $skala++)
-                        <td class="text-center">
-                        <input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required>
-                        </td>
-                        @endfor
+                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="1" required></td>
+                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="2" required></td>
+                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="3" required></td>
+                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="4" required></td>
+                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="5" required></td>
                     </tr>
-                    @endforeach
                     <!-- Baris kemampuan tambahan dinamis -->
                     <tr id="row-tambah-kemampuan"></tr>
                     <tr>
@@ -105,22 +97,31 @@
             </div>
           </div>
 
-          @push('page-script')
+          @push('scripts')
           <script>
-            window.hapusKemampuan = function(idx) {
-              const row = document.getElementById(`row-kemampuan-${idx}`);
-              if (row) row.remove();
-            };
             document.addEventListener('DOMContentLoaded', function() {
+              // --- Penilaian Kemampuan Anak ---
               let kemampuanIndex = {
                 {
                   count($kemampuanList ?? ['Kontak mata', 'Atensi', 'Simbolik play'])
                 }
               };
               const btnTambah = document.getElementById('btn-tambah-kemampuan');
+              const tbody = document.querySelector('table tbody');
+
+              // Event delegation untuk hapus baris kemampuan
+              tbody.addEventListener('click', function(e) {
+                if (e.target.closest('.btn-hapus-kemampuan')) {
+                  const btn = e.target.closest('.btn-hapus-kemampuan');
+                  const tr = btn.closest('tr');
+                  if (tr && tr.id.startsWith('row-kemampuan-')) {
+                    tr.remove();
+                  }
+                }
+              });
+
               if (btnTambah) {
-                btnTambah.onclick = function() {
-                  const tbody = document.querySelector('table tbody');
+                btnTambah.addEventListener('click', function() {
                   // Cari index terbesar yang masih ada
                   const rows = Array.from(document.querySelectorAll('tr[id^="row-kemampuan-"]'));
                   if (rows.length > 0) {
@@ -129,15 +130,39 @@
                   }
                   const tr = document.createElement('tr');
                   tr.id = `row-kemampuan-${kemampuanIndex}`;
-                  let html = `<td><div class=\"input-group\"><input type=\"text\" name=\"kemampuan[${kemampuanIndex}][judul]\" class=\"form-control\" required><button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-hapus-kemampuan\" onclick=\"window.hapusKemampuan(${kemampuanIndex})\"><i class=\"ri-delete-bin-line\"></i></button></div></td>`;
+                  let html = `<td><div class=\"input-group\"><input type=\"text\" name=\"kemampuan[${kemampuanIndex}][judul]\" class=\"form-control\" required><button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-hapus-kemampuan\"><i class=\"ri-delete-bin-line\"></i></button></div></td>`;
                   for (let skala = 1; skala <= 5; skala++) {
                     html += `<td class=\"text-center\"><input type=\"radio\" name=\"kemampuan[${kemampuanIndex}][skala]\" value=\"${skala}\" required></td>`;
                   }
                   tr.innerHTML = html;
                   tbody.insertBefore(tr, document.getElementById('row-tambah-kemampuan'));
                   kemampuanIndex++;
-                };
+                });
               }
+
+              // --- Konsultan Change Handler ---
+              window.handleKonsultanChange = function() {
+                var select = document.getElementById('konsultan_id');
+                var selected = select.options[select.selectedIndex];
+                var spesialisasi = selected.getAttribute('data-spesialisasi');
+                var wawancaraRow = document.getElementById('row-wawancara');
+                var wawancaraLabel = document.getElementById('label-wawancara');
+                var wawancaraInput = document.getElementById('input-wawancara');
+                var rowKemampuanSaatIni = document.getElementById('row-kemampuan-saat-ini');
+                var rowSaranRekomendasi = document.getElementById('row-saran-rekomendasi');
+                if (spesialisasi === 'sensori integrasi') {
+                  wawancaraLabel.textContent = 'Keterangan';
+                  wawancaraInput.placeholder = 'Keterangan';
+                  if (rowKemampuanSaatIni) rowKemampuanSaatIni.style.display = 'none';
+                  if (rowSaranRekomendasi) rowSaranRekomendasi.style.display = 'none';
+                } else {
+                  wawancaraLabel.textContent = 'Wawancara';
+                  wawancaraInput.placeholder = 'Hasil wawancara dengan orang tua/anak/guru';
+                  if (rowKemampuanSaatIni) rowKemampuanSaatIni.style.display = '';
+                  if (rowSaranRekomendasi) rowSaranRekomendasi.style.display = '';
+                }
+              }
+              window.handleKonsultanChange();
             });
           </script>
           @endpush
@@ -176,40 +201,13 @@
               <button type="submit" class="btn btn-primary me-2">
                 <i class="ri-save-line me-2"></i>Simpan
               </button>
-              <a href="{{ route('program.index') }}" class="btn btn-outline-secondary">
+              <a href="{{ route('program.index') }}" class="btn btn-outline-danger">
                 <i class="ri-close-line me-2"></i>Batal
               </a>
             </div>
           </div>
 
-          @push('page-script')
-          <script>
-            window.handleKonsultanChange = function() {
-              var select = document.getElementById('konsultan_id');
-              var selected = select.options[select.selectedIndex];
-              var spesialisasi = selected.getAttribute('data-spesialisasi');
-              var wawancaraRow = document.getElementById('row-wawancara');
-              var wawancaraLabel = document.getElementById('label-wawancara');
-              var wawancaraInput = document.getElementById('input-wawancara');
-              var rowKemampuanSaatIni = document.getElementById('row-kemampuan-saat-ini');
-              var rowSaranRekomendasi = document.getElementById('row-saran-rekomendasi');
-              if (spesialisasi === 'sensori integrasi') {
-                wawancaraLabel.textContent = 'Keterangan';
-                wawancaraInput.placeholder = 'Keterangan';
-                if (rowKemampuanSaatIni) rowKemampuanSaatIni.style.display = 'none';
-                if (rowSaranRekomendasi) rowSaranRekomendasi.style.display = 'none';
-              } else {
-                wawancaraLabel.textContent = 'Wawancara';
-                wawancaraInput.placeholder = 'Hasil wawancara dengan orang tua/anak/guru';
-                if (rowKemampuanSaatIni) rowKemampuanSaatIni.style.display = '';
-                if (rowSaranRekomendasi) rowSaranRekomendasi.style.display = '';
-              }
-            }
-            document.addEventListener('DOMContentLoaded', function() {
-              window.handleKonsultanChange();
-            });
-          </script>
-          @endpush
+
         </form>
       </div>
     </div>
