@@ -4,16 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ProgramWicara extends Model
+class ProgramSI extends Model
 {
-  protected $table = 'program_wicara';
+  protected $table = 'program_si';
   protected $fillable = [
     'anak_didik_id',
     'user_id',
     'kemampuan',
-    'wawancara',
-    'kemampuan_saat_ini',
-    'saran_rekomendasi',
+    'keterangan',
   ];
   protected $casts = [
     'kemampuan' => 'array',

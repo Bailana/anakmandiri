@@ -30,4 +30,9 @@ class Konsultan extends Model
     'tanggal_lahir' => 'date',
     'tanggal_registrasi' => 'date',
   ];
+
+  public function user()
+  {
+    return $this->belongsTo(\App\Models\User::class, 'user_id');
+  }
 }

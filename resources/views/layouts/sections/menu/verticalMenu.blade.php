@@ -6,8 +6,10 @@ use Illuminate\Support\Facades\Route;
     <!-- ! Hide app brand if navbar-full -->
     <div class="app-brand demo">
         <a href="{{url('/')}}" class="app-brand-link">
-            <span class="app-brand-logo demo me-1">@include('_partials.macros')</span>
-            <span class="app-brand-text demo menu-text fw-semibold ms-2">{{config('variables.templateName')}}</span>
+            <span class="app-brand-logo demo me-1">
+                <img src="{{ asset('assets/img/am.png') }}" alt="Logo" style="height:40px;">
+            </span>
+            <span class="app-brand-text demo menu-text fw-semibold ms-2">Anak Mandiri</span>
         </a>
 
         <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -29,17 +31,20 @@ use Illuminate\Support\Facades\Route;
         }
         // Sembunyikan menu karyawan & konsultan pada sidebar jika bukan admin (legacy, untuk menu lama)
         if (
-        (isset($menu->slug) && $menu->slug === 'karyawan.index' && (!auth()->check() || auth()->user()->role !== 'admin')) ||
+        (isset($menu->slug) && $menu->slug === 'karyawan.index' && (!auth()->check() || auth()->user()->role !== 'admin'))
+        ||
         (isset($menu->slug) && $menu->slug === 'konsultan.index' && (!auth()->check() || auth()->user()->role !== 'admin'))
         ) {
         $showMenu = false;
         }
         // Tampilkan menu program untuk admin dan konsultan
-        if (isset($menu->slug) && $menu->slug === 'program.index' && (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'konsultan']))) {
+        if (isset($menu->slug) && $menu->slug === 'program.index' && (!auth()->check() || !in_array(auth()->user()->role,
+        ['admin', 'konsultan']))) {
         $showMenu = false;
         }
         // Tampilkan menu assessment (penilaian anak) untuk admin dan guru saja
-        if (isset($menu->slug) && $menu->slug === 'assessment.index' && (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'guru']))) {
+        if (isset($menu->slug) && $menu->slug === 'assessment.index' && (!auth()->check() || !in_array(auth()->user()->role,
+        ['admin', 'guru']))) {
         $showMenu = false;
         }
         @endphp
@@ -84,10 +89,13 @@ use Illuminate\Support\Facades\Route;
 
         {{-- main menu --}}
         <li class="menu-item {{$activeClass}}">
-            @if(isset($menu->slug) && $menu->slug === 'anak-didik.index' && auth()->user() && auth()->user()->role === 'admin')
+            @if(isset($menu->slug) && $menu->slug === 'anak-didik.index' && auth()->user() && auth()->user()->role ===
+            'admin')
             <a href="{{ route('anak-didik.index') }}" class="menu-link">
                 @else
-                <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}" class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if (isset($menu->target) and !empty($menu->target)) target="_blank" @endif>
+                <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}"
+                    class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if (isset($menu->target) and
+                    !empty($menu->target)) target="_blank" @endif>
                     @endif
                     @isset($menu->icon)
                     <i class="{{ $menu->icon }}"></i>

@@ -18,6 +18,17 @@
       </div>
       <div class="card-body">
         <form action="{{ route('program.store') }}" method="POST">
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label">Konsultan <span class="text-danger">*</span></label>
+              <select name="konsultan_id" id="konsultan_id" class="form-select" required onchange="window.handleKonsultanChange()">
+                <option value="">Pilih Konsultan</option>
+                @foreach($konsultans as $konsultan)
+                <option value="{{ $konsultan->id }}" data-spesialisasi="{{ strtolower($konsultan->spesialisasi) }}">{{ $konsultan->nama }} ({{ $konsultan->spesialisasi }})</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
           @csrf
 
           <div class="row mb-3">
@@ -132,17 +143,16 @@
           @endpush
 
 
-          <div class="row mb-3">
+          <div class="row mb-3" id="row-wawancara">
             <div class="col-md-12">
-              <label class="form-label">Wawancara</label>
-              <textarea name="wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara') }}</textarea>
+              <label class="form-label" id="label-wawancara">Wawancara</label>
+              <textarea name="wawancara" id="input-wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara') }}</textarea>
               @error('wawancara')
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>
           </div>
-
-          <div class="row mb-3">
+          <div class="row mb-3" id="row-kemampuan-saat-ini">
             <div class="col-md-12">
               <label class="form-label">Kemampuan Saat Ini</label>
               <textarea name="kemampuan_saat_ini" class="form-control @error('kemampuan_saat_ini') is-invalid @enderror" rows="3" placeholder="Deskripsikan kemampuan anak saat ini">{{ old('kemampuan_saat_ini') }}</textarea>
@@ -151,8 +161,7 @@
               @enderror
             </div>
           </div>
-
-          <div class="row mb-3">
+          <div class="row mb-3" id="row-saran-rekomendasi">
             <div class="col-md-12">
               <label class="form-label">Saran / Rekomendasi</label>
               <textarea name="saran_rekomendasi" class="form-control @error('saran_rekomendasi') is-invalid @enderror" rows="3" placeholder="Saran atau rekomendasi untuk program berikutnya">{{ old('saran_rekomendasi') }}</textarea>
@@ -172,6 +181,35 @@
               </a>
             </div>
           </div>
+
+          @push('page-script')
+          <script>
+            window.handleKonsultanChange = function() {
+              var select = document.getElementById('konsultan_id');
+              var selected = select.options[select.selectedIndex];
+              var spesialisasi = selected.getAttribute('data-spesialisasi');
+              var wawancaraRow = document.getElementById('row-wawancara');
+              var wawancaraLabel = document.getElementById('label-wawancara');
+              var wawancaraInput = document.getElementById('input-wawancara');
+              var rowKemampuanSaatIni = document.getElementById('row-kemampuan-saat-ini');
+              var rowSaranRekomendasi = document.getElementById('row-saran-rekomendasi');
+              if (spesialisasi === 'sensori integrasi') {
+                wawancaraLabel.textContent = 'Keterangan';
+                wawancaraInput.placeholder = 'Keterangan';
+                if (rowKemampuanSaatIni) rowKemampuanSaatIni.style.display = 'none';
+                if (rowSaranRekomendasi) rowSaranRekomendasi.style.display = 'none';
+              } else {
+                wawancaraLabel.textContent = 'Wawancara';
+                wawancaraInput.placeholder = 'Hasil wawancara dengan orang tua/anak/guru';
+                if (rowKemampuanSaatIni) rowKemampuanSaatIni.style.display = '';
+                if (rowSaranRekomendasi) rowSaranRekomendasi.style.display = '';
+              }
+            }
+            document.addEventListener('DOMContentLoaded', function() {
+              window.handleKonsultanChange();
+            });
+          </script>
+          @endpush
         </form>
       </div>
     </div>

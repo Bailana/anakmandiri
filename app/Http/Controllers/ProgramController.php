@@ -28,16 +28,24 @@ class ProgramController extends Controller
    */
   public function showObservasiProgram($id)
   {
+    // Coba cari di program_wicara
     $program = ProgramWicara::with([
       'anakDidik.guruFokus',
-      'konsultan',
-    ])->findOrFail($id);
+      'user',
+    ])->find($id);
+    $sumber = 'wicara';
+    if (!$program) {
+      // Jika tidak ditemukan, cari di program_si
+      $program = \App\Models\ProgramSI::with([
+        'anakDidik.guruFokus',
+        'user',
+      ])->findOrFail($id);
+      $sumber = 'si';
+    }
 
-    // Hari/tanggal observasi dari created_at
     $createdAt = $program->created_at ? $program->created_at->format('Y-m-d') : null;
     $hariTanggal = $createdAt ? \App\Helpers\DateHelper::hariTanggal($createdAt) : [null, null];
 
-    // Siapkan data kemampuan (tabel penilaian kemampuan)
     $kemampuan = [];
     if (is_array($program->kemampuan)) {
       foreach ($program->kemampuan as $item) {
@@ -47,7 +55,8 @@ class ProgramController extends Controller
         ];
       }
     }
-
+    $konsultanNama = $program->user ? $program->user->name : '-';
+    // Untuk program_si, wawancara = keterangan, tidak ada kemampuan_saat_ini/saran_rekomendasi
     return response()->json([
       'success' => true,
       'data' => [
@@ -55,11 +64,12 @@ class ProgramController extends Controller
         'guru_fokus_nama' => $program->anakDidik && $program->anakDidik->guruFokus ? $program->anakDidik->guruFokus->nama : '-',
         'hari' => $hariTanggal[0],
         'tanggal' => $hariTanggal[1],
-        'konsultan_nama' => $program->konsultan->nama ?? '-',
+        'konsultan_nama' => $konsultanNama,
         'kemampuan' => $kemampuan,
-        'wawancara' => $program->wawancara,
-        'kemampuan_saat_ini' => $program->kemampuan_saat_ini,
-        'saran_rekomendasi' => $program->saran_rekomendasi,
+        'wawancara' => $sumber === 'wicara' ? $program->wawancara : $program->keterangan,
+        'kemampuan_saat_ini' => $sumber === 'wicara' ? $program->kemampuan_saat_ini : null,
+        'saran_rekomendasi' => $sumber === 'wicara' ? $program->saran_rekomendasi : null,
+        'sumber' => $sumber,
       ]
     ]);
   }
@@ -111,25 +121,55 @@ class ProgramController extends Controller
   public function index(Request $request)
   {
     $user = Auth::user();
-    // Ambil hanya anak didik yang masih punya riwayat observasi/evaluasi
-    $sub = ProgramWicara::selectRaw('MAX(id) as id')
-      ->groupBy('anak_didik_id');
-    $query = ProgramWicara::with(['anakDidik.guruFokus', 'konsultan'])
-      ->whereIn('id', $sub)
-      ->whereHas('anakDidik') // pastikan relasi anak didik masih ada
-      ->whereExists(function ($q) {
-        $q->selectRaw(1)
-          ->from('program_wicara as pw2')
-          ->whereRaw('pw2.anak_didik_id = program_wicara.anak_didik_id');
-      });
+    // Ambil data program_wicara (terbaru per anak_didik)
+    $subWicara = \App\Models\ProgramWicara::selectRaw('MAX(id) as id')->groupBy('anak_didik_id');
+    $queryWicara = \App\Models\ProgramWicara::with(['anakDidik.guruFokus', 'user'])
+      ->whereIn('id', $subWicara)
+      ->whereHas('anakDidik');
+    // Ambil data program_si (terbaru per anak_didik)
+    $subSI = \App\Models\ProgramSI::selectRaw('MAX(id) as id')->groupBy('anak_didik_id');
+    $querySI = \App\Models\ProgramSI::with(['anakDidik.guruFokus', 'user'])
+      ->whereIn('id', $subSI)
+      ->whereHas('anakDidik');
+    // Filter guru fokus jika ada
     if ($request->filled('guru_fokus')) {
       $guruFokusId = $request->guru_fokus;
-      $query->whereHas('anakDidik', function ($q) use ($guruFokusId) {
+      $queryWicara->whereHas('anakDidik', function ($q) use ($guruFokusId) {
+        $q->where('guru_fokus_id', $guruFokusId);
+      });
+      $querySI->whereHas('anakDidik', function ($q) use ($guruFokusId) {
         $q->where('guru_fokus_id', $guruFokusId);
       });
     }
-    $programs = $query->paginate(15)->appends($request->query());
-    // Guru Fokus options (Karyawan dengan posisi Guru Fokus saja)
+    // Ambil data, tambahkan field sumber
+    $dataWicara = $queryWicara->get()->map(function ($item) {
+      $item->sumber = 'wicara';
+      $item->tanggal_program = $item->created_at;
+      return $item;
+    });
+    $dataSI = $querySI->get()->map(function ($item) {
+      $item->sumber = 'si';
+      $item->tanggal_program = $item->created_at;
+      return $item;
+    });
+    // Gabungkan, lalu group by anak_didik_id, ambil data terbaru per anak
+    $merged = $dataWicara->concat($dataSI)
+      ->sortByDesc('tanggal_program')
+      ->values()
+      ->groupBy('anak_didik_id')
+      ->map(function ($group) {
+        return $group->first(); // data terbaru per anak
+      })->values();
+    // Manual pagination
+    $perPage = 15;
+    $currentPage = $request->input('page', 1);
+    $total = $merged->count();
+    $items = $merged->slice(($currentPage - 1) * $perPage, $perPage)->all();
+    $programs = new \Illuminate\Pagination\LengthAwarePaginator($items, $total, $perPage, $currentPage, [
+      'path' => $request->url(),
+      'query' => $request->query(),
+    ]);
+    // Guru Fokus options
     $guruOptions = \App\Models\Karyawan::where('posisi', 'Guru Fokus')->orderBy('nama')->pluck('nama', 'id');
     $data = [
       'title' => 'Program Wicara',
@@ -170,51 +210,67 @@ class ProgramController extends Controller
   {
     $user = Auth::user();
     $isKonsultan = $user->role === 'konsultan';
-    $rules = [
-      'anak_didik_id' => 'required|exists:anak_didiks,id',
-      'deskripsi' => 'nullable|string',
-      'target_pembelajaran' => 'nullable|string',
-      'tanggal_mulai' => 'nullable|date',
-      'tanggal_selesai' => 'nullable|date',
-      'catatan_konsultan' => 'nullable|string',
-      'kemampuan' => 'nullable|array',
-      'kemampuan.*.judul' => 'required_with:kemampuan|string',
-      'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:5',
-      'wawancara' => 'nullable|string',
-      'kemampuan_saat_ini' => 'nullable|string',
-      'saran_rekomendasi' => 'nullable|string',
-    ];
-    if (!$isKonsultan) {
-      $rules['konsultan_id'] = 'required|exists:konsultans,id';
-      $rules['nama_program'] = 'required|string|max:255';
-      $rules['kategori'] = 'required|in:bina_diri,akademik,motorik,perilaku,vokasi';
-    }
-    $validated = $request->validate([
-      'anak_didik_id' => 'required|exists:anak_didiks,id',
-      'kemampuan' => 'nullable|array',
-      'kemampuan.*.judul' => 'required_with:kemampuan|string',
-      'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:5',
-      'wawancara' => 'nullable|string',
-      'kemampuan_saat_ini' => 'nullable|string',
-      'saran_rekomendasi' => 'nullable|string',
-    ]);
-    $data = $validated;
-    if ($request->has('kemampuan')) {
-      $data['kemampuan'] = array_values($request->input('kemampuan'));
-    }
-    // Jika user adalah konsultan, isi konsultan_id otomatis
-    if ($isKonsultan) {
-      $konsultan = \App\Models\Konsultan::where('user_id', $user->id)->first();
-      if ($konsultan) {
-        $data['konsultan_id'] = $konsultan->id;
+    $konsultanId = $request->input('konsultan_id');
+    $konsultan = $konsultanId ? \App\Models\Konsultan::find($konsultanId) : null;
+    $spesialisasi = $konsultan ? strtolower($konsultan->spesialisasi) : '';
+
+    if ($spesialisasi === 'sensori integrasi') {
+      // Validasi untuk sensori integrasi
+      $rules = [
+        'anak_didik_id' => 'required|exists:anak_didiks,id',
+        'kemampuan' => 'nullable|array',
+        'kemampuan.*.judul' => 'required_with:kemampuan|string',
+        'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:5',
+        'wawancara' => 'nullable|string', // ini akan jadi keterangan
+      ];
+      $validated = $request->validate($rules);
+      $data = $validated;
+      if ($request->has('kemampuan')) {
+        $data['kemampuan'] = array_values($request->input('kemampuan'));
       }
+      $data['user_id'] = $user->id;
+      $data['keterangan'] = $data['wawancara'] ?? null;
+      unset($data['wawancara']);
+      \App\Models\ProgramSI::create($data);
+      ActivityService::logCreate('ProgramSI', null, 'Membuat program sensori integrasi baru');
+      return redirect()->route('program.index')->with('success', 'Program sensori integrasi berhasil ditambahkan');
+    } else {
+      // Validasi untuk wicara (default)
+      $rules = [
+        'anak_didik_id' => 'required|exists:anak_didiks,id',
+        'deskripsi' => 'nullable|string',
+        'target_pembelajaran' => 'nullable|string',
+        'tanggal_mulai' => 'nullable|date',
+        'tanggal_selesai' => 'nullable|date',
+        'catatan_konsultan' => 'nullable|string',
+        'kemampuan' => 'nullable|array',
+        'kemampuan.*.judul' => 'required_with:kemampuan|string',
+        'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:5',
+        'wawancara' => 'nullable|string',
+        'kemampuan_saat_ini' => 'nullable|string',
+        'saran_rekomendasi' => 'nullable|string',
+      ];
+      if (!$isKonsultan) {
+        $rules['konsultan_id'] = 'required|exists:konsultans,id';
+        $rules['nama_program'] = 'required|string|max:255';
+        $rules['kategori'] = 'required|in:bina_diri,akademik,motorik,perilaku,vokasi';
+      }
+      $validated = $request->validate($rules);
+      $data = $validated;
+      if ($request->has('kemampuan')) {
+        $data['kemampuan'] = array_values($request->input('kemampuan'));
+      }
+      if ($isKonsultan) {
+        $konsultan = \App\Models\Konsultan::where('user_id', $user->id)->first();
+        if ($konsultan) {
+          $data['konsultan_id'] = $konsultan->id;
+        }
+      }
+      $data['user_id'] = $user->id;
+      ProgramWicara::create($data);
+      ActivityService::logCreate('ProgramWicara', null, 'Membuat program wicara baru');
+      return redirect()->route('program.index')->with('success', 'Program pembelajaran berhasil ditambahkan');
     }
-    ProgramWicara::create($data);
-
-    // Log activity
-    ActivityService::logCreate('ProgramWicara', null, 'Membuat program wicara baru');
-
-    return redirect()->route('program.index')->with('success', 'Program pembelajaran berhasil ditambahkan');
   }
 
   /**
@@ -222,11 +278,16 @@ class ProgramController extends Controller
    */
   public function riwayatObservasiProgram($anakDidikId)
   {
-    $programs = ProgramWicara::where('anak_didik_id', $anakDidikId)
+    $programsWicara = \App\Models\ProgramWicara::with('user')
+      ->where('anak_didik_id', $anakDidikId)
+      ->orderByDesc('created_at')
+      ->get();
+    $programsSI = \App\Models\ProgramSI::with('user')
+      ->where('anak_didik_id', $anakDidikId)
       ->orderByDesc('created_at')
       ->get();
 
-    $riwayat = $programs->map(function ($p) {
+    $riwayatWicara = $programsWicara->map(function ($p) {
       if ($p->created_at) {
         $tanggalStr = is_string($p->created_at) ? $p->created_at : $p->created_at->format('Y-m-d');
         [$hari, $tanggal] = \App\Helpers\DateHelper::hariTanggal(date('Y-m-d', strtotime($tanggalStr)));
@@ -236,17 +297,40 @@ class ProgramController extends Controller
       }
       return [
         'id' => $p->id,
+        'user_id' => $p->user_id,
+        'user_name' => $p->user ? $p->user->name : '-',
         'hari' => $hari,
         'tanggal' => $tanggal,
         'jam' => $p->updated_at ? $p->updated_at->format('H:i') : '-',
-        'kategori' => $p->kategori ?? '-',
-        'catatan_konsultan' => $p->catatan_konsultan ?? '-',
+        'sumber' => 'wicara',
         'created_at' => $p->created_at ? $p->created_at->format('d-m-Y H:i') : '',
       ];
     });
+    $riwayatSI = $programsSI->map(function ($p) {
+      if ($p->created_at) {
+        $tanggalStr = is_string($p->created_at) ? $p->created_at : $p->created_at->format('Y-m-d');
+        [$hari, $tanggal] = \App\Helpers\DateHelper::hariTanggal(date('Y-m-d', strtotime($tanggalStr)));
+      } else {
+        $hari = null;
+        $tanggal = null;
+      }
+      return [
+        'id' => $p->id,
+        'user_id' => $p->user_id,
+        'user_name' => $p->user ? $p->user->name : '-',
+        'hari' => $hari,
+        'tanggal' => $tanggal,
+        'jam' => $p->updated_at ? $p->updated_at->format('H:i') : '-',
+        'sumber' => 'si',
+        'created_at' => $p->created_at ? $p->created_at->format('d-m-Y H:i') : '',
+      ];
+    });
+    $riwayatGabung = $riwayatWicara->concat($riwayatSI)->sortByDesc(function ($item) {
+      return $item['created_at'];
+    })->values();
     return response()->json([
       'success' => true,
-      'riwayat' => $riwayat,
+      'riwayat' => $riwayatGabung,
     ]);
   }
 }
