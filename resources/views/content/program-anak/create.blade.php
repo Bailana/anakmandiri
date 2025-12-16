@@ -77,6 +77,33 @@
               <input type="date" name="periode_selesai" id="periode_selesai" class="form-control" required>
             </div>
           </div>
+          <!-- Kolom khusus untuk konsultan psikologi -->
+          <div class="row mb-3" id="psikologiFields" style="display:none;">
+            <div class="col-md-12 mb-2">
+              <label for="latar_belakang" class="form-label">Latar Belakang</label>
+              <textarea name="latar_belakang" id="latar_belakang" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-12 mb-2">
+              <label for="metode_assessment" class="form-label">Metode Assessment</label>
+              <textarea name="metode_assessment" id="metode_assessment" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-12 mb-2">
+              <label for="hasil_assessment" class="form-label">Hasil Assessment</label>
+              <textarea name="hasil_assessment" id="hasil_assessment" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-12 mb-2">
+              <label for="diagnosa" class="form-label">Diagnosa</label>
+              <textarea name="diagnosa" id="diagnosa" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-12 mb-2">
+              <label for="kesimpulan" class="form-label">Kesimpulan</label>
+              <textarea name="kesimpulan" id="kesimpulan" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-12 mb-2">
+              <label for="rekomendasi" class="form-label">Rekomendasi</label>
+              <textarea name="rekomendasi" id="rekomendasi" class="form-control" rows="3"></textarea>
+            </div>
+          </div>
           <div class="row mb-3">
             <div class="col-md-12">
               <label for="keterangan" class="form-label">Keterangan</label>
@@ -115,16 +142,24 @@
     }
   });
 
-  // Tampilkan/hidden form daftar program anak sesuai konsultan
+  // Tampilkan/hidden form daftar program anak & field psikologi sesuai konsultan
   function toggleDaftarProgramAnak() {
     const select = document.getElementById('konsultan_id');
     const selected = select.options[select.selectedIndex];
     const spesialisasi = selected ? selected.getAttribute('data-spesialisasi') : '';
     const wrapper = document.getElementById('daftarProgramAnakWrapper');
+    const psikologiFields = document.getElementById('psikologiFields');
+    // Tampilkan daftar program anak hanya untuk wicara/sensori integrasi
     if (spesialisasi === 'wicara' || spesialisasi === 'sensori integrasi') {
       wrapper.style.display = '';
     } else {
       wrapper.style.display = 'none';
+    }
+    // Tampilkan field psikologi jika konsultan psikologi
+    if (spesialisasi === 'psikologi') {
+      psikologiFields.style.display = '';
+    } else {
+      psikologiFields.style.display = 'none';
     }
   }
   document.getElementById('konsultan_id').addEventListener('change', toggleDaftarProgramAnak);
