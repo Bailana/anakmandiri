@@ -1,6 +1,6 @@
 @extends('layouts/blankLayout')
 
-@section('title', 'Login Basic - Pages')
+@section('title', 'Login | Anak Mandiri')
 
 @section('page-style')
 @vite(['resources/assets/vendor/scss/pages/page-auth.scss'])
@@ -14,15 +14,16 @@
             <div class="card p-sm-7 p-2">
                 <!-- Logo -->
                 <div class="app-brand justify-content-center mt-5">
-                    <a href="{{ url('/') }}" class="app-brand-link gap-3">
-                        <span class="app-brand-logo demo">@include('_partials.macros')</span>
-                        <span class="app-brand-text demo text-heading fw-semibold">{{ config('variables.templateName') }}</span>
+                    <a href="{{url('/')}}" class="app-brand-link">
+                        <span class="app-brand-logo demo me-1">
+                            <img src="{{ asset('assets/img/am.png') }}" alt="Logo" style="height:40px;">
+                        </span>
                     </a>
                 </div>
                 <!-- /Logo -->
 
                 <div class="card-body mt-1">
-                    <h4 class="mb-1">Selamat Datang di {{ config('variables.templateName') }}! 👋🏻</h4>
+                    <h4 class="mb-1 text-center">Klinik Terapis & Sekolah Khusus Anak Mandiri</h4>
                     <p class="mb-5">Silakan masuk ke akun Anda untuk melanjutkan</p>
 
                     @if ($errors->any())
@@ -71,17 +72,6 @@
                             <button class="btn btn-primary d-grid w-100" type="submit">Masuk</button>
                         </div>
                     </form>
-
-                    <!-- Info Box untuk Demo -->
-                    <div class="alert alert-info" role="alert">
-                        <h6 class="alert-heading mb-2">🔑 Akun Demo</h6>
-                        <p class="mb-2"><strong>Admin:</strong> admin@example.com</p>
-                        <p class="mb-2"><strong>Guru:</strong> guru@example.com</p>
-                        <p class="mb-2"><strong>Konsultan:</strong> konsultan@example.com</p>
-                        <p class="mb-0"><strong>Terapis:</strong> terapis@example.com</p>
-                        <p class="mt-2 mb-0"><strong>Password untuk semua:</strong> password</p>
-                    </div>
-
                     <p class="text-center mb-5">
                         <span>New on our platform?</span>
                         <a href="{{ url('auth/register-basic') }}">
@@ -90,11 +80,6 @@
                     </p>
                 </div>
             </div>
-            <!-- /Login -->
-            <img src="{{ asset('assets/img/illustrations/tree-3.png') }}" alt="auth-tree" class="authentication-image-object-left d-none d-lg-block" />
-            <img src="{{ asset('assets/img/illustrations/auth-basic-mask-light.png') }}" class="authentication-image d-none d-lg-block scaleX-n1-rtl" height="172" alt="triangle-bg" />
-            <img src="{{ asset('assets/img/illustrations/tree.png') }}" alt="auth-tree" class="authentication-image-object-right d-none d-lg-block" />
         </div>
     </div>
-</div>
-@endsection
+    @endsection
