@@ -12,6 +12,7 @@ class ProgramSI extends Model
     'user_id',
     'kemampuan',
     'keterangan',
+    'diagnosa',
   ];
   protected $casts = [
     'kemampuan' => 'array',

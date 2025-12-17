@@ -183,6 +183,39 @@
               <div id="detailKemampuan"></div>
             </div>
           </div>
+          <!-- Psikologi specific fields -->
+          <div id="psikologiFieldsDetail" style="display:none">
+            <div class="row mb-3">
+              <div class="col-12">
+                <p class="text-body-secondary text-sm mb-1">Latar Belakang</p>
+                <p class="fw-medium" id="detailLatarBelakang"></p>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12">
+                <p class="text-body-secondary text-sm mb-1">Metode Assessment</p>
+                <p class="fw-medium" id="detailMetodeAssessment"></p>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12">
+                <p class="text-body-secondary text-sm mb-1">Hasil Assessment</p>
+                <p class="fw-medium" id="detailHasilAssessment"></p>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12">
+                <p class="text-body-secondary text-sm mb-1">Kesimpulan</p>
+                <p class="fw-medium" id="detailKesimpulan"></p>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12">
+                <p class="text-body-secondary text-sm mb-1">Rekomendasi</p>
+                <p class="fw-medium" id="detailRekomendasi"></p>
+              </div>
+            </div>
+          </div>
           <div class="row mb-3">
             <div class="col-12">
               <p class="text-body-secondary text-sm mb-1">Wawancara</p>
@@ -193,6 +226,12 @@
             <div class="col-12">
               <p class="text-body-secondary text-sm mb-1">Kemampuan Saat Ini</p>
               <p class="fw-medium" id="detailKemampuanSaatIni"></p>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-12">
+              <p class="text-body-secondary text-sm mb-1">Diagnosa</p>
+              <p class="fw-medium" id="detailDiagnosa"></p>
             </div>
           </div>
           <div class="row mb-3">
@@ -215,11 +254,13 @@
 
   <script>
     // Fungsi untuk menampilkan detail observasi secara aman
-    window.showDetailObservasi = function(id) {
+    window.showDetailObservasi = function(sumber, id) {
       // Pastikan modal detail ada di DOM
       var detailModalEl = document.getElementById('detailModal');
       if (!detailModalEl) return;
-      fetch('/program/observasi-program/' + id)
+      // If sumber provided, call source-aware endpoint
+      var url = sumber ? '/program/observasi-program/' + sumber + '/' + id : '/program/observasi-program/' + id;
+      fetch(url)
         .then(response => response.json())
         .then(res => {
           if (res.success && res.data) {
@@ -264,6 +305,37 @@
             }
             el = document.getElementById('detailWawancara');
             if (el && program && document.body.contains(el)) el.textContent = program.wawancara || '-';
+            // Psikologi specific: populate and toggle visibility
+            var psikologiBlock = document.getElementById('psikologiFieldsDetail');
+            if (sumber === 'psikologi') {
+              if (psikologiBlock) psikologiBlock.style.display = '';
+              // hide non-relevant blocks
+              var detailKemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById('detailKemampuan').parentElement : null;
+              if (detailKemampuanBlock) detailKemampuanBlock.style.display = 'none';
+              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById('detailWawancara').parentElement : null;
+              if (wawancaraBlock) wawancaraBlock.style.display = 'none';
+              var kemampuanSaatIniBlock = document.getElementById('detailKemampuanSaatIni') ? document.getElementById('detailKemampuanSaatIni').parentElement : null;
+              if (kemampuanSaatIniBlock) kemampuanSaatIniBlock.style.display = 'none';
+              var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
+              if (saranBlock) saranBlock.style.display = 'none';
+              // populate psikologi fields
+              var elLB = document.getElementById('detailLatarBelakang'); if (elLB) elLB.textContent = program.latar_belakang || '-';
+              var elMA = document.getElementById('detailMetodeAssessment'); if (elMA) elMA.textContent = program.metode_assessment || '-';
+              var elHA = document.getElementById('detailHasilAssessment'); if (elHA) elHA.textContent = program.hasil_assessment || '-';
+              var elKS = document.getElementById('detailKesimpulan'); if (elKS) elKS.textContent = program.kesimpulan || '-';
+              var elRK = document.getElementById('detailRekomendasi'); if (elRK) elRK.textContent = program.rekomendasi || '-';
+            } else {
+              if (psikologiBlock) psikologiBlock.style.display = 'none';
+              // restore other blocks
+              var detailKemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById('detailKemampuan').parentElement : null;
+              if (detailKemampuanBlock) detailKemampuanBlock.style.display = '';
+              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById('detailWawancara').parentElement : null;
+              if (wawancaraBlock) wawancaraBlock.style.display = '';
+              var kemampuanSaatIniBlock = document.getElementById('detailKemampuanSaatIni') ? document.getElementById('detailKemampuanSaatIni').parentElement : null;
+              if (kemampuanSaatIniBlock) kemampuanSaatIniBlock.style.display = '';
+              var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
+              if (saranBlock) saranBlock.style.display = '';
+            }
             // Untuk SI, sembunyikan Kemampuan Saat Ini & Saran Rekomendasi
             el = document.getElementById('detailKemampuanSaatIni');
             if (el && program && document.body.contains(el)) {
@@ -282,6 +354,11 @@
                 el.parentElement.style.display = '';
                 el.textContent = program.saran_rekomendasi || '-';
               }
+            }
+            // Diagnosa
+            el = document.getElementById('detailDiagnosa');
+            if (el && program && document.body.contains(el)) {
+              el.textContent = program.diagnosa || '-';
             }
             // Tampilkan modal detail
             var detailModal = new bootstrap.Modal(detailModalEl);
@@ -326,14 +403,13 @@
             listDiv.innerHTML = '<div class="text-center text-muted">Belum ada riwayat observasi/evaluasi.</div>';
             return;
           }
-          // Group by user_id
+          // Group by konsultan (if present) else by user
           const groups = {};
           res.riwayat.forEach(item => {
-            if (!groups[item.user_id]) groups[item.user_id] = {
-              name: item.user_name,
-              items: []
-            };
-            groups[item.user_id].items.push(item);
+            const key = item.konsultan_id ? `konsultan_${item.konsultan_id}` : `user_${item.user_id}`;
+            const name = item.konsultan_name || item.user_name || '-';
+            if (!groups[key]) groups[key] = { name: name, items: [] };
+            groups[key].items.push(item);
           });
           let html = '';
           Object.keys(groups).forEach((userId, idx, arr) => {
@@ -345,7 +421,7 @@
               html += `<li class="list-group-item d-flex justify-content-between align-items-center">
                 <span><b>${item.hari}</b>, ${item.tanggal}</span>
                 <span>
-                  <button class="btn btn-sm btn-outline-info me-1" onclick="showDetailObservasi(${item.id})" title="Lihat"><i class='ri-eye-line'></i></button>
+                  <button class="btn btn-sm btn-outline-info me-1" onclick="showDetailObservasi('${item.sumber}', ${item.id})" title="Lihat"><i class='ri-eye-line'></i></button>
                   ${item.user_id == currentUserId ? `
                     <button class="btn btn-sm btn-outline-warning me-1" onclick="editObservasi(${item.id})" title="Edit"><i class='ri-edit-line'></i></button>
                     <button class="btn btn-sm btn-outline-danger" onclick="hapusObservasi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>

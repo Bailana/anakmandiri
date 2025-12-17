@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProgramWicara;
+use App\Models\ProgramPsikologi;
 use App\Models\Program;
 use App\Models\AnakDidik;
 use App\Models\Konsultan;
@@ -26,21 +27,58 @@ class ProgramController extends Controller
   /**
    * API: Detail Observasi/Evaluasi dari tabel program_wicara (untuk modal lihat)
    */
-  public function showObservasiProgram($id)
+  public function showObservasiProgram($idOrSumber, $maybeId = null)
   {
-    // Coba cari di program_wicara
-    $program = ProgramWicara::with([
-      'anakDidik.guruFokus',
-      'user',
-    ])->find($id);
-    $sumber = 'wicara';
+    // Support two usages:
+    // - /program/observasi-program/{id} (legacy) => $idOrSumber = id
+    // - /program/observasi-program/{sumber}/{id} => $idOrSumber = sumber, $maybeId = id
+    $sumber = null;
+    if ($maybeId !== null) {
+      $sumber = $idOrSumber;
+      $id = $maybeId;
+    } else {
+      $id = $idOrSumber;
+    }
+
+    $program = null;
+    // If sumber specified, look only in that table first
+    if ($sumber) {
+      if ($sumber === 'wicara') {
+        $program = ProgramWicara::with(['anakDidik.guruFokus', 'user'])->find($id);
+      } elseif ($sumber === 'psikologi') {
+        $program = ProgramPsikologi::with(['anakDidik.guruFokus', 'user'])->find($id);
+      } elseif ($sumber === 'si') {
+        $program = \App\Models\ProgramSI::with(['anakDidik.guruFokus', 'user'])->find($id);
+      }
+      // If not found in specified sumber, fall back to searching all
+      if (!$program) {
+        $sumber = null;
+      }
+    }
+
     if (!$program) {
-      // Jika tidak ditemukan, cari di program_si
-      $program = \App\Models\ProgramSI::with([
+      // Coba cari di program_wicara
+      $program = ProgramWicara::with([
         'anakDidik.guruFokus',
         'user',
-      ])->findOrFail($id);
-      $sumber = 'si';
+      ])->find($id);
+      $sumber = 'wicara';
+      if (!$program) {
+        // Jika tidak ditemukan, cari di program_psikologi
+        $program = ProgramPsikologi::with([
+          'anakDidik.guruFokus',
+          'user',
+        ])->find($id);
+        $sumber = 'psikologi';
+      }
+      if (!$program) {
+        // Jika masih tidak ditemukan, cari di program_si
+        $program = \App\Models\ProgramSI::with([
+          'anakDidik.guruFokus',
+          'user',
+        ])->findOrFail($id);
+        $sumber = 'si';
+      }
     }
 
     $createdAt = $program->created_at ? $program->created_at->format('Y-m-d') : null;
@@ -66,9 +104,16 @@ class ProgramController extends Controller
         'tanggal' => $hariTanggal[1],
         'konsultan_nama' => $konsultanNama,
         'kemampuan' => $kemampuan,
-        'wawancara' => $sumber === 'wicara' ? $program->wawancara : $program->keterangan,
-        'kemampuan_saat_ini' => $sumber === 'wicara' ? $program->kemampuan_saat_ini : null,
-        'saran_rekomendasi' => $sumber === 'wicara' ? $program->saran_rekomendasi : null,
+        'wawancara' => in_array($sumber, ['wicara', 'psikologi']) ? $program->wawancara : $program->keterangan,
+        'kemampuan_saat_ini' => in_array($sumber, ['wicara', 'psikologi']) ? $program->kemampuan_saat_ini : null,
+        'saran_rekomendasi' => in_array($sumber, ['wicara', 'psikologi']) ? $program->saran_rekomendasi : null,
+        'diagnosa' => $sumber === 'psikologi' ? ($program->diagnosa_psikologi ?? '-') : ($program->diagnosa ?? '-'),
+        // fields spesifik psikologi
+        'latar_belakang' => $sumber === 'psikologi' ? ($program->latar_belakang ?? null) : null,
+        'metode_assessment' => $sumber === 'psikologi' ? ($program->metode_assessment ?? null) : null,
+        'hasil_assessment' => $sumber === 'psikologi' ? ($program->hasil_assessment ?? null) : null,
+        'kesimpulan' => $sumber === 'psikologi' ? ($program->kesimpulan ?? null) : null,
+        'rekomendasi' => $sumber === 'psikologi' ? ($program->rekomendasi ?? null) : null,
         'sumber' => $sumber,
       ]
     ]);
@@ -131,6 +176,11 @@ class ProgramController extends Controller
     $querySI = \App\Models\ProgramSI::with(['anakDidik.guruFokus', 'user'])
       ->whereIn('id', $subSI)
       ->whereHas('anakDidik');
+    // Ambil data program_psikologi (terbaru per anak_didik)
+    $subPsikologi = \App\Models\ProgramPsikologi::selectRaw('MAX(id) as id')->groupBy('anak_didik_id');
+    $queryPsikologi = \App\Models\ProgramPsikologi::with(['anakDidik.guruFokus', 'user'])
+      ->whereIn('id', $subPsikologi)
+      ->whereHas('anakDidik');
     // Filter guru fokus jika ada
     if ($request->filled('guru_fokus')) {
       $guruFokusId = $request->guru_fokus;
@@ -138,6 +188,9 @@ class ProgramController extends Controller
         $q->where('guru_fokus_id', $guruFokusId);
       });
       $querySI->whereHas('anakDidik', function ($q) use ($guruFokusId) {
+        $q->where('guru_fokus_id', $guruFokusId);
+      });
+      $queryPsikologi->whereHas('anakDidik', function ($q) use ($guruFokusId) {
         $q->where('guru_fokus_id', $guruFokusId);
       });
     }
@@ -152,8 +205,13 @@ class ProgramController extends Controller
       $item->tanggal_program = $item->created_at;
       return $item;
     });
+    $dataPsikologi = $queryPsikologi->get()->map(function ($item) {
+      $item->sumber = 'psikologi';
+      $item->tanggal_program = $item->created_at;
+      return $item;
+    });
     // Gabungkan, lalu group by anak_didik_id, ambil data terbaru per anak
-    $merged = $dataWicara->concat($dataSI)
+    $merged = $dataWicara->concat($dataSI)->concat($dataPsikologi)
       ->sortByDesc('tanggal_program')
       ->values()
       ->groupBy('anak_didik_id')
@@ -222,6 +280,7 @@ class ProgramController extends Controller
         'kemampuan.*.judul' => 'required_with:kemampuan|string',
         'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:5',
         'wawancara' => 'nullable|string', // ini akan jadi keterangan
+        'diagnosa' => 'nullable|string',
       ];
       $validated = $request->validate($rules);
       $data = $validated;
@@ -231,9 +290,60 @@ class ProgramController extends Controller
       $data['user_id'] = $user->id;
       $data['keterangan'] = $data['wawancara'] ?? null;
       unset($data['wawancara']);
+      // Simpan diagnosa jika ada
+      if ($request->filled('diagnosa')) {
+        $data['diagnosa'] = $request->input('diagnosa');
+      }
       \App\Models\ProgramSI::create($data);
       ActivityService::logCreate('ProgramSI', null, 'Membuat program sensori integrasi baru');
       return redirect()->route('program.index')->with('success', 'Program sensori integrasi berhasil ditambahkan');
+    } elseif ($spesialisasi === 'psikologi') {
+      // Validasi untuk psikologi (sesuai fields pada form)
+      $rules = [
+        'anak_didik_id' => 'required|exists:anak_didiks,id',
+        'latar_belakang' => 'nullable|string',
+        'metode_assessment' => 'nullable|string',
+        'hasil_assessment' => 'nullable|string',
+        'diagnosa_psikologi' => 'nullable|string',
+        'kesimpulan' => 'nullable|string',
+        'rekomendasi' => 'nullable|string',
+      ];
+      if (!$isKonsultan) {
+        $rules['konsultan_id'] = 'required|exists:konsultans,id';
+      }
+      $validated = $request->validate($rules);
+      $data = $validated;
+      // If admin selected a konsultan, attribute the record to that konsultan's user
+      if (!$isKonsultan && $request->filled('konsultan_id')) {
+        $sel = \App\Models\Konsultan::find($request->input('konsultan_id'));
+        if ($sel && $sel->user_id) {
+          $data['user_id'] = $sel->user_id;
+        } else {
+          $data['user_id'] = $user->id;
+        }
+      } else {
+        $data['user_id'] = $user->id;
+      }
+      // Map form fields to DB columns
+      $data['latar_belakang'] = $request->input('latar_belakang');
+      $data['metode_assessment'] = $request->input('metode_assessment');
+      $data['hasil_assessment'] = $request->input('hasil_assessment');
+      $data['kesimpulan'] = $request->input('kesimpulan');
+      $data['rekomendasi'] = $request->input('rekomendasi');
+      if ($request->filled('diagnosa_psikologi')) {
+        $data['diagnosa_psikologi'] = $request->input('diagnosa_psikologi');
+      }
+      // Save konsultan_id (so riwayat groups by konsultan name)
+      if ($request->filled('konsultan_id')) {
+        $data['konsultan_id'] = $request->input('konsultan_id');
+      } elseif ($isKonsultan) {
+        // if current user is a konsultan, try to find their Konsultan record
+        $k = \App\Models\Konsultan::where('user_id', $user->id)->first();
+        if ($k) $data['konsultan_id'] = $k->id;
+      }
+      ProgramPsikologi::create($data);
+      ActivityService::logCreate('ProgramPsikologi', null, 'Membuat program psikologi baru');
+      return redirect()->route('program.index')->with('success', 'Program psikologi berhasil ditambahkan');
     } else {
       // Validasi untuk wicara (default)
       $rules = [
@@ -249,6 +359,7 @@ class ProgramController extends Controller
         'wawancara' => 'nullable|string',
         'kemampuan_saat_ini' => 'nullable|string',
         'saran_rekomendasi' => 'nullable|string',
+        'diagnosa' => 'nullable|string',
       ];
       if (!$isKonsultan) {
         $rules['konsultan_id'] = 'required|exists:konsultans,id';
@@ -267,6 +378,10 @@ class ProgramController extends Controller
         }
       }
       $data['user_id'] = $user->id;
+      // Simpan diagnosa jika ada
+      if ($request->filled('diagnosa')) {
+        $data['diagnosa'] = $request->input('diagnosa');
+      }
       ProgramWicara::create($data);
       ActivityService::logCreate('ProgramWicara', null, 'Membuat program wicara baru');
       return redirect()->route('program.index')->with('success', 'Program pembelajaran berhasil ditambahkan');
@@ -283,6 +398,10 @@ class ProgramController extends Controller
       ->orderByDesc('created_at')
       ->get();
     $programsSI = \App\Models\ProgramSI::with('user')
+      ->where('anak_didik_id', $anakDidikId)
+      ->orderByDesc('created_at')
+      ->get();
+    $programsPsikologi = \App\Models\ProgramPsikologi::with(['user','konsultan'])
       ->where('anak_didik_id', $anakDidikId)
       ->orderByDesc('created_at')
       ->get();
@@ -325,7 +444,28 @@ class ProgramController extends Controller
         'created_at' => $p->created_at ? $p->created_at->format('d-m-Y H:i') : '',
       ];
     });
-    $riwayatGabung = $riwayatWicara->concat($riwayatSI)->sortByDesc(function ($item) {
+    $riwayatPsikologi = $programsPsikologi->map(function ($p) {
+      if ($p->created_at) {
+        $tanggalStr = is_string($p->created_at) ? $p->created_at : $p->created_at->format('Y-m-d');
+        [$hari, $tanggal] = \App\Helpers\DateHelper::hariTanggal(date('Y-m-d', strtotime($tanggalStr)));
+      } else {
+        $hari = null;
+        $tanggal = null;
+      }
+      return [
+        'id' => $p->id,
+        'user_id' => $p->user_id,
+        'user_name' => $p->user ? $p->user->name : '-',
+        'konsultan_id' => $p->konsultan_id ?? null,
+        'konsultan_name' => $p->konsultan ? $p->konsultan->nama : null,
+        'hari' => $hari,
+        'tanggal' => $tanggal,
+        'jam' => $p->updated_at ? $p->updated_at->format('H:i') : '-',
+        'sumber' => 'psikologi',
+        'created_at' => $p->created_at ? $p->created_at->format('d-m-Y H:i') : '',
+      ];
+    });
+    $riwayatGabung = $riwayatWicara->concat($riwayatSI)->concat($riwayatPsikologi)->sortByDesc(function ($item) {
       return $item['created_at'];
     })->values();
     return response()->json([

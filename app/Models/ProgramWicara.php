@@ -14,6 +14,7 @@ class ProgramWicara extends Model
     'wawancara',
     'kemampuan_saat_ini',
     'saran_rekomendasi',
+    'diagnosa',
   ];
   protected $casts = [
     'kemampuan' => 'array',
