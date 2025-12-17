@@ -47,6 +47,32 @@ use Illuminate\Support\Facades\Route;
         ['admin', 'guru']))) {
         $showMenu = false;
         }
+        // Tampilkan menu PPI hanya untuk admin, guru, atau konsultan dengan spesialisasi 'Pendidikan'
+        if (isset($menu->slug) && $menu->slug === 'ppi.index') {
+        if (!auth()->check()) {
+        $showMenu = false;
+        } else {
+        $role = auth()->user()->role;
+        if (in_array($role, ['admin', 'guru'])) {
+        // tetap tampil
+        } elseif ($role === 'konsultan') {
+        // Coba cari record Konsultan terkait user; fallback ke email atau nama jika user_id kosong
+        $k = \App\Models\Konsultan::where('user_id', auth()->id())->first();
+        if (!$k && auth()->user()->email) {
+        $k = \App\Models\Konsultan::where('email', auth()->user()->email)->first();
+        }
+        if (!$k && auth()->user()->name) {
+        $k = \App\Models\Konsultan::where('nama', 'like', "%".auth()->user()->name."%")->first();
+        }
+        $sp = $k ? strtolower($k->spesialisasi) : null;
+        if ($sp !== 'pendidikan') {
+        $showMenu = false;
+        }
+        } else {
+        $showMenu = false;
+        }
+        }
+        }
         @endphp
         @if($showMenu)
 

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AnakDidik;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+
+use App\Models\Konsultan;
 use App\Http\Controllers\GuruAnakDidikController;
 
 class PPIController extends Controller
@@ -12,6 +14,11 @@ class PPIController extends Controller
   public function index(Request $request)
   {
     $user = Auth::user();
+
+    // If user is konsultan but not spesialisasi Pendidikan, forbid access
+    if ($user && $user->role === 'konsultan' && !$this->isKonsultanPendidikan($user)) {
+      abort(403);
+    }
 
     $query = AnakDidik::with('guruFokus')->orderBy('nama');
     if ($request->filled('search')) {
@@ -52,9 +59,44 @@ class PPIController extends Controller
     ]);
   }
 
+  public function create()
+  {
+    $user = Auth::user();
+    if ($user && $user->role === 'konsultan' && !$this->isKonsultanPendidikan($user)) {
+      abort(403);
+    }
+    $anakDidiks = AnakDidik::orderBy('nama')->get();
+    $konsultans = Konsultan::orderBy('nama')->get();
+    return view('content.ppi.create', compact('anakDidiks', 'konsultans'));
+  }
+
+  public function store(Request $request)
+  {
+    $user = Auth::user();
+    if ($user && $user->role === 'konsultan' && !$this->isKonsultanPendidikan($user)) {
+      abort(403);
+    }
+
+    $validated = $request->validate([
+      'anak_didik_id' => 'required|exists:anak_didiks,id',
+      'nama_program' => 'required|string|max:255',
+      'periode_mulai' => 'required|date',
+      'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
+      'keterangan' => 'nullable|string',
+    ]);
+
+    $validated['status'] = 'aktif';
+    \App\Models\ProgramAnak::create($validated);
+
+    return redirect()->route('ppi.index')->with('success', 'PPI berhasil ditambahkan');
+  }
+
   public function show($id)
   {
     $user = Auth::user();
+    if ($user && $user->role === 'konsultan' && !$this->isKonsultanPendidikan($user)) {
+      abort(403);
+    }
     $anak = AnakDidik::with('guruFokus')->findOrFail($id);
 
     $canAccess = false;
@@ -76,5 +118,26 @@ class PPIController extends Controller
 
     // If allowed, show program anak detail page (reuse program-anak.show if exists)
     return redirect()->route('program-anak.show', $anak->id);
+  }
+
+  /**
+   * Resolve whether the given user is a Konsultan with spesialisasi Pendidikan
+   */
+  private function isKonsultanPendidikan($user)
+  {
+    if (!$user) return false;
+    // Must be konsultan role
+    if ($user->role !== 'konsultan') return false;
+    // Try resolve Konsultan record by user_id, email, or name
+    $k = Konsultan::where('user_id', $user->id)->first();
+    if (!$k && $user->email) {
+      $k = Konsultan::where('email', $user->email)->first();
+    }
+    if (!$k && $user->name) {
+      $k = Konsultan::where('nama', 'like', "%{$user->name}%")->first();
+    }
+    if (!$k) return false;
+    $sp = strtolower($k->spesialisasi ?? '');
+    return $sp === 'pendidikan';
   }
 }

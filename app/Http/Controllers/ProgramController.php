@@ -245,9 +245,28 @@ class ProgramController extends Controller
     $anakDidiks = AnakDidik::all();
     $konsultans = Konsultan::all();
 
+    $user = Auth::user();
+    $isKonsultan = $user && $user->role === 'konsultan';
+    $currentKonsultanId = null;
+    if ($isKonsultan) {
+      // Primary: find Konsultan by user_id
+      $k = Konsultan::where('user_id', $user->id)->first();
+      // Fallback: if user_id not set on Konsultan record, try match by email
+      if (!$k && $user->email) {
+        $k = Konsultan::where('email', $user->email)->first();
+      }
+      // Additional fallback: try match by name (if present)
+      if (!$k && $user->name) {
+        $k = Konsultan::where('nama', 'like', "%{$user->name}%")->first();
+      }
+      if ($k) $currentKonsultanId = $k->id;
+    }
+
     return view('content.program.create', [
       'anakDidiks' => $anakDidiks,
       'konsultans' => $konsultans,
+      'isKonsultan' => $isKonsultan,
+      'currentKonsultanId' => $currentKonsultanId,
     ]);
   }
 

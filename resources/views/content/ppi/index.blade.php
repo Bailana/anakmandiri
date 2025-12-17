@@ -10,6 +10,11 @@
             <h4 class="mb-0">Program Pembelajaran Individual (PPI)</h4>
             <p class="text-body-secondary mb-0">Tampilkan daftar anak didik. Klik untuk melihat program jika Anda memiliki akses.</p>
           </div>
+          <div>
+            <a href="{{ route('ppi.create') }}" class="btn btn-primary">
+              <i class="ri-add-line me-2"></i>Tambah PPI
+            </a>
+          </div>
         </div>
       </div>
     </div>

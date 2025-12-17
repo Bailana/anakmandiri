@@ -23,12 +23,23 @@
             <!-- Kolom khusus untuk konsultan psikologi, letakkan setelah dropdown anak didik -->
             <div class="col-md-12">
               <label class="form-label">Konsultan <span class="text-danger">*</span></label>
-              <select name="konsultan_id" id="konsultan_id" class="form-select" required onchange="window.handleKonsultanChange()">
+              @php
+              $userKonsultanId = $currentKonsultanId ?? (auth()->check() && auth()->user()->role === 'konsultan' ? optional(\App\Models\Konsultan::where('user_id', auth()->id())->first())->id : null);
+              @endphp
+              <select name="konsultan_id" id="konsultan_id" class="form-select" required onchange="window.handleKonsultanChange()" @if(!empty($userKonsultanId)) disabled @endif>
                 <option value="">Pilih Konsultan</option>
                 @foreach($konsultans as $konsultan)
-                <option value="{{ $konsultan->id }}" data-spesialisasi="{{ strtolower($konsultan->spesialisasi) }}">{{ $konsultan->nama }} ({{ $konsultan->spesialisasi }})</option>
+                <option value="{{ $konsultan->id }}" data-spesialisasi="{{ strtolower($konsultan->spesialisasi) }}"
+                  @if(old('konsultan_id')==$konsultan->id) selected
+                  @elseif(!empty($currentKonsultanId) && $currentKonsultanId == $konsultan->id) selected
+                  @elseif(empty($currentKonsultanId) && !empty($userKonsultanId) && $userKonsultanId == $konsultan->id) selected
+                  @endif
+                  >{{ $konsultan->nama }} ({{ $konsultan->spesialisasi }})</option>
                 @endforeach
               </select>
+              @if(!empty($userKonsultanId))
+              <input type="hidden" name="konsultan_id" value="{{ $userKonsultanId }}">
+              @endif
             </div>
           </div>
           @csrf
@@ -181,6 +192,17 @@
 @push('page-script')
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Jika server mengirim currentKonsultanId atau view menentukan userKonsultanId, pastikan option terpilih
+    var currentKonsultanId = '{{ $currentKonsultanId ?? ($userKonsultanId ?? "") }}';
+    if (currentKonsultanId) {
+      var sel = document.getElementById('konsultan_id');
+      if (sel) {
+        // set value (works even jika select disabled)
+        sel.value = currentKonsultanId;
+        // trigger handler to show/hide related fields
+        if (typeof window.handleKonsultanChange === 'function') window.handleKonsultanChange();
+      }
+    }
     // --- Penilaian Kemampuan Anak ---
     // Toggle tampilan field sesuai konsultan
     var psikologiFields = document.getElementById('psikologiFields');
@@ -223,17 +245,8 @@
       const controls = container.querySelectorAll('input,textarea,select,button');
       controls.forEach(c => {
         // don't disable buttons used to add/remove rows globally
-        if (c.classList && c.classList.contains('btn-hapus-kemampuan')) return;
-        if (disabled) {
-          c.setAttribute('data-was-enabled', c.disabled ? '0' : '1');
-          c.disabled = true;
-        } else {
-          // restore previous state if we recorded it
-          if (c.getAttribute('data-was-enabled') === '1') {
-            c.disabled = false;
-          }
-          c.removeAttribute('data-was-enabled');
-        }
+        if (c.classList && (c.classList.contains('btn-hapus-kemampuan') || c.id === 'btn-tambah-kemampuan' || c.classList.contains('btn-tambah-kemampuan'))) return;
+        c.disabled = !!disabled;
       });
     }
     document.getElementById('konsultan_id').addEventListener('change', toggleFieldsByKonsultan);

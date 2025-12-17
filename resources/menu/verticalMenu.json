@@ -61,7 +61,8 @@
       "slug": "ppi.index",
       "roles": [
         "admin",
-        "guru"
+        "guru",
+        "konsultan"
       ]
     },
     {
