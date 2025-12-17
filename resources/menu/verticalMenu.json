@@ -13,7 +13,8 @@
       "slug": "anak-didik.index",
       "roles": [
         "admin",
-        "konsultan"
+        "konsultan",
+        "guru"
       ]
     },
     {

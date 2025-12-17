@@ -31,7 +31,7 @@
               <th>Nama Anak</th>
               <th>Program</th>
               <th>Periode</th>
-              <th>Status</th>
+              <!-- <th>Status</th> -->
               <th>Aksi</th>
             </tr>
           </thead>
@@ -42,10 +42,10 @@
               <td>Rizky Ramadhan</td>
               <td>Terapi Wicara</td>
               <td>Jan 2025 - Mar 2025</td>
-              <td><span class="badge bg-label-success">Aktif</span></td>
+              <!-- <td><span class="badge bg-label-success">Aktif</span></td> -->
               <td>
                 <a href="#" class="btn btn-sm btn-outline-info" title="Lihat"><i class="ri-eye-line"></i></a>
-                @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
+                @if(auth()->user()->role === 'admin')
                 <a href="#" class="btn btn-sm btn-outline-warning" title="Edit"><i class="ri-edit-line"></i></a>
                 <a href="#" class="btn btn-sm btn-outline-danger" title="Hapus"><i class="ri-delete-bin-line"></i></a>
                 @endif

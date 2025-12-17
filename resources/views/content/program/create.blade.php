@@ -48,6 +48,12 @@
             </div>
           </div>
 
+          <div class="row mb-3" id="row-diagnosa" style="display:none;">
+            <div class="col-md-12">
+              <label class="form-label">Diagnosa</label>
+              <input type="text" name="diagnosa" id="input-diagnosa" class="form-control" placeholder="Masukkan diagnosa...">
+            </div>
+          </div>
           <div class="row mb-3">
             <div class="col-md-12">
               <label class="form-label">Penilaian Kemampuan Anak</label>
@@ -95,117 +101,44 @@
                 </table>
               </div>
             </div>
-          </div>
-
-          @push('scripts')
-          <script>
-            document.addEventListener('DOMContentLoaded', function() {
-              // --- Penilaian Kemampuan Anak ---
-              let kemampuanIndex = {
-                {
-                  count($kemampuanList ?? ['Kontak mata', 'Atensi', 'Simbolik play'])
-                }
-              };
-              const btnTambah = document.getElementById('btn-tambah-kemampuan');
-              const tbody = document.querySelector('table tbody');
-
-              // Event delegation untuk hapus baris kemampuan
-              tbody.addEventListener('click', function(e) {
-                if (e.target.closest('.btn-hapus-kemampuan')) {
-                  const btn = e.target.closest('.btn-hapus-kemampuan');
-                  const tr = btn.closest('tr');
-                  if (tr && tr.id.startsWith('row-kemampuan-')) {
-                    tr.remove();
-                  }
-                }
-              });
-
-              if (btnTambah) {
-                btnTambah.addEventListener('click', function() {
-                  // Cari index terbesar yang masih ada
-                  const rows = Array.from(document.querySelectorAll('tr[id^="row-kemampuan-"]'));
-                  if (rows.length > 0) {
-                    const lastIdx = rows.map(row => parseInt(row.id.replace('row-kemampuan-', ''))).sort((a, b) => b - a)[0];
-                    kemampuanIndex = lastIdx + 1;
-                  }
-                  const tr = document.createElement('tr');
-                  tr.id = `row-kemampuan-${kemampuanIndex}`;
-                  let html = `<td><div class=\"input-group\"><input type=\"text\" name=\"kemampuan[${kemampuanIndex}][judul]\" class=\"form-control\" required><button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-hapus-kemampuan\"><i class=\"ri-delete-bin-line\"></i></button></div></td>`;
-                  for (let skala = 1; skala <= 5; skala++) {
-                    html += `<td class=\"text-center\"><input type=\"radio\" name=\"kemampuan[${kemampuanIndex}][skala]\" value=\"${skala}\" required></td>`;
-                  }
-                  tr.innerHTML = html;
-                  tbody.insertBefore(tr, document.getElementById('row-tambah-kemampuan'));
-                  kemampuanIndex++;
-                });
-              }
-
-              // --- Konsultan Change Handler ---
-              window.handleKonsultanChange = function() {
-                var select = document.getElementById('konsultan_id');
-                var selected = select.options[select.selectedIndex];
-                var spesialisasi = selected.getAttribute('data-spesialisasi');
-                var wawancaraRow = document.getElementById('row-wawancara');
-                var wawancaraLabel = document.getElementById('label-wawancara');
-                var wawancaraInput = document.getElementById('input-wawancara');
-                var rowKemampuanSaatIni = document.getElementById('row-kemampuan-saat-ini');
-                var rowSaranRekomendasi = document.getElementById('row-saran-rekomendasi');
-                if (spesialisasi === 'sensori integrasi') {
-                  wawancaraLabel.textContent = 'Keterangan';
-                  wawancaraInput.placeholder = 'Keterangan';
-                  if (rowKemampuanSaatIni) rowKemampuanSaatIni.style.display = 'none';
-                  if (rowSaranRekomendasi) rowSaranRekomendasi.style.display = 'none';
-                } else {
-                  wawancaraLabel.textContent = 'Wawancara';
-                  wawancaraInput.placeholder = 'Hasil wawancara dengan orang tua/anak/guru';
-                  if (rowKemampuanSaatIni) rowKemampuanSaatIni.style.display = '';
-                  if (rowSaranRekomendasi) rowSaranRekomendasi.style.display = '';
-                }
-              }
-              window.handleKonsultanChange();
-            });
-          </script>
-          @endpush
-
-
-          <div class="row mb-3" id="row-wawancara">
-            <div class="col-md-12">
-              <label class="form-label" id="label-wawancara">Wawancara</label>
-              <textarea name="wawancara" id="input-wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara') }}</textarea>
-              @error('wawancara')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
+            <div class="row mb-3" id="row-wawancara">
+              <div class="col-md-12">
+                <label class="form-label" id="label-wawancara">Wawancara</label>
+                <textarea name="wawancara" id="input-wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara') }}</textarea>
+                @error('wawancara')
+                <span class="invalid-feedback">{{ $message }}</span>
+                @enderror
+              </div>
             </div>
-          </div>
-          <div class="row mb-3" id="row-kemampuan-saat-ini">
-            <div class="col-md-12">
-              <label class="form-label">Kemampuan Saat Ini</label>
-              <textarea name="kemampuan_saat_ini" class="form-control @error('kemampuan_saat_ini') is-invalid @enderror" rows="3" placeholder="Deskripsikan kemampuan anak saat ini">{{ old('kemampuan_saat_ini') }}</textarea>
-              @error('kemampuan_saat_ini')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
+            <div class="row mb-3" id="row-kemampuan-saat-ini">
+              <div class="col-md-12">
+                <label class="form-label">Kemampuan Saat Ini</label>
+                <textarea name="kemampuan_saat_ini" class="form-control @error('kemampuan_saat_ini') is-invalid @enderror" rows="3" placeholder="Deskripsikan kemampuan anak saat ini">{{ old('kemampuan_saat_ini') }}</textarea>
+                @error('kemampuan_saat_ini')
+                <span class="invalid-feedback">{{ $message }}</span>
+                @enderror
+              </div>
             </div>
-          </div>
-          <div class="row mb-3" id="row-saran-rekomendasi">
-            <div class="col-md-12">
-              <label class="form-label">Saran / Rekomendasi</label>
-              <textarea name="saran_rekomendasi" class="form-control @error('saran_rekomendasi') is-invalid @enderror" rows="3" placeholder="Saran atau rekomendasi untuk program berikutnya">{{ old('saran_rekomendasi') }}</textarea>
-              @error('saran_rekomendasi')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
+            <div class="row mb-3" id="row-saran-rekomendasi">
+              <div class="col-md-12">
+                <label class="form-label">Saran / Rekomendasi</label>
+                <textarea name="saran_rekomendasi" class="form-control @error('saran_rekomendasi') is-invalid @enderror" rows="3" placeholder="Saran atau rekomendasi untuk program berikutnya">{{ old('saran_rekomendasi') }}</textarea>
+                @error('saran_rekomendasi')
+                <span class="invalid-feedback">{{ $message }}</span>
+                @enderror
+              </div>
             </div>
-          </div>
 
-          <div class="row">
-            <div class="col-12">
-              <button type="submit" class="btn btn-primary me-2">
-                <i class="ri-save-line me-2"></i>Simpan
-              </button>
-              <a href="{{ route('program.index') }}" class="btn btn-outline-danger">
-                <i class="ri-close-line me-2"></i>Batal
-              </a>
+            <div class="row">
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary me-2">
+                  <i class="ri-save-line me-2"></i>Simpan
+                </button>
+                <a href="{{ route('program.index') }}" class="btn btn-outline-danger">
+                  <i class="ri-close-line me-2"></i>Batal
+                </a>
+              </div>
             </div>
-          </div>
 
 
         </form>
@@ -214,3 +147,61 @@
   </div>
 </div>
 @endsection
+
+@push('page-script')
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // --- Penilaian Kemampuan Anak ---
+    // Set kemampuanIndex ke index terbesar yang ada + 1, hanya jalankan sekali
+    let kemampuanIndex = 1;
+    // Cari index terbesar dari baris kemampuan yang sudah ada
+    const rowsAwal = Array.from(document.querySelectorAll('tr[id^="row-kemampuan-"]'));
+    if (rowsAwal.length > 0) {
+      const lastIdx = rowsAwal.map(row => parseInt(row.id.replace('row-kemampuan-', ''))).sort((a, b) => b - a)[0];
+      kemampuanIndex = lastIdx + 1;
+    }
+    const tbody = document.querySelector('table tbody');
+
+    // Proteksi agar event handler hanya dipasang satu kali
+    if (!window._handlerKemampuanSudahDipasang) {
+      tbody.addEventListener('click', function(e) {
+        // Hapus baris kemampuan
+        if (e.target.closest('.btn-hapus-kemampuan')) {
+          const btn = e.target.closest('.btn-hapus-kemampuan');
+          const tr = btn.closest('tr');
+          if (tr && tr.id.startsWith('row-kemampuan-')) {
+            tr.remove();
+          }
+        }
+        // Tambah baris kemampuan
+        if (e.target.closest('#btn-tambah-kemampuan')) {
+          const tr = document.createElement('tr');
+          tr.id = `row-kemampuan-${kemampuanIndex}`;
+          let html = `<td><div class=\"input-group\"><input type=\"text\" name=\"kemampuan[${kemampuanIndex}][judul]\" class=\"form-control\" required><button type=\"button\" class=\"btn btn-outline-danger btn-sm btn-hapus-kemampuan\"><i class=\"ri-delete-bin-line\"></i></button></div></td>`;
+          for (let skala = 1; skala <= 5; skala++) {
+            html += `<td class=\"text-center\"><input type=\"radio\" name=\"kemampuan[${kemampuanIndex}][skala]\" value=\"${skala}\" required></td>`;
+          }
+          tr.innerHTML = html;
+          tbody.insertBefore(tr, document.getElementById('row-tambah-kemampuan'));
+          kemampuanIndex++;
+        }
+      });
+      window._handlerKemampuanSudahDipasang = true;
+    }
+
+    // --- Konsultan Change Handler ---
+    window.handleKonsultanChange = function() {
+      var select = document.getElementById('konsultan_id');
+      var selected = select.options[select.selectedIndex];
+      var spesialisasi = selected.getAttribute('data-spesialisasi');
+      var rowDiagnosa = document.getElementById('row-diagnosa');
+      if (spesialisasi === 'wicara') {
+        if (rowDiagnosa) rowDiagnosa.style.display = '';
+      } else {
+        if (rowDiagnosa) rowDiagnosa.style.display = 'none';
+      }
+    }
+    window.handleKonsultanChange();
+  });
+</script>
+@endpush
