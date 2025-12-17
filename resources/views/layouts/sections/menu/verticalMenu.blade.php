@@ -29,6 +29,14 @@ use Illuminate\Support\Facades\Route;
         $showMenu = false;
         }
         }
+        // Allow role 'terapis' to access certain menus even if menu roles don't include it
+        if (isset($menu->slug) && auth()->check() && auth()->user()->role === 'terapis') {
+        $slugStr = is_array($menu->slug) ? implode(',', $menu->slug) : $menu->slug;
+        // Anak Didik, Observasi/Evaluasi (program.index) and Program Anak should be visible to terapis
+        if (str_contains($slugStr, 'anak-didik') || str_contains($slugStr, 'program.index') || str_contains($slugStr, 'program-anak') || str_contains($slugStr, 'program')) {
+        $showMenu = true;
+        }
+        }
         // Sembunyikan menu karyawan & konsultan pada sidebar jika bukan admin (legacy, untuk menu lama)
         if (
         (isset($menu->slug) && $menu->slug === 'karyawan.index' && (!auth()->check() || auth()->user()->role !== 'admin'))
@@ -37,9 +45,14 @@ use Illuminate\Support\Facades\Route;
         ) {
         $showMenu = false;
         }
-        // Tampilkan menu program untuk admin dan konsultan
+        // Tampilkan menu program untuk admin, konsultan, dan terapis
         if (isset($menu->slug) && $menu->slug === 'program.index' && (!auth()->check() || !in_array(auth()->user()->role,
-        ['admin', 'konsultan']))) {
+        ['admin', 'konsultan', 'terapis']))) {
+        $showMenu = false;
+        }
+        // Tampilkan menu program-anak untuk admin, konsultan, guru, dan terapis
+        if (isset($menu->slug) && ( $menu->slug === 'program-anak.index' || $menu->slug === 'program-anak') && (!auth()->check() || !in_array(auth()->user()->role,
+        ['admin', 'konsultan', 'guru', 'terapis']))) {
         $showMenu = false;
         }
         // Tampilkan menu assessment (penilaian anak) untuk admin dan guru saja

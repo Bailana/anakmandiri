@@ -76,37 +76,10 @@
   </div>
   @endif
 
-  <!-- Quick Actions -->
-  <div class="col-lg-4">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">Aksi Cepat</h5>
-      </div>
-      <div class="card-body">
-        <div class="d-flex flex-column gap-2">
-          <a href="#" class="btn btn-sm btn-info d-flex align-items-center justify-content-between">
-            <span>Buat Catatan Pasien</span>
-            <i class="ri-arrow-right-line"></i>
-          </a>
-          <a href="#" class="btn btn-sm btn-primary d-flex align-items-center justify-content-between">
-            <span>Daftar Pasien</span>
-            <i class="ri-arrow-right-line"></i>
-          </a>
-          <a href="#" class="btn btn-sm btn-success d-flex align-items-center justify-content-between">
-            <span>Jadwal Sesi</span>
-            <i class="ri-arrow-right-line"></i>
-          </a>
-          <a href="#" class="btn btn-sm btn-warning d-flex align-items-center justify-content-between">
-            <span>Laporan Terapi</span>
-            <i class="ri-arrow-right-line"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Quick Actions removed -->
 
   <!-- Sesi Hari Ini -->
-  <div class="col-lg-6">
+  <div class="col-lg-4">
     <div class="card h-100">
       <div class="card-header">
         <h5 class="card-title m-0">⏰ Sesi Hari Ini</h5>
@@ -138,51 +111,7 @@
     </div>
   </div>
 
-  <!-- Pasien dengan Progres Positif -->
-  <div class="col-lg-6">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">📈 Pasien dengan Progres Positif</h5>
-      </div>
-      <div class="card-body">
-        <div class="list-group list-group-flush">
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">Siti Nurhaliza</h6>
-                <div class="progress mt-2" style="height: 6px;">
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 85%" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-                <p class="text-muted small mb-0 mt-1">Perbaikan: 85%</p>
-              </div>
-            </div>
-          </div>
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">Ahmad Wijaya</h6>
-                <div class="progress mt-2" style="height: 6px;">
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 78%" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-                <p class="text-muted small mb-0 mt-1">Perbaikan: 78%</p>
-              </div>
-            </div>
-          </div>
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">Dewi Kusuma</h6>
-                <div class="progress mt-2" style="height: 6px;">
-                  <div class="progress-bar bg-info" role="progressbar" style="width: 65%" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-                <p class="text-muted small mb-0 mt-1">Perbaikan: 65%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Pasien dengan Progres Positif removed -->
 
   <!-- Daftar Pasien Aktif -->
   <div class="col-12">

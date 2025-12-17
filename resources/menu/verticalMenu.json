@@ -78,6 +78,16 @@
       ]
     },
     {
+      "url": "terapis/pasien",
+      "name": "Pasien Terapis",
+      "icon": "menu-icon icon-base ri ri-heart-pulse-line",
+      "slug": "terapis.pasien.index",
+      "roles": [
+        "admin",
+        "terapis"
+      ]
+    },
+    {
       "url": "assessment",
       "name": "Penilaian Anak",
       "icon": "menu-icon icon-base ri ri-survey-line",

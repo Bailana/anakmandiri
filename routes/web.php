@@ -168,8 +168,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('program/{id}/approve', [App\Http\Controllers\ProgramController::class, 'approve'])->name('program.approve');
     Route::resource('pengguna', 'App\Http\Controllers\PenggunaController');
   });
+  // Allow konsultan and terapis to view program index/show, but only konsultan can create/store
+  Route::middleware(['auth', 'role:konsultan,terapis'])->group(function () {
+    Route::resource('program', 'App\Http\Controllers\ProgramController')->only(['index', 'show']);
+  });
   Route::middleware(['auth', 'role:konsultan'])->group(function () {
-    Route::resource('program', 'App\Http\Controllers\ProgramController')->only(['index', 'show', 'create', 'store']);
+    Route::resource('program', 'App\Http\Controllers\ProgramController')->only(['create', 'store']);
   });
 
   // Assessment: admin & guru (guru hanya index/show)
@@ -192,6 +196,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('ppi', [App\Http\Controllers\PPIController::class, 'store'])->name('ppi.store');
     Route::get('ppi/{id}', [App\Http\Controllers\PPIController::class, 'show'])->name('ppi.show');
     Route::post('ppi/request-access', [App\Http\Controllers\GuruAnakDidikController::class, 'requestAccess'])->name('ppi.request-access');
+  });
+
+  // Pasien Terapis - accessible to admin and terapis
+  Route::middleware(['auth', 'role:admin,terapis'])->group(function () {
+    Route::get('terapis/pasien', [App\Http\Controllers\TerapisPatientController::class, 'index'])->name('terapis.pasien.index');
+    Route::get('terapis/pasien/create', [App\Http\Controllers\TerapisPatientController::class, 'create'])->name('terapis.pasien.create');
+    Route::post('terapis/pasien', [App\Http\Controllers\TerapisPatientController::class, 'store'])->name('terapis.pasien.store');
   });
 });
 
