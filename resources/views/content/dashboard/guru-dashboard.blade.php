@@ -27,8 +27,8 @@
           </div>
           <div>
             <h5 class="card-title text-white mb-2">Halo {{ Auth::user()->name }}! 📚</h5>
-            <p class="mb-2 text-white-50">Dashboard Guru Pembelajaran</p>
-            <p class="mb-0 text-white-50">Kelola kelas dan pantau perkembangan siswa</p>
+            <p class="mb-2 text-white-50">Dashboard Guru Fokus</p>
+            <p class="mb-0 text-white-50">Kelola perkembangan siswa</p>
           </div>
         </div>
       </div>

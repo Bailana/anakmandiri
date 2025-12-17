@@ -319,11 +319,16 @@
               var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
               if (saranBlock) saranBlock.style.display = 'none';
               // populate psikologi fields
-              var elLB = document.getElementById('detailLatarBelakang'); if (elLB) elLB.textContent = program.latar_belakang || '-';
-              var elMA = document.getElementById('detailMetodeAssessment'); if (elMA) elMA.textContent = program.metode_assessment || '-';
-              var elHA = document.getElementById('detailHasilAssessment'); if (elHA) elHA.textContent = program.hasil_assessment || '-';
-              var elKS = document.getElementById('detailKesimpulan'); if (elKS) elKS.textContent = program.kesimpulan || '-';
-              var elRK = document.getElementById('detailRekomendasi'); if (elRK) elRK.textContent = program.rekomendasi || '-';
+              var elLB = document.getElementById('detailLatarBelakang');
+              if (elLB) elLB.textContent = program.latar_belakang || '-';
+              var elMA = document.getElementById('detailMetodeAssessment');
+              if (elMA) elMA.textContent = program.metode_assessment || '-';
+              var elHA = document.getElementById('detailHasilAssessment');
+              if (elHA) elHA.textContent = program.hasil_assessment || '-';
+              var elKS = document.getElementById('detailKesimpulan');
+              if (elKS) elKS.textContent = program.kesimpulan || '-';
+              var elRK = document.getElementById('detailRekomendasi');
+              if (elRK) elRK.textContent = program.rekomendasi || '-';
             } else {
               if (psikologiBlock) psikologiBlock.style.display = 'none';
               // restore other blocks
@@ -408,7 +413,10 @@
           res.riwayat.forEach(item => {
             const key = item.konsultan_id ? `konsultan_${item.konsultan_id}` : `user_${item.user_id}`;
             const name = item.konsultan_name || item.user_name || '-';
-            if (!groups[key]) groups[key] = { name: name, items: [] };
+            if (!groups[key]) groups[key] = {
+              name: name,
+              items: []
+            };
             groups[key].items.push(item);
           });
           let html = '';

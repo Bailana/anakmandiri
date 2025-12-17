@@ -55,6 +55,16 @@
       ]
     },
     {
+      "url": "ppi",
+      "name": "PPI",
+      "icon": "menu-icon icon-base ri ri-clipboard-line",
+      "slug": "ppi.index",
+      "roles": [
+        "admin",
+        "guru"
+      ]
+    },
+    {
       "url": "program-anak",
       "name": "Program Anak",
       "icon": "menu-icon icon-base ri ri-graduation-cap-line",

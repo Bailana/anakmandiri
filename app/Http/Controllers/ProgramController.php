@@ -401,7 +401,7 @@ class ProgramController extends Controller
       ->where('anak_didik_id', $anakDidikId)
       ->orderByDesc('created_at')
       ->get();
-    $programsPsikologi = \App\Models\ProgramPsikologi::with(['user','konsultan'])
+    $programsPsikologi = \App\Models\ProgramPsikologi::with(['user', 'konsultan'])
       ->where('anak_didik_id', $anakDidikId)
       ->orderByDesc('created_at')
       ->get();

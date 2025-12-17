@@ -184,6 +184,13 @@ Route::middleware(['auth'])->group(function () {
   Route::middleware(['auth', 'role:admin,konsultan,guru,terapis'])->group(function () {
     Route::resource('program-anak', App\Http\Controllers\ProgramAnakController::class)->only(['index', 'show']);
   });
+
+  // PPI Routes - Program Pembelajaran Individual (admin & guru)
+  Route::middleware(['auth', 'role:admin,guru'])->group(function () {
+    Route::get('ppi', [App\Http\Controllers\PPIController::class, 'index'])->name('ppi.index');
+    Route::get('ppi/{id}', [App\Http\Controllers\PPIController::class, 'show'])->name('ppi.show');
+    Route::post('ppi/request-access', [App\Http\Controllers\GuruAnakDidikController::class, 'requestAccess'])->name('ppi.request-access');
+  });
 });
 
 // Tambahan route untuk API riwayat observasi/evaluasi anak didik di halaman program
