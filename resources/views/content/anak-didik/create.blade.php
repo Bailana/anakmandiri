@@ -51,7 +51,7 @@
           </li>
         </ul>
 
-        <form action="{{ route('anak-didik.store') }}" method="POST" enctype="multipart/form-data">
+        <form id="anakDidikCreateForm" action="{{ route('anak-didik.store') }}" method="POST" enctype="multipart/form-data">
           @csrf
 
           <!-- Tab Content -->
@@ -69,8 +69,9 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">NIS <span class="text-danger">*</span></label>
-                  <input type="text" name="nis" class="form-control @error('nis') is-invalid @enderror"
-                    placeholder="Nomor Induk Siswa" value="{{ old('nis') }}" required>
+                  <input type="text" name="nis" id="nis" inputmode="numeric" pattern="\\d*" maxlength="20"
+                    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,20)"
+                    class="form-control @error('nis') is-invalid @enderror" placeholder="Nomor Induk Siswa" value="{{ old('nis') }}" required>
                   @error('nis')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -113,8 +114,9 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">NIK (Nomor Identitas)</label>
-                  <input type="text" name="nik" class="form-control @error('nik') is-invalid @enderror"
-                    placeholder="Nomor NIK" value="{{ old('nik') }}">
+                  <input type="text" name="nik" id="nik" inputmode="numeric" pattern="\\d*" maxlength="16"
+                    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,16)"
+                    class="form-control @error('nik') is-invalid @enderror" placeholder="Nomor NIK" value="{{ old('nik') }}">
                   @error('nik')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -122,22 +124,15 @@
               </div>
 
               <div class="row mb-3">
-                <div class="col-md-12">
-                  <label class="form-label">Alamat</label>
-                  <textarea name="alamat" class="form-control @error('alamat') is-invalid @enderror" rows="3"
-                    placeholder="Masukkan alamat lengkap">{{ old('alamat') }}</textarea>
-                  @error('alamat')
-                  <span class="invalid-feedback">{{ $message }}</span>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="row mb-3">
                 <div class="col-md-6">
-                  <label class="form-label">No. Telepon</label>
-                  <input type="tel" name="no_telepon" class="form-control @error('no_telepon') is-invalid @enderror"
-                    placeholder="08xx-xxxx-xxxx" value="{{ old('no_telepon') }}">
-                  @error('no_telepon')
+                  <label class="form-label">Guru Fokus</label>
+                  <select name="guru_fokus_id" class="form-select @error('guru_fokus_id') is-invalid @enderror">
+                    <option value="">Pilih Guru Fokus</option>
+                    @foreach(($guruFokusList ?? collect()) as $id => $nama)
+                    <option value="{{ $id }}" {{ old('guru_fokus_id') == $id ? 'selected' : '' }}>{{ $nama }}</option>
+                    @endforeach
+                  </select>
+                  @error('guru_fokus_id')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
@@ -150,6 +145,15 @@
                   @enderror
                 </div>
               </div>
+
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" disabled>
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-keluarga-tab').click()">
+                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                </button>
+              </div>
             </div>
 
             <!-- Data Keluarga Tab -->
@@ -157,8 +161,9 @@
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label class="form-label">Nomor KK (Kartu Keluarga)</label>
-                  <input type="text" name="no_kk" class="form-control @error('no_kk') is-invalid @enderror"
-                    placeholder="Nomor Kartu Keluarga" value="{{ old('no_kk') }}">
+                  <input type="text" name="no_kk" id="no_kk" inputmode="numeric" pattern="\\d*" maxlength="16"
+                    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,16)"
+                    class="form-control @error('no_kk') is-invalid @enderror" placeholder="Nomor Kartu Keluarga" value="{{ old('no_kk') }}">
                   @error('no_kk')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -184,8 +189,9 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">No. Telepon Orang Tua</label>
-                  <input type="tel" name="no_telepon_orang_tua" class="form-control @error('no_telepon_orang_tua') is-invalid @enderror"
-                    placeholder="08xx-xxxx-xxxx" value="{{ old('no_telepon_orang_tua') }}">
+                  <input type="tel" name="no_telepon_orang_tua" id="no_telepon_orang_tua" inputmode="tel" pattern="\\d*" maxlength="13"
+                    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,13)"
+                    class="form-control @error('no_telepon_orang_tua') is-invalid @enderror" placeholder="08xx-xxxx-xxxx" value="{{ old('no_telepon_orang_tua') }}">
                   @error('no_telepon_orang_tua')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -221,6 +227,14 @@
                   @enderror
                 </div>
               </div>
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-diri-tab').click()">
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-kesehatan-tab').click()">
+                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                </button>
+              </div>
             </div>
 
             <!-- Data Kesehatan Tab -->
@@ -248,6 +262,15 @@
                 <i class="ri-information-line me-2"></i>
                 <strong>Catatan:</strong> Data kesehatan dan pengukuran dapat diperbarui secara berkala seiring perkembangan anak.
               </div>
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-keluarga-tab').click()">
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-pendidikan-tab').click()">
+                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                </button>
+              </div>
+
             </div>
 
             <!-- Data Pendidikan Tab -->
@@ -255,8 +278,13 @@
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label class="form-label">Pendidikan Terakhir</label>
-                  <input type="text" name="pendidikan_terakhir" class="form-control @error('pendidikan_terakhir') is-invalid @enderror"
-                    placeholder="Contoh: TK, SD, SMP, dll" value="{{ old('pendidikan_terakhir') }}">
+                  <select name="pendidikan_terakhir" class="form-select @error('pendidikan_terakhir') is-invalid @enderror">
+                    <option value="">Pilih Pendidikan</option>
+                    <option value="TK" {{ old('pendidikan_terakhir') === 'TK' ? 'selected' : '' }}>TK</option>
+                    <option value="SD" {{ old('pendidikan_terakhir') === 'SD' ? 'selected' : '' }}>SD</option>
+                    <option value="SMP" {{ old('pendidikan_terakhir') === 'SMP' ? 'selected' : '' }}>SMP</option>
+                    <option value="SMA" {{ old('pendidikan_terakhir') === 'SMA' ? 'selected' : '' }}>SMA</option>
+                  </select>
                   @error('pendidikan_terakhir')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -280,6 +308,14 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
+              </div>
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-kesehatan-tab').click()">
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('dokumen-tab').click()">
+                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                </button>
               </div>
             </div>
 
@@ -367,19 +403,20 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <hr class="my-4">
-
-          <div class="row">
-            <div class="col-12">
-              <button type="submit" class="btn btn-primary me-2">
-                <i class="ri-save-line me-2"></i>Simpan
-              </button>
-              <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary">
-                <i class="ri-close-line me-2"></i>Batal
-              </a>
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-pendidikan-tab').click()">
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <div>
+                  <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary me-2">
+                    <i class="ri-close-line me-2"></i>Batal
+                  </a>
+                  <button id="anakDidikSaveBtn" type="submit" class="btn btn-primary">
+                    <i class="ri-save-line me-2"></i>Simpan
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </form>
@@ -387,4 +424,49 @@
     </div>
   </div>
 </div>
+
+<script>
+  (function() {
+    function bindDigits(id, max) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', function() {
+        var val = this.value.replace(/\D/g, '').slice(0, max);
+        if (this.value !== val) this.value = val;
+      });
+      el.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, max);
+        if (document.queryCommandSupported('insertText')) {
+          document.execCommand('insertText', false, text);
+        } else {
+          this.value = (this.value + text).replace(/\D/g, '').slice(0, max);
+        }
+      });
+    }
+    ['nis', 'nik', 'no_kk', 'no_telepon', 'no_telepon_orang_tua'].forEach(function(id) {
+      var max = id === 'nis' ? 20 : (id === 'nik' || id === 'no_kk' ? 16 : 13);
+      bindDigits(id, max);
+    });
+  })();
+</script>
+
+<script>
+  // Ensure create form submits even if a hidden invalid control would block native submit
+  (function() {
+    var btn = document.getElementById('anakDidikSaveBtn');
+    var form = document.getElementById('anakDidikCreateForm');
+    if (btn && form) {
+      btn.addEventListener('click', function(e) {
+        // Bypass HTML5 validation since some required controls live in other (hidden) tabs
+        form.noValidate = true;
+        if (!form.__submitted) {
+          form.__submitted = true;
+          form.submit();
+        }
+      });
+    }
+  })();
+</script>
+
 @endsection

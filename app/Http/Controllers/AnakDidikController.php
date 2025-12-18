@@ -59,7 +59,11 @@ class AnakDidikController extends Controller
    */
   public function create()
   {
-    return view('content.anak-didik.create');
+    // Ambil semua guru fokus (karyawan dengan posisi Guru Fokus) untuk dropdown
+    $guruFokusList = \App\Models\Karyawan::where('posisi', 'Guru Fokus')->orderBy('nama')->pluck('nama', 'id');
+    return view('content.anak-didik.create', [
+      'guruFokusList' => $guruFokusList
+    ]);
   }
 
   /**
@@ -67,26 +71,37 @@ class AnakDidikController extends Controller
    */
   public function store(Request $request)
   {
+    // sanitize numeric-only fields from any non-digit characters (covers programmatic clients)
+    $numericFields = ['nis' => 20, 'nik' => 16, 'no_kk' => 16, 'no_telepon' => 13, 'no_telepon_orang_tua' => 13];
+    foreach ($numericFields as $field => $max) {
+      $val = preg_replace('/\D/', '', (string) $request->input($field, ''));
+      if ($val === '') {
+        $request->merge([$field => null]);
+      } else {
+        $request->merge([$field => $val]);
+      }
+    }
     $validated = $request->validate([
+      'guru_fokus_id' => 'nullable|exists:karyawans,id',
       'nama' => 'required|string|max:255',
-      'nis' => 'required|string|unique:anak_didiks',
+      'nis' => 'required|digits_between:1,20|unique:anak_didiks',
       'jenis_kelamin' => 'required|in:laki-laki,perempuan',
       'tanggal_lahir' => 'nullable|date',
       'tempat_lahir' => 'nullable|string',
       'alamat' => 'nullable|string',
-      'no_telepon' => 'nullable|string',
+      'no_telepon' => 'nullable|digits_between:1,13',
       'email' => 'nullable|email',
       'nama_orang_tua' => 'nullable|string',
-      'no_telepon_orang_tua' => 'nullable|string',
-      'no_kk' => 'nullable|string',
-      'nik' => 'nullable|string',
+      'no_telepon_orang_tua' => 'nullable|digits_between:1,13',
+      'no_kk' => 'nullable|digits_between:1,16',
+      'nik' => 'nullable|digits_between:1,16',
       'no_akta_kelahiran' => 'nullable|string',
       'tinggi_badan' => 'nullable|numeric',
       'berat_badan' => 'nullable|numeric',
       'jumlah_saudara_kandung' => 'nullable|integer',
       'anak_ke' => 'nullable|integer',
       'tinggal_bersama' => 'nullable|string',
-      'pendidikan_terakhir' => 'nullable|string',
+      'pendidikan_terakhir' => 'nullable|in:TK,SD,SMP,SMA',
       'asal_sekolah' => 'nullable|string',
       'tanggal_pendaftaran' => 'nullable|date',
       'kk' => 'nullable|boolean',
@@ -164,27 +179,38 @@ class AnakDidikController extends Controller
   {
     $anakDidik = AnakDidik::findOrFail($id);
 
+    // sanitize numeric-only fields from any non-digit characters (covers programmatic clients)
+    $numericFields = ['nis' => 20, 'nik' => 16, 'no_kk' => 16, 'no_telepon' => 13, 'no_telepon_orang_tua' => 13];
+    foreach ($numericFields as $field => $max) {
+      $val = preg_replace('/\D/', '', (string) $request->input($field, ''));
+      if ($val === '') {
+        $request->merge([$field => null]);
+      } else {
+        $request->merge([$field => $val]);
+      }
+    }
+
     $validated = $request->validate([
       'guru_fokus_id' => 'required|exists:karyawans,id',
       'nama' => 'required|string|max:255',
-      'nis' => 'required|string|unique:anak_didiks,nis,' . $id,
+      'nis' => 'required|digits_between:1,20|unique:anak_didiks,nis,' . $id,
       'jenis_kelamin' => 'required|in:laki-laki,perempuan',
       'tanggal_lahir' => 'nullable|date',
       'tempat_lahir' => 'nullable|string',
       'alamat' => 'nullable|string',
-      'no_telepon' => 'nullable|string',
+      'no_telepon' => 'nullable|digits_between:1,13',
       'email' => 'nullable|email',
       'nama_orang_tua' => 'nullable|string',
-      'no_telepon_orang_tua' => 'nullable|string',
-      'no_kk' => 'nullable|string',
-      'nik' => 'nullable|string',
+      'no_telepon_orang_tua' => 'nullable|digits_between:1,13',
+      'no_kk' => 'nullable|digits_between:1,16',
+      'nik' => 'nullable|digits_between:1,16',
       'no_akta_kelahiran' => 'nullable|string',
       'tinggi_badan' => 'nullable|numeric',
       'berat_badan' => 'nullable|numeric',
       'jumlah_saudara_kandung' => 'nullable|integer',
       'anak_ke' => 'nullable|integer',
       'tinggal_bersama' => 'nullable|string',
-      'pendidikan_terakhir' => 'nullable|string',
+      'pendidikan_terakhir' => 'nullable|in:TK,SD,SMP,SMA',
       'asal_sekolah' => 'nullable|string',
       'tanggal_pendaftaran' => 'nullable|date',
       'kk' => 'nullable|boolean',

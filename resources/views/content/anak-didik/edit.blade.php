@@ -57,7 +57,7 @@
           </li>
         </ul>
 
-        <form action="{{ route('anak-didik.update', $anakDidik->id) }}" method="POST" enctype="multipart/form-data">
+        <form id="anakDidikEditForm" action="{{ route('anak-didik.update', $anakDidik->id) }}" method="POST" enctype="multipart/form-data">
           @csrf
           @method('PUT')
 
@@ -76,8 +76,9 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">NIS <span class="text-danger">*</span></label>
-                  <input type="text" name="nis" class="form-control @error('nis') is-invalid @enderror"
-                    placeholder="Nomor Induk Siswa" value="{{ old('nis', $anakDidik->nis) }}" required>
+                  <input type="text" name="nis" id="nis" inputmode="numeric" pattern="\\d*" maxlength="20"
+                    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,20)"
+                    class="form-control @error('nis') is-invalid @enderror" placeholder="Nomor Induk Siswa" value="{{ old('nis', $anakDidik->nis) }}" required>
                   @error('nis')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -94,6 +95,14 @@
                     @endforeach
                   </select>
                   @error('guru_fokus_id')
+                  <span class="invalid-feedback">{{ $message }}</span>
+                  @enderror
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Email</label>
+                  <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
+                    placeholder="example@email.com" value="{{ old('email', $anakDidik->email) }}">
+                  @error('email')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
@@ -137,8 +146,9 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">NIK (Nomor Identitas)</label>
-                  <input type="text" name="nik" class="form-control @error('nik') is-invalid @enderror"
-                    placeholder="Nomor NIK" value="{{ old('nik', $anakDidik->nik) }}">
+                  <input type="text" name="nik" id="nik" inputmode="numeric" pattern="\\d*" maxlength="16"
+                    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,16)"
+                    class="form-control @error('nik') is-invalid @enderror" placeholder="Nomor NIK" value="{{ old('nik', $anakDidik->nik) }}">
                   @error('nik')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -156,23 +166,14 @@
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">No. Telepon</label>
-                  <input type="tel" name="no_telepon" class="form-control @error('no_telepon') is-invalid @enderror"
-                    placeholder="08xx-xxxx-xxxx" value="{{ old('no_telepon', $anakDidik->no_telepon) }}">
-                  @error('no_telepon')
-                  <span class="invalid-feedback">{{ $message }}</span>
-                  @enderror
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Email</label>
-                  <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                    placeholder="example@email.com" value="{{ old('email', $anakDidik->email) }}">
-                  @error('email')
-                  <span class="invalid-feedback">{{ $message }}</span>
-                  @enderror
-                </div>
+
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" disabled>
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-keluarga-tab').click()">
+                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                </button>
               </div>
             </div>
 
@@ -181,8 +182,9 @@
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label class="form-label">Nomor KK (Kartu Keluarga)</label>
-                  <input type="text" name="no_kk" class="form-control @error('no_kk') is-invalid @enderror"
-                    placeholder="Nomor Kartu Keluarga" value="{{ old('no_kk', $anakDidik->no_kk) }}">
+                  <input type="text" name="no_kk" id="no_kk" inputmode="numeric" pattern="\\d*" maxlength="16"
+                    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,16)"
+                    class="form-control @error('no_kk') is-invalid @enderror" placeholder="Nomor Kartu Keluarga" value="{{ old('no_kk', $anakDidik->no_kk) }}">
                   @error('no_kk')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -208,8 +210,9 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">No. Telepon Orang Tua</label>
-                  <input type="tel" name="no_telepon_orang_tua" class="form-control @error('no_telepon_orang_tua') is-invalid @enderror"
-                    placeholder="08xx-xxxx-xxxx" value="{{ old('no_telepon_orang_tua', $anakDidik->no_telepon_orang_tua) }}">
+                  <input type="tel" name="no_telepon_orang_tua" id="no_telepon_orang_tua" inputmode="tel" pattern="\\d*" maxlength="13"
+                    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,13)"
+                    class="form-control @error('no_telepon_orang_tua') is-invalid @enderror" placeholder="08xx-xxxx-xxxx" value="{{ old('no_telepon_orang_tua', $anakDidik->no_telepon_orang_tua) }}">
                   @error('no_telepon_orang_tua')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -246,6 +249,14 @@
                   @enderror
                 </div>
               </div>
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-diri-tab').click()">
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-kesehatan-tab').click()">
+                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                </button>
+              </div>
             </div>
 
             <!-- Data Kesehatan Tab -->
@@ -273,6 +284,14 @@
                 <i class="ri-information-line me-2"></i>
                 <strong>Catatan:</strong> Data kesehatan dan pengukuran dapat diperbarui secara berkala seiring perkembangan anak.
               </div>
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-keluarga-tab').click()">
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-pendidikan-tab').click()">
+                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                </button>
+              </div>
             </div>
 
             <!-- Data Pendidikan Tab -->
@@ -280,8 +299,13 @@
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label class="form-label">Pendidikan Terakhir</label>
-                  <input type="text" name="pendidikan_terakhir" class="form-control @error('pendidikan_terakhir') is-invalid @enderror"
-                    placeholder="Contoh: TK, SD, SMP, dll" value="{{ old('pendidikan_terakhir', $anakDidik->pendidikan_terakhir) }}">
+                  <select name="pendidikan_terakhir" class="form-select @error('pendidikan_terakhir') is-invalid @enderror">
+                    <option value="">Pilih Pendidikan</option>
+                    <option value="TK" {{ old('pendidikan_terakhir', $anakDidik->pendidikan_terakhir) === 'TK' ? 'selected' : '' }}>TK</option>
+                    <option value="SD" {{ old('pendidikan_terakhir', $anakDidik->pendidikan_terakhir) === 'SD' ? 'selected' : '' }}>SD</option>
+                    <option value="SMP" {{ old('pendidikan_terakhir', $anakDidik->pendidikan_terakhir) === 'SMP' ? 'selected' : '' }}>SMP</option>
+                    <option value="SMA" {{ old('pendidikan_terakhir', $anakDidik->pendidikan_terakhir) === 'SMA' ? 'selected' : '' }}>SMA</option>
+                  </select>
                   @error('pendidikan_terakhir')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -305,6 +329,14 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
+              </div>
+              <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-kesehatan-tab').click()">
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('dokumen-tab').click()">
+                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                </button>
               </div>
             </div>
 
@@ -392,6 +424,19 @@
                   </div>
                 </div>
               </div>
+              <div class="d-flex mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-pendidikan-tab').click()">
+                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                </button>
+                <div class="ms-auto">
+                  <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary me-2">
+                    <i class="ri-close-line me-2"></i>Batal
+                  </a>
+                  <button id="anakDidikEditSaveBtn" type="submit" class="btn btn-primary">
+                    <i class="ri-save-line me-2"></i>Perbarui
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Program Terapi Tab -->
@@ -449,21 +494,54 @@
             </div>
           </div>
 
-          <hr class="my-4">
 
-          <div class="row">
-            <div class="col-12">
-              <button type="submit" class="btn btn-primary me-2">
-                <i class="ri-save-line me-2"></i>Perbarui
-              </button>
-              <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary">
-                <i class="ri-close-line me-2"></i>Batal
-              </a>
-            </div>
-          </div>
         </form>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  (function() {
+    function bindDigits(id, max) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', function() {
+        var val = this.value.replace(/\D/g, '').slice(0, max);
+        if (this.value !== val) this.value = val;
+      });
+      el.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, max);
+        if (document.queryCommandSupported('insertText')) {
+          document.execCommand('insertText', false, text);
+        } else {
+          this.value = (this.value + text).replace(/\D/g, '').slice(0, max);
+        }
+      });
+    }
+    ['nis', 'nik', 'no_kk', 'no_telepon', 'no_telepon_orang_tua'].forEach(function(id) {
+      var max = id === 'nis' ? 20 : (id === 'nik' || id === 'no_kk' ? 16 : 13);
+      bindDigits(id, max);
+    });
+  })();
+</script>
+
+<script>
+  // Ensure edit form submits even if a hidden invalid control would block native submit
+  (function() {
+    var btn = document.getElementById('anakDidikEditSaveBtn');
+    var form = document.getElementById('anakDidikEditForm');
+    if (btn && form) {
+      btn.addEventListener('click', function(e) {
+        form.noValidate = true;
+        if (!form.__submitted) {
+          form.__submitted = true;
+          form.submit();
+        }
+      });
+    }
+  })();
+</script>
+
 @endsection
