@@ -167,6 +167,14 @@ class KonsultanDataController extends Controller
     // Log activity
     ActivityService::logDelete('Konsultan', $konsultan->id, 'Menghapus data konsultan: ' . $namaKonsultan);
 
+    // If request is AJAX / expects JSON, return JSON response
+    if (request()->wantsJson() || request()->ajax()) {
+      return response()->json([
+        'success' => true,
+        'message' => 'Data konsultan berhasil dihapus'
+      ]);
+    }
+
     return redirect()->route('konsultan.index')
       ->with('success', 'Data konsultan berhasil dihapus');
   }

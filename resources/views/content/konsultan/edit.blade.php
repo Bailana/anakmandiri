@@ -216,7 +216,7 @@
                     <i class="ri-close-line me-2"></i>Batal
                   </a>
                   <button type="submit" class="btn btn-primary">
-                    <i class="ri-save-line me-2"></i>Simpan Perubahan
+                    <i class="ri-save-line me-2"></i>Perbarui
                   </button>
                 </div>
               </div>

@@ -33,6 +33,8 @@
 </div>
 @endif
 
+<!-- Toasts are handled via shared `showToast` helper -->
+
 <!-- Search & Filter -->
 <div class="row mb-4">
   <div class="col-12">
@@ -120,13 +122,12 @@
                 <div class="d-flex gap-2 align-items-center">
                   <button
                     type="button"
-                    class="btn btn-sm btn-icon btn-outline-primary"
+                    class="btn btn-sm btn-icon btn-outline-primary btn-detail"
                     data-bs-toggle="modal"
                     data-bs-target="#detailModal"
                     data-konsultan-id="{{ $konsultan->id }}"
                     data-bs-title="Detail Konsultan"
-                    title="Lihat Detail"
-                    onclick="showDetail(this)">
+                    title="Lihat Detail">
                     <i class="ri-eye-line"></i>
                   </button>
                   <a
@@ -137,10 +138,9 @@
                   </a>
                   <button
                     type="button"
-                    class="btn btn-sm btn-icon btn-outline-danger"
+                    class="btn btn-sm btn-icon btn-outline-danger btn-delete"
                     data-konsultan-id="{{ $konsultan->id }}"
-                    title="Hapus Data"
-                    onclick="deleteData(this)">
+                    title="Hapus Data">
                     <i class="ri-delete-bin-line"></i>
                   </button>
                 </div>
@@ -289,12 +289,12 @@
 
 @endsection
 
-@section('page-script')
+@push('page-script')
 <script>
-  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   // Format Date
-  function formatDate(dateString) {
+  window.formatDate = function(dateString) {
     if (!dateString) return '-';
     const options = {
       year: 'numeric',
@@ -305,7 +305,7 @@
   }
 
   // Show Detail
-  function showDetail(button) {
+  window.showDetail = function(button) {
     const konsultanId = button.getAttribute('data-konsultan-id');
 
     fetch(`/konsultan/${konsultanId}`, {
@@ -314,12 +314,23 @@
           'Accept': 'application/json'
         }
       })
-      .then(response => response.json())
-      .then(data => {
-        const konsultan = data.data;
+      .then(response => response.text())
+      .then(text => {
+        let data = null;
+        try {
+          data = JSON.parse(text);
+        } catch (err) {
+          console.warn('detail response is not valid JSON, response text:', text);
+          // show raw response in modal for debugging
+          console.debug('Raw response text:', text);
+          throw new Error('Invalid JSON response');
+        }
+
+        console.debug('detail response', data);
+        const konsultan = (data && data.data) ? data.data : data;
 
         // Basic Info
-        document.getElementById('detailNama').textContent = konsultan.nama || '-';
+        document.getElementById('detailNama').textContent = (konsultan && konsultan.nama) ? konsultan.nama : '-';
         document.getElementById('detailNik').textContent = konsultan.nik || '-';
         document.getElementById('detailTl').textContent = formatDate(konsultan.tanggal_lahir);
         document.getElementById('detailEmail').textContent = konsultan.email || '-';
@@ -328,8 +339,9 @@
 
         // Jenis Kelamin Badge
         const jkBadge = document.getElementById('detailJk');
-        jkBadge.textContent = (konsultan.jenis_kelamin || '').charAt(0).toUpperCase() + (konsultan.jenis_kelamin || '').slice(1);
-        jkBadge.className = konsultan.jenis_kelamin === 'laki-laki' ? 'badge bg-label-info' : 'badge bg-label-warning';
+        const jkText = (konsultan && konsultan.jenis_kelamin) ? (konsultan.jenis_kelamin.charAt(0).toUpperCase() + konsultan.jenis_kelamin.slice(1)) : '-';
+        jkBadge.textContent = jkText;
+        jkBadge.className = (konsultan && konsultan.jenis_kelamin === 'laki-laki') ? 'badge bg-label-info' : ((konsultan && konsultan.jenis_kelamin === 'perempuan') ? 'badge bg-label-warning' : 'badge bg-secondary');
 
         // Professional Info
         document.getElementById('detailSpesialisasi').textContent = konsultan.spesialisasi || '-';
@@ -340,8 +352,9 @@
 
         // Status Badge
         const statusBadge = document.getElementById('detailStatus');
-        statusBadge.textContent = (konsultan.status_hubungan || '-').charAt(0).toUpperCase() + (konsultan.status_hubungan || '').slice(1);
-        statusBadge.className = konsultan.status_hubungan === 'aktif' ? 'badge bg-label-success' : 'badge bg-label-danger';
+        const statusText = (konsultan && konsultan.status_hubungan) ? (konsultan.status_hubungan.charAt(0).toUpperCase() + konsultan.status_hubungan.slice(1)) : '-';
+        statusBadge.textContent = statusText;
+        statusBadge.className = (konsultan && konsultan.status_hubungan === 'aktif') ? 'badge bg-label-success' : ((konsultan && konsultan.status_hubungan === 'non-aktif') ? 'badge bg-label-danger' : 'badge bg-secondary');
 
         // Education
         document.getElementById('detailPendidikan').textContent = konsultan.pendidikan_terakhir || '-';
@@ -349,9 +362,9 @@
 
         // Set Avatar
         const avatarNum = (konsultanId % 4) + 1;
-        const avatarPath = '/assets/img/avatars/' + avatarNum + '.svg';
+        const avatarPath = (konsultan && konsultan.avatar_path) ? konsultan.avatar_path : '/assets/img/avatars/' + avatarNum + '.svg';
         document.getElementById('detailAvatar').src = avatarPath;
-        console.log('Avatar path:', avatarPath); // Debug
+        console.debug('Avatar path:', avatarPath); // Debug
       })
       .catch(error => {
         console.error('Error:', error);
@@ -360,23 +373,33 @@
   }
 
   // Delete Data
-  function deleteData(button) {
+  window.deleteData = function(button) {
     const konsultanId = button.getAttribute('data-konsultan-id');
 
     if (confirm('Apakah Anda yakin ingin menghapus konsultan ini?')) {
+      // Some servers or environments block DELETE; send POST with _method override
       fetch(`/konsultan/${konsultanId}`, {
-          method: 'DELETE',
+          method: 'POST',
           headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest',
-          }
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: new URLSearchParams({
+            _method: 'DELETE',
+            _token: window.csrfToken
+          })
         })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            location.reload();
+            // remove table row
+            const row = document.getElementById('row-' + konsultanId);
+            if (row) row.remove();
+
+            // show success toast (use shared helper)
+            window.showToast && window.showToast('Data konsultan berhasil dihapus', 'success');
           } else {
-            alert(data.message);
+            alert(data.message || 'Gagal menghapus data');
           }
         })
         .catch(error => {
@@ -385,5 +408,77 @@
         });
     }
   }
+
+  // Note: explicit button bindings are used below; removed global delegation to avoid double-calls
+
+  // Ensure buttons have explicit listeners (in case delegation misses due to event ordering)
+  function bindDetailButtons() {
+    const detailButtons = document.querySelectorAll('.btn-detail');
+    detailButtons.forEach(btn => {
+      // avoid double-binding
+      if (!btn.__detailBound) {
+        btn.addEventListener('click', function(ev) {
+          try {
+            if (typeof window.showDetail === 'function') {
+              window.showDetail(btn);
+            } else {
+              console.error('showDetail not defined on click');
+            }
+          } catch (err) {
+            console.error('Error in detail button handler', err);
+          }
+        });
+        btn.__detailBound = true;
+      }
+    });
+
+    const deleteButtons = document.querySelectorAll('.btn-delete');
+    deleteButtons.forEach(btn => {
+      if (!btn.__deleteBound) {
+        btn.addEventListener('click', function(ev) {
+          try {
+            if (typeof window.deleteData === 'function') {
+              window.deleteData(btn);
+            } else {
+              console.error('deleteData not defined on click');
+            }
+          } catch (err) {
+            console.error('Error in delete button handler', err);
+          }
+        });
+        btn.__deleteBound = true;
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindDetailButtons);
+  } else {
+    bindDetailButtons();
+  }
+
+  // Generic toast helper (matches other pages)
+  window.showToast = function(message, type = 'success') {
+    let toast = document.getElementById('customToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'customToast';
+      toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-4';
+      toast.style.zIndex = 9999;
+      toast.innerHTML = '<div class="d-flex"><div class="toast-body"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+      document.body.appendChild(toast);
+    } else {
+      toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-4';
+    }
+    toast.querySelector('.toast-body').textContent = message;
+    var bsToast = window.bootstrap && typeof window.bootstrap.Toast === 'function' ? window.bootstrap.Toast.getOrCreateInstance(toast, {
+      delay: 2000
+    }) : null;
+    if (bsToast) bsToast.show();
+    else {
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+  }
 </script>
-@endsection
+@endpush

@@ -377,7 +377,28 @@
         })
         .then(response => {
           if (response.ok) {
-            location.reload();
+            // remove table row without full reload
+            const row = document.getElementById('row-' + karyawanId);
+            if (row) row.remove();
+
+            // use global showToast if available, otherwise show alert as fallback
+            if (typeof window.showToast === 'function') {
+              window.showToast('Data karyawan berhasil dihapus', 'success');
+            } else if (window.bootstrap && typeof window.bootstrap.Toast === 'function') {
+              // create a temporary bootstrap toast
+              const toast = document.createElement('div');
+              toast.className = 'toast align-items-center text-bg-success border-0 position-fixed bottom-0 end-0 m-4';
+              toast.style.zIndex = 9999;
+              toast.innerHTML = '<div class="d-flex"><div class="toast-body">Data karyawan berhasil dihapus</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+              document.body.appendChild(toast);
+              const bsToast = window.bootstrap.Toast.getOrCreateInstance(toast, {
+                delay: 2000
+              });
+              bsToast.show();
+              setTimeout(() => toast.remove(), 2500);
+            } else {
+              alert('Data karyawan berhasil dihapus');
+            }
           } else {
             return response.json().then(data => {
               throw new Error(data.message || 'Gagal menghapus data');
