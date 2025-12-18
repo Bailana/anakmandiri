@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
+use App\Services\ActivityService;
 
 class AuthController extends Controller
 {
@@ -28,6 +29,9 @@ class AuthController extends Controller
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
       $request->session()->regenerate();
 
+      // Log login activity
+      ActivityService::logLogin();
+
       return redirect()->intended('/dashboard');
     }
 
@@ -39,6 +43,9 @@ class AuthController extends Controller
   // Handle logout
   public function logout(Request $request)
   {
+    // Log logout activity for current user
+    ActivityService::logLogout();
+
     Auth::logout();
 
     $request->session()->invalidate();

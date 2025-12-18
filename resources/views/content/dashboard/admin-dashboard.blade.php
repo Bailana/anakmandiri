@@ -40,7 +40,7 @@
   <div class="col-12">
     <div class="row g-4">
       @foreach($dashboardData['stats'] as $stat)
-      <div class="col-lg-3 col-sm-6">
+      <div class="col">
         <div class="card h-100">
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between">
@@ -63,6 +63,27 @@
   @endif
 
   <!-- Users Distribution Chart -->
+  <!-- Total Active Anak Didik (placed left of Users Distribution Chart) -->
+  @if(isset($dashboardData['total_anak_didik_active']))
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="card-title m-0">Anak Didik Aktif</h5>
+        <p class="small text-muted mb-0">Total anak didik yang sedang aktif</p>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-between">
+        <div>
+          <h2 class="mb-0">{{ $dashboardData['total_anak_didik_active'] }}</h2>
+        </div>
+        <div class="avatar">
+          <div class="avatar-initial bg-success rounded">
+            <i class="icon-base ri ri-group-line icon-24px"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  @endif
   @if(isset($dashboardData['chartData']))
   <div class="col-lg-6">
     <div class="card h-100">
@@ -95,17 +116,24 @@
   <!-- Recent Activity -->
   <div class="col-12">
     <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">Aktivitas Terbaru</h5>
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <div>
+          <h5 class="card-title m-0">Aktivitas Terbaru</h5>
+          <p class="small text-muted mb-0">Menampilkan aktivitas hari ini</p>
+        </div>
+        <div>
+          <span class="badge bg-primary"><i class="ri-calendar-line me-1"></i>Hari ini</span>
+        </div>
       </div>
       <div class="table-responsive">
         <table class="table table-hover mb-0">
           <thead class="table-light">
             <tr>
               <th>Waktu</th>
+              <th>Role</th>
               <th>Pengguna</th>
               <th>Aktivitas</th>
-              <th>Status</th>
+              <th>IP</th>
             </tr>
           </thead>
           <tbody>
@@ -115,33 +143,37 @@
               <td>
                 <small class="text-muted">{{ $activity->created_at->diffForHumans() }}</small>
               </td>
-              <td>
-                @php
-                $roleColors = [
-                'admin' => 'primary',
-                'guru' => 'primary',
-                'konsultan' => 'warning',
-                'terapis' => 'info',
-                'karyawan' => 'secondary',
-                ];
-                $roleName = ucfirst($activity->user->role);
-                $roleBgColor = $roleColors[$activity->user->role] ?? 'secondary';
-                @endphp
-                <span class="badge bg-{{ $roleBgColor }}">{{ $roleName }}</span> {{ $activity->user->name }}
-              </td>
+              @php
+              $roleColors = [
+              'admin' => 'primary',
+              'guru' => 'primary',
+              'konsultan' => 'warning',
+              'terapis' => 'info',
+              'karyawan' => 'secondary',
+              ];
+              $roleName = $activity->user ? ucfirst($activity->user->role) : '-';
+              $roleBgColor = $activity->user ? ($roleColors[$activity->user->role] ?? 'secondary') : 'secondary';
+              @endphp
+              <td><span class="badge bg-{{ $roleBgColor }}">{{ $roleName }}</span></td>
+              <td>{{ $activity->user ? $activity->user->name : '-' }}</td>
               <td>{{ $activity->description }}</td>
-              <td><span class="badge bg-success">Sukses</span></td>
+              <td>{{ $activity->ip_address }}</td>
             </tr>
             @endforeach
             @else
             <tr>
-              <td colspan="4" class="text-center text-muted py-4">
+              <td colspan="5" class="text-center text-muted py-4">
                 Belum ada aktivitas
               </td>
             </tr>
             @endif
           </tbody>
         </table>
+      </div>
+      <div class="card-footer">
+        <div class="d-flex justify-content-end">
+          {!! $dashboardData['activities']->links('pagination::bootstrap-5') !!}
+        </div>
       </div>
     </div>
   </div>

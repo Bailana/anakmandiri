@@ -153,6 +153,14 @@ use Illuminate\Support\Facades\Route;
         @endif
         @endif
         @endforeach
+        @if(auth()->check() && auth()->user()->role === 'admin')
+        <li class="menu-item {{ Route::currentRouteName() === 'activity.logs' ? 'active' : '' }}">
+            <a href="{{ route('activity.logs') }}" class="menu-link">
+                <i class="ri ri-list-unordered"></i>
+                <div>Log Aktivitas</div>
+            </a>
+        </li>
+        @endif
     </ul>
 
 </aside>

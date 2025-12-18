@@ -152,6 +152,9 @@ Route::middleware(['auth'])->group(function () {
   Route::get('anak-didik', [App\Http\Controllers\AnakDidikController::class, 'index'])->name('anak-didik.index');
   // Resource route harus sebelum show manual agar edit tidak bentrok
   Route::middleware(['auth', 'role:admin'])->group(function () {
+    // Activity Logs (admin only)
+    Route::get('activity-logs', [App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity.logs');
+    Route::get('activity-logs/export', [App\Http\Controllers\ActivityLogController::class, 'export'])->name('activity.logs.export');
     Route::resource('anak-didik', 'App\Http\Controllers\AnakDidikController')->except(['index', 'show', 'show']);
   });
   Route::get('anak-didik/{anak_didik}', [App\Http\Controllers\AnakDidikController::class, 'show'])

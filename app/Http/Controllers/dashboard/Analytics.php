@@ -5,6 +5,8 @@ namespace App\Http\Controllers\dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\AnakDidik;
+use App\Models\Activity;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +52,11 @@ class Analytics extends Controller
       ->pluck('count', 'role')
       ->toArray();
 
+    // Total active anak didik (those with an active therapy program)
+    $totalActiveAnakDidik = AnakDidik::whereHas('therapyPrograms', function ($q) {
+      $q->where('is_active', true);
+    })->count();
+
     // Data anak didik per bulan dalam 1 tahun
     $currentYear = date('Y');
     $anakDidikPerMonth = AnakDidik::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
@@ -67,6 +74,10 @@ class Analytics extends Controller
     }
 
     return [
+      'activities' => Activity::with('user')
+        ->whereDate('created_at', Carbon::today())
+        ->orderBy('created_at', 'desc')
+        ->paginate(10),
       'title' => 'Admin Dashboard',
       'totalUsers' => $totalUsers,
       'usersByRole' => $usersByRole,
@@ -95,6 +106,12 @@ class Analytics extends Controller
         'title' => 'Data Anak Didik Masuk per Bulan (' . $currentYear . ')'
       ],
       'stats' => [
+        [
+          'label' => 'Anak Didik Aktif',
+          'value' => $totalActiveAnakDidik,
+          'color' => 'success',
+          'icon' => 'ri-group-line'
+        ],
         [
           'label' => 'Total Users',
           'value' => $totalUsers,
