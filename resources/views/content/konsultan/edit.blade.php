@@ -51,7 +51,7 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">NIK</label>
-                  <input type="text" name="nik" class="form-control @error('nik') is-invalid @enderror" placeholder="Nomor Identitas Kependudukan" value="{{ old('nik', $konsultan->nik) }}">
+                  <input type="text" inputmode="numeric" maxlength="16" pattern="\d*" oninput="this.value=this.value.replace(/\D/g,'').slice(0,16)" name="nik" class="form-control @error('nik') is-invalid @enderror" placeholder="Nomor Identitas Kependudukan" value="{{ old('nik', $konsultan->nik) }}">
                   @error('nik')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -67,7 +67,7 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">No Telepon</label>
-                  <input type="text" name="no_telepon" class="form-control @error('no_telepon') is-invalid @enderror" placeholder="08xxxxxxxxxx" value="{{ old('no_telepon', $konsultan->no_telepon) }}">
+                  <input type="text" inputmode="numeric" maxlength="13" pattern="\d*" oninput="this.value=this.value.replace(/\D/g,'').slice(0,13)" name="no_telepon" class="form-control @error('no_telepon') is-invalid @enderror" placeholder="08xxxxxxxxxx" value="{{ old('no_telepon', $konsultan->no_telepon) }}">
                   @error('no_telepon')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror

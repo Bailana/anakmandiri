@@ -171,8 +171,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('program/{id}/approve', [App\Http\Controllers\ProgramController::class, 'approve'])->name('program.approve');
     Route::resource('pengguna', 'App\Http\Controllers\PenggunaController');
   });
-  // Allow konsultan and terapis to view program index/show, but only konsultan can create/store
-  Route::middleware(['auth', 'role:konsultan,terapis'])->group(function () {
+  // Allow konsultan, terapis and admin to view program index/show (include admin so admin isn't blocked by later route registration)
+  Route::middleware(['auth', 'role:admin,konsultan,terapis'])->group(function () {
     Route::resource('program', 'App\Http\Controllers\ProgramController')->only(['index', 'show']);
   });
   Route::middleware(['auth', 'role:konsultan'])->group(function () {

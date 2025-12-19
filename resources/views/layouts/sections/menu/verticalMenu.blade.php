@@ -50,6 +50,10 @@ use Illuminate\Support\Facades\Route;
         ['admin', 'konsultan', 'terapis']))) {
         $showMenu = false;
         }
+        // Pastikan admin selalu dapat melihat Observasi & Evaluasi (program.index)
+        if (isset($menu->slug) && $menu->slug === 'program.index' && auth()->check() && auth()->user()->role === 'admin') {
+        $showMenu = true;
+        }
         // Tampilkan menu program-anak untuk admin, konsultan, guru, dan terapis
         if (isset($menu->slug) && ( $menu->slug === 'program-anak.index' || $menu->slug === 'program-anak') && (!auth()->check() || !in_array(auth()->user()->role,
         ['admin', 'konsultan', 'guru', 'terapis']))) {

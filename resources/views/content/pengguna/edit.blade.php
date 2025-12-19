@@ -32,8 +32,8 @@
           <option value="terapis" @if($user->role=='terapis') selected @endif>Terapis</option>
         </select>
       </div>
-      <button type="submit" class="btn btn-primary">Update</button>
-      <a href="{{ route('pengguna.index') }}" class="btn btn-secondary">Batal</a>
+      <button type="submit" class="btn btn-primary"><i class="ri-save-line me-2"></i>Perbarui</button>
+      <a href="{{ route('pengguna.index') }}" class="btn btn-outline-secondary me-2"><i class="ri-close-line me-2"></i>Batal</a>
     </form>
   </div>
 </div>

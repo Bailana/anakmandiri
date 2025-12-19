@@ -194,6 +194,19 @@ class ProgramController extends Controller
         $q->where('guru_fokus_id', $guruFokusId);
       });
     }
+    // Filter pencarian berdasarkan nama Anak Didik jika ada
+    if ($request->filled('search')) {
+      $search = $request->search;
+      $queryWicara->whereHas('anakDidik', function ($q) use ($search) {
+        $q->where('nama', 'like', "%{$search}%");
+      });
+      $querySI->whereHas('anakDidik', function ($q) use ($search) {
+        $q->where('nama', 'like', "%{$search}%");
+      });
+      $queryPsikologi->whereHas('anakDidik', function ($q) use ($search) {
+        $q->where('nama', 'like', "%{$search}%");
+      });
+    }
     // Ambil data, tambahkan field sumber
     $dataWicara = $queryWicara->get()->map(function ($item) {
       $item->sumber = 'wicara';

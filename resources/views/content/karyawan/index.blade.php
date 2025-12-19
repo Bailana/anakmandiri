@@ -62,8 +62,7 @@
       <select name="status_kepegawaian" class="form-select" style="max-width: 150px;">
         <option value="">Status</option>
         <option value="tetap" {{ request('status_kepegawaian') === 'tetap' ? 'selected' : '' }}>Tetap</option>
-        <option value="kontrak" {{ request('status_kepegawaian') === 'kontrak' ? 'selected' : '' }}>Kontrak</option>
-        <option value="honorer" {{ request('status_kepegawaian') === 'honorer' ? 'selected' : '' }}>Honorer</option>
+        <option value="training" {{ request('status_kepegawaian') === 'training' ? 'selected' : '' }}>Training</option>
       </select>
 
       <!-- Action Buttons -->
@@ -114,7 +113,7 @@
               <td>{{ $karyawan->departemen ?? '-' }}</td>
               <td>{{ $karyawan->email ?? '-' }}</td>
               <td>
-                <span class="badge bg-label-{{ $karyawan->status_kepegawaian === 'tetap' ? 'success' : ($karyawan->status_kepegawaian === 'kontrak' ? 'warning' : 'info') }}">
+                <span class="badge bg-label-{{ $karyawan->status_kepegawaian === 'tetap' ? 'success' : ($karyawan->status_kepegawaian === 'training' ? 'warning' : 'info') }}">
                   {{ ucfirst($karyawan->status_kepegawaian ?? '-') }}
                 </span>
               </td>
@@ -337,7 +336,7 @@
         // Status Badge
         const statusBadge = document.getElementById('detailStatus');
         statusBadge.textContent = (karyawan.status_kepegawaian || '-').charAt(0).toUpperCase() + (karyawan.status_kepegawaian || '').slice(1);
-        statusBadge.className = karyawan.status_kepegawaian === 'tetap' ? 'badge bg-label-success' : (karyawan.status_kepegawaian === 'kontrak' ? 'badge bg-label-warning' : 'badge bg-label-info');
+        statusBadge.className = karyawan.status_kepegawaian === 'tetap' ? 'badge bg-label-success' : (karyawan.status_kepegawaian === 'training' ? 'badge bg-label-warning' : 'badge bg-label-info');
 
         // Education
         document.getElementById('detailPendidikan').textContent = karyawan.pendidikan_terakhir || '-';

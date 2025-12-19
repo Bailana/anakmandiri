@@ -16,7 +16,7 @@
             <h4 class="mb-0">Observasi/Evaluasi</h4>
             <p class="text-body-secondary mb-0">Kelola observasi/evaluasi anak didik</p>
           </div>
-          @if(auth()->check() && in_array(auth()->user()->role, ['admin','konsultan']))
+          @if(auth()->check() && auth()->user()->role === 'konsultan')
           <a href="{{ route('program.create') }}" class="btn btn-primary">
             <i class="ri-add-line me-2"></i>Tambah Observasi/Evaluasi
           </a>
