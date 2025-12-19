@@ -45,9 +45,9 @@ use Illuminate\Support\Facades\Route;
         ) {
         $showMenu = false;
         }
-        // Tampilkan menu program untuk admin, konsultan, dan terapis
+        // Tampilkan menu program untuk admin, konsultan, terapis, dan guru (guru hanya lihat)
         if (isset($menu->slug) && $menu->slug === 'program.index' && (!auth()->check() || !in_array(auth()->user()->role,
-        ['admin', 'konsultan', 'terapis']))) {
+        ['admin', 'konsultan', 'terapis', 'guru']))) {
         $showMenu = false;
         }
         // Pastikan admin selalu dapat melihat Observasi & Evaluasi (program.index)

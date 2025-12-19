@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             KaryawanSeeder::class,
             KonsultanSeeder::class,
             AssignGuruFokusSeeder::class,
+            ProgramKonsultanSeeder::class,
         ]);
     }
 }

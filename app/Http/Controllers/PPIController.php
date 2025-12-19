@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 use App\Models\Konsultan;
+use App\Models\Karyawan;
 use App\Http\Controllers\GuruAnakDidikController;
 
 class PPIController extends Controller
@@ -26,6 +27,11 @@ class PPIController extends Controller
       $query->where(function ($s) use ($q) {
         $s->where('nama', 'like', "%{$q}%")->orWhere('nis', 'like', "%{$q}%");
       });
+    }
+
+    // Filter by guru fokus (Karyawan id)
+    if ($request->filled('guru_fokus')) {
+      $query->where('guru_fokus_id', $request->guru_fokus);
     }
 
     $perPage = 15;
@@ -52,11 +58,73 @@ class PPIController extends Controller
       $accessMap[$anak->id] = $can;
     }
 
+    // Provide list of guru fokus options for filter dropdown
+    $guruOptions = Karyawan::whereNotNull('posisi')
+      ->whereRaw('LOWER(posisi) LIKE ?', ['%guru%'])
+      ->orderBy('nama')
+      ->get();
+
+    $user = Auth::user();
+    $canApprovePPI = $this->isKonsultanPendidikan($user);
+
     return view('content.ppi.index', [
       'anakList' => $anakPaginator,
       'accessMap' => $accessMap,
       'search' => $request->search ?? null,
+      'guruOptions' => $guruOptions,
+      'guru_fokus' => $request->guru_fokus ?? null,
+      'canApprovePPI' => $canApprovePPI,
     ]);
+  }
+
+  /**
+   * API: Riwayat PPI untuk anak didik tertentu
+   */
+  public function riwayat($anakId)
+  {
+    $items = \App\Models\ProgramAnak::where('anak_didik_id', $anakId)
+      ->orderByDesc('created_at')
+      ->get();
+
+    $riwayat = $items->map(function ($p) {
+      return [
+        'id' => $p->id,
+        'nama_program' => $p->nama_program,
+        'periode_mulai' => $p->periode_mulai ? $p->periode_mulai->format('Y-m-d') : null,
+        'periode_selesai' => $p->periode_selesai ? $p->periode_selesai->format('Y-m-d') : null,
+        'status' => $p->status,
+        'keterangan' => $p->keterangan ?? null,
+        'created_at' => $p->created_at ? $p->created_at->format('d-m-Y H:i') : '',
+      ];
+    });
+
+    return response()->json([
+      'success' => true,
+      'riwayat' => $riwayat,
+    ]);
+  }
+
+  /**
+   * Approve a PPI entry (only konsultan pendidikan allowed)
+   */
+  public function approve(Request $request, $id)
+  {
+    $user = Auth::user();
+    if (!$this->isKonsultanPendidikan($user)) {
+      return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+    }
+
+    $p = \App\Models\ProgramAnak::findOrFail($id);
+    $anak = $p->anakDidik;
+    // Require that anak has a guru_fokus assigned
+    if (!$anak || !$anak->guru_fokus_id) {
+      return response()->json(['success' => false, 'message' => 'Tidak ada guru fokus untuk anak ini'], 400);
+    }
+
+    $p->status = 'disetujui';
+    $p->save();
+
+    return response()->json(['success' => true, 'message' => 'PPI berhasil disetujui']);
   }
 
   public function create()

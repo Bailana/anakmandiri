@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProgramController;
 
 // Routes that allow viewing riwayat and detail should be accessible to terapis as well
-Route::middleware(['auth', 'role:admin,konsultan,terapis'])->group(function () {
+Route::middleware(['auth', 'role:admin,konsultan,terapis,guru'])->group(function () {
   // Observasi/Evaluasi dari tabel assessments (lama) - view only
   Route::get('/program/riwayat/{anakDidikId}', [ProgramController::class, 'riwayatObservasi'])->name('program.riwayat');
 

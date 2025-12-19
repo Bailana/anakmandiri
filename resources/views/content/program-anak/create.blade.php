@@ -49,10 +49,13 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td><input type="text" name="program_items[0][kode_program]" class="form-control" required></td>
-                    <td><input type="text" name="program_items[0][nama_program]" class="form-control" required></td>
-                    <td><textarea name="program_items[0][tujuan]" class="form-control" rows="1" required></textarea></td>
-                    <td><textarea name="program_items[0][aktivitas]" class="form-control" rows="1" required></textarea></td>
+                    <td>
+                      <select name="program_items[0][kode_program]" class="form-select kode-select"></select>
+                      <input type="hidden" name="program_items[0][program_konsultan_id]" class="program-konsultan-id">
+                    </td>
+                    <td><input type="text" name="program_items[0][nama_program]" class="form-control nama-input" required></td>
+                    <td><textarea name="program_items[0][tujuan]" class="form-control tujuan-input" rows="1" required></textarea></td>
+                    <td><textarea name="program_items[0][aktivitas]" class="form-control aktivitas-input" rows="1" required></textarea></td>
                     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
                   </tr>
                 </tbody>
@@ -110,6 +113,14 @@
               <textarea name="keterangan" id="keterangan" class="form-control"></textarea>
             </div>
           </div>
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="is_suggested" name="is_suggested" value="1">
+                <label class="form-check-label" for="is_suggested">Sarankan terapi</label>
+              </div>
+            </div>
+          </div>
           <div class="d-flex justify-content-start gap-2">
             <button type="submit" class="btn btn-primary"><i class="ri-save-line me-2"></i>Simpan</button>
             <a href="{{ route('program-anak.index') }}" class="btn btn-outline-danger"><i class="ri-close-line me-2"></i>Batal</a>
@@ -121,26 +132,98 @@
 </div>
 @push('page-script')
 <script>
+  // program master templates grouped by konsultan_id
+  const programMastersByKonsultan = @json($programMasters ?? []);
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
   let barisIdx = 1;
+
+  function buildKodeSelectHtml(idx) {
+    const konsultanId = document.getElementById('konsultan_id').value || '';
+    const items = (programMastersByKonsultan[konsultanId] || []);
+    let html = `<select name="program_items[${idx}][kode_program]" class="form-select kode-select"><option value="">Pilih Kode</option>`;
+    items.forEach(item => {
+      const nama = escapeHtml(item.nama_program || item.nama || '');
+      const tujuan = escapeHtml(item.tujuan || '');
+      const aktivitas = escapeHtml(item.aktivitas || '');
+      const kode = escapeHtml(item.kode_program || '');
+      const id = item.id || '';
+      html += `<option value="${kode}" data-id="${id}" data-nama="${nama}" data-tujuan="${tujuan}" data-aktivitas="${aktivitas}">${kode} - ${nama}</option>`;
+    });
+    html += '</select>';
+    return html;
+  }
+
   document.getElementById('btnTambahBaris').addEventListener('click', function() {
     const tbody = document.querySelector('#programItemsTable tbody');
     const tr = document.createElement('tr');
     tr.innerHTML = `
-    <td><input type="text" name="program_items[${barisIdx}][kode_program]" class="form-control" required></td>
-    <td><input type="text" name="program_items[${barisIdx}][nama_program]" class="form-control" required></td>
-    <td><textarea name="program_items[${barisIdx}][tujuan]" class="form-control" rows="1" required></textarea></td>
-    <td><textarea name="program_items[${barisIdx}][aktivitas]" class="form-control" rows="1" required></textarea></td>
+    <td>${buildKodeSelectHtml(barisIdx)}<input type="hidden" name="program_items[${barisIdx}][program_konsultan_id]" class="program-konsultan-id"></td>
+    <td><input type="text" name="program_items[${barisIdx}][nama_program]" class="form-control nama-input" required></td>
+    <td><textarea name="program_items[${barisIdx}][tujuan]" class="form-control tujuan-input" rows="1" required></textarea></td>
+    <td><textarea name="program_items[${barisIdx}][aktivitas]" class="form-control aktivitas-input" rows="1" required></textarea></td>
     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
   `;
     tbody.appendChild(tr);
     barisIdx++;
   });
+
+  // delete row
   document.querySelector('#programItemsTable').addEventListener('click', function(e) {
     if (e.target.closest('.btn-hapus-baris')) {
       const tr = e.target.closest('tr');
       if (tr.parentNode.children.length > 1) tr.remove();
     }
   });
+
+  // when a kode-select changes, autofill nama/tujuan/aktivitas if they are empty
+  document.querySelector('#programItemsTable').addEventListener('change', function(e) {
+    if (e.target.classList.contains('kode-select')) {
+      const sel = e.target;
+      const tr = sel.closest('tr');
+      const namaInput = tr.querySelector('.nama-input');
+      const tujuanInput = tr.querySelector('.tujuan-input');
+      const aktivitasInput = tr.querySelector('.aktivitas-input');
+      const pkInput = tr.querySelector('.program-konsultan-id');
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt) return;
+      const nama = opt.getAttribute('data-nama') || '';
+      const tujuan = opt.getAttribute('data-tujuan') || '';
+      const aktivitas = opt.getAttribute('data-aktivitas') || '';
+      const pid = opt.getAttribute('data-id') || '';
+      // Always set fields to selected template values (override)
+      if (namaInput) namaInput.value = nama;
+      if (tujuanInput) tujuanInput.value = tujuan;
+      if (aktivitasInput) aktivitasInput.value = aktivitas;
+      if (pkInput) pkInput.value = pid;
+    }
+  });
+
+  // update kode-select options when konsultan changes
+  function refreshKodeOptions() {
+    const konsultanId = document.getElementById('konsultan_id').value || '';
+    const items = (programMastersByKonsultan[konsultanId] || []);
+    document.querySelectorAll('.kode-select').forEach(sel => {
+      const prev = sel.value;
+      // clear
+      sel.innerHTML = '<option value="">Pilih Kode</option>';
+      items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.kode_program || '';
+        opt.setAttribute('data-nama', item.nama_program || item.nama || '');
+        opt.setAttribute('data-tujuan', item.tujuan || '');
+        opt.setAttribute('data-aktivitas', item.aktivitas || '');
+        opt.textContent = (item.kode_program || '') + ' - ' + (item.nama_program || item.nama || '');
+        sel.appendChild(opt);
+      });
+      // restore previous selection if still available
+      sel.value = prev;
+    });
+  }
 
   // Tampilkan/hidden form daftar program anak & field psikologi sesuai konsultan
   function toggleDaftarProgramAnak() {
@@ -161,10 +244,15 @@
     } else {
       psikologiFields.style.display = 'none';
     }
+    // refresh kode options for all rows
+    refreshKodeOptions();
   }
   document.getElementById('konsultan_id').addEventListener('change', toggleDaftarProgramAnak);
+
   // Inisialisasi saat load
-  toggleDaftarProgramAnak();
+  document.addEventListener('DOMContentLoaded', function() {
+    toggleDaftarProgramAnak();
+  });
 </script>
 @endpush
 @endsection
