@@ -40,7 +40,8 @@ class ProgramAnakController extends Controller
         // ignore parse errors and do not apply periode filter
       }
     }
-    $programAnak = $query->get();
+    // use pagination so the view can call paginator methods (currentPage, perPage, firstItem, links, etc.)
+    $programAnak = $query->paginate(10)->withQueryString();
     $currentKonsultanSpesRaw = null;
     if (auth()->check() && auth()->user()->role === 'konsultan') {
       $user = auth()->user();
@@ -63,6 +64,160 @@ class ProgramAnakController extends Controller
     // load program master grouped by konsultan for populating dropdowns in the form
     $programMasters = ProgramKonsultan::all()->groupBy('konsultan_id');
     return view('content.program-anak.create', compact('anakDidiks', 'konsultans', 'programMasters'));
+  }
+
+  public function storeProgramKonsultan(Request $request)
+  {
+    $request->validate([
+      'kode_program' => 'nullable|string|max:100',
+      'nama_program' => 'required|string|max:255',
+      'tujuan' => 'nullable|string',
+      'aktivitas' => 'nullable|string',
+    ]);
+
+    // normalize kode_program: remove non-alphanumeric and uppercase (no hyphens)
+    $rawKode = $request->input('kode_program');
+    $kodeSanitized = $rawKode ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $rawKode)) : null;
+
+    ProgramKonsultan::create([
+      'konsultan_id' => (function () {
+        $user = auth()->user();
+        if (!$user) return null;
+        $konsultanId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
+        if (!$konsultanId && $user->email) {
+          $konsultanId = \App\Models\Konsultan::where('email', $user->email)->value('id');
+        }
+        if (!$konsultanId) {
+          $konsultanId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
+        }
+        return $konsultanId;
+      })(),
+      'kode_program' => $kodeSanitized,
+      'nama_program' => $request->input('nama_program'),
+      'tujuan' => $request->input('tujuan'),
+      'aktivitas' => $request->input('aktivitas'),
+    ]);
+
+    return redirect()->back()->with('success', 'Daftar program berhasil ditambahkan');
+  }
+
+  public function daftarProgramKonsultan()
+  {
+    $query = ProgramKonsultan::with('konsultan');
+    if (auth()->check() && auth()->user()->role === 'konsultan') {
+      $user = auth()->user();
+      $spec = \App\Models\Konsultan::where('user_id', $user->id)->value('spesialisasi');
+      if (!$spec && $user->email) {
+        $spec = \App\Models\Konsultan::where('email', $user->email)->value('spesialisasi');
+      }
+      if (!$spec) {
+        $spec = \App\Models\Konsultan::where('nama', $user->name)->value('spesialisasi');
+      }
+      if ($spec) {
+        $query->whereHas('konsultan', function ($q) use ($spec) {
+          $q->where('spesialisasi', 'like', "%$spec%");
+        });
+      }
+    }
+
+    // apply search filter across kode_program, nama_program, tujuan, aktivitas
+    if (request('search')) {
+      $s = request('search');
+      $query->where(function ($q) use ($s) {
+        $q->where('kode_program', 'like', "%$s%")
+          ->orWhere('nama_program', 'like', "%$s%")
+          ->orWhere('tujuan', 'like', "%$s%")
+          ->orWhere('aktivitas', 'like', "%$s%");
+      });
+    }
+
+    // order by kode_program prefix then numeric suffix (natural ordering like WIC001, WIC002)
+    // Use MySQL 8+ regex functions if available: order by prefix (non-numeric part) then numeric suffix cast to integer
+    try {
+      // strip non-alphanumeric characters when ordering (so SI-001 and SI001 are treated same)
+      $programs = $query->orderByRaw("REGEXP_REPLACE(REGEXP_REPLACE(kode_program, '[^A-Za-z0-9]', ''), '\\\\d+$', '') ASC")
+        ->orderByRaw("CAST(REGEXP_SUBSTR(REGEXP_REPLACE(kode_program, '[^0-9]', ''), '\\\\d+$') AS UNSIGNED) ASC")
+        ->paginate(10)->withQueryString();
+    } catch (\Exception $e) {
+      // fallback to ordering by sanitized kode_program string if regex functions not available
+      $programs = $query->orderByRaw("REPLACE(REPLACE(REPLACE(kode_program,'-',''),' ',''),'.','') ASC")->paginate(10)->withQueryString();
+    }
+
+    // determine prefix based on konsultan spesialisasi (if available)
+    $prefix = null;
+    if (isset($spec) && $spec) {
+      $s = strtolower($spec);
+      if (str_contains($s, 'wicara') || str_contains($s, 'wic')) {
+        $prefix = 'WIC';
+      } elseif (str_contains($s, 'sensori') || str_contains($s, 'integrasi')) {
+        $prefix = 'SI';
+      } elseif (str_contains($s, 'psikologi') || str_contains($s, 'psiko')) {
+        $prefix = 'PS';
+      } else {
+        // take first 3 letters of spesialisasi alphanumeric
+        $clean = preg_replace('/[^A-Za-z0-9]/', '', strtoupper($spec));
+        $prefix = substr($clean, 0, 3) ?: 'PRG';
+      }
+    }
+
+    // find last kode matching prefix (if prefix available) or any last kode
+    if ($prefix) {
+      // match regardless of non-alphanumeric separators by stripping them in DB like query
+      $lastKode = ProgramKonsultan::whereRaw("REPLACE(REPLACE(REPLACE(kode_program,'-',''),' ','') ,'.','') LIKE ?", [$prefix . '%'])->orderByDesc('id')->value('kode_program');
+    } else {
+      $lastKode = ProgramKonsultan::whereNotNull('kode_program')->orderByDesc('id')->value('kode_program');
+    }
+
+    $nextKode = null;
+    if ($lastKode) {
+      if (preg_match('/^(.*?)(\d+)$/', $lastKode, $m)) {
+        $lastPrefix = preg_replace('/[^A-Za-z0-9]/', '', $m[1]);
+        $num = intval($m[2]) + 1;
+        $digits = strlen($m[2]);
+        // if we derived a prefix, ensure we use it; otherwise use sanitized lastPrefix
+        $usePrefix = $prefix ?? $lastPrefix;
+        $usePrefix = preg_replace('/[^A-Za-z0-9]/', '', $usePrefix);
+        $nextKode = $usePrefix . str_pad($num, $digits, '0', STR_PAD_LEFT);
+      } else {
+        $usePrefix = preg_replace('/[^A-Za-z0-9]/', '', ($prefix ?? $lastKode));
+        $nextKode = $usePrefix . '001';
+      }
+    } else {
+      $nextKode = preg_replace('/[^A-Za-z0-9]/', '', ($prefix ?? 'PRG')) . '001';
+    }
+
+    return view('content.program-anak.daftar-program', compact('programs', 'nextKode'));
+  }
+
+  public function updateProgramKonsultan(Request $request, $id)
+  {
+    $request->validate([
+      'kode_program' => 'nullable|string|max:100',
+      'nama_program' => 'required|string|max:255',
+      'tujuan' => 'nullable|string',
+      'aktivitas' => 'nullable|string',
+    ]);
+
+    $program = ProgramKonsultan::findOrFail($id);
+    // normalize kode_program before update
+    $rawKode = $request->input('kode_program', $program->kode_program);
+    $kodeSanitized = $rawKode ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $rawKode)) : null;
+    $program->update([
+      // keep konsultan_id unchanged to avoid FK changes
+      'kode_program' => $kodeSanitized,
+      'nama_program' => $request->input('nama_program'),
+      'tujuan' => $request->input('tujuan'),
+      'aktivitas' => $request->input('aktivitas'),
+    ]);
+
+    return redirect()->route('program-anak.daftar-program')->with('success', 'Daftar program berhasil diupdate');
+  }
+
+  public function destroyProgramKonsultan($id)
+  {
+    $program = ProgramKonsultan::findOrFail($id);
+    $program->delete();
+    return redirect()->route('program-anak.daftar-program')->with('success', 'Daftar program berhasil dihapus');
   }
 
   public function store(Request $request)

@@ -186,6 +186,10 @@ Route::middleware(['auth'])->group(function () {
   });
 
   Route::middleware(['auth', 'role:admin,konsultan'])->group(function () {
+    Route::post('program-anak/program-konsultan', [App\Http\Controllers\ProgramAnakController::class, 'storeProgramKonsultan'])->name('program-anak.program-konsultan.store');
+    Route::get('program-anak/daftar-program', [App\Http\Controllers\ProgramAnakController::class, 'daftarProgramKonsultan'])->name('program-anak.daftar-program');
+    Route::put('program-anak/program-konsultan/{id}', [App\Http\Controllers\ProgramAnakController::class, 'updateProgramKonsultan'])->name('program-anak.program-konsultan.update');
+    Route::delete('program-anak/program-konsultan/{id}', [App\Http\Controllers\ProgramAnakController::class, 'destroyProgramKonsultan'])->name('program-anak.program-konsultan.destroy');
     Route::resource('program-anak', App\Http\Controllers\ProgramAnakController::class)->except(['index', 'show']);
   });
   Route::middleware(['auth', 'role:admin,konsultan,guru,terapis'])->group(function () {

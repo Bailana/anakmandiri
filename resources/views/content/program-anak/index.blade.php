@@ -12,15 +12,20 @@
           <p class="text-body-secondary mb-0">Kelola program anak didik</p>
         </div>
         @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
-        <a href="{{ route('program-anak.create') }}" class="btn btn-primary">
-          <i class="ri-add-line me-2"></i>Tambah Program Anak
-        </a>
+        <div class="d-flex align-items-center">
+          <a href="{{ route('program-anak.daftar-program') }}" class="btn btn-outline-secondary me-2">
+            <i class="ri-list-unordered me-2"></i>Daftar Program
+          </a>
+          <a href="{{ route('program-anak.create') }}" class="btn btn-primary">
+            <i class="ri-add-line me-2"></i>Tambah Program Anak
+          </a>
+        </div>
         @endif
       </div>
     </div>
   </div>
 </div>
-<div class="row mb-4">
+<div class="row">
   <div class="col-12">
     <form method="GET" action="{{ route('program-anak.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <div class="flex-grow-1" style="min-width:200px;">
@@ -55,7 +60,7 @@
           <tbody>
             @forelse($programAnak as $index => $program)
             <tr>
-              <td>{{ $index + 1 }}</td>
+              <td>{{ ($programAnak->currentPage() - 1) * $programAnak->perPage() + $index + 1 }}</td>
               <td>{{ $program->anakDidik->nama ?? '-' }}</td>
               <td>{{ $program->nama_program }}</td>
               <td>
@@ -122,7 +127,52 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="text-body-secondary">
+          Menampilkan {{ $programAnak->firstItem() ?? 0 }} hingga {{ $programAnak->lastItem() ?? 0 }} dari {{ $programAnak->total() }} data
+        </div>
+        <nav>
+          {{ $programAnak->links('pagination::bootstrap-4') }}
+        </nav>
+      </div>
     </div>
   </div>
 </div>
 @endsection
+
+<!-- Modal: Tambah Daftar Program -->
+<div class="modal fade" id="modalAddProgramMaster" tabindex="-1" aria-labelledby="modalAddProgramMasterLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form action="{{ route('program-anak.program-konsultan.store') }}" method="POST" class="modal-content">
+      @csrf
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAddProgramMasterLabel">Tambah Daftar Program</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Kode Program</label>
+          <input type="text" name="kode_program" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Nama Program</label>
+          <input type="text" name="nama_program" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Tujuan</label>
+          <textarea name="tujuan" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Aktivitas</label>
+          <textarea name="aktivitas" class="form-control" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
