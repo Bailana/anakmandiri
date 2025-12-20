@@ -168,6 +168,25 @@ class ProgramAnakController extends Controller
   }
 
   /**
+   * Return list of ProgramKonsultan for a konsultan as JSON
+   */
+  public function listProgramKonsultan($konsultanId)
+  {
+    $items = ProgramKonsultan::where('konsultan_id', $konsultanId)->orderBy('kode_program')->get();
+    $out = [];
+    foreach ($items as $it) {
+      $out[] = [
+        'id' => $it->id,
+        'kode_program' => $it->kode_program,
+        'nama_program' => $it->nama_program,
+        'tujuan' => $it->tujuan,
+        'aktivitas' => $it->aktivitas,
+      ];
+    }
+    return response()->json(['success' => true, 'program_konsultan' => $out]);
+  }
+
+  /**
    * Set or unset is_suggested for all programs for an anak+konsultan on a given date.
    * Expects JSON body: { suggest: 1|0 }
    */
@@ -508,6 +527,7 @@ class ProgramAnakController extends Controller
       'periode_selesai' => $program->periode_selesai ? $program->periode_selesai->toDateString() : null,
       'anak' => $program->anakDidik ? ['id' => $program->anakDidik->id, 'nama' => $program->anakDidik->nama] : null,
       'konsultan' => $program->programKonsultan && $program->programKonsultan->konsultan ? ['id' => $program->programKonsultan->konsultan->id, 'nama' => $program->programKonsultan->konsultan->nama] : null,
+      'program_konsultan_id' => $program->program_konsultan_id,
       'created_at' => $program->created_at ? $program->created_at->toDateTimeString() : null,
     ];
 

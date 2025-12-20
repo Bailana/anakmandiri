@@ -194,6 +194,7 @@ Route::middleware(['auth'])->group(function () {
   });
   Route::middleware(['auth', 'role:admin,konsultan,guru,terapis'])->group(function () {
     Route::resource('program-anak', App\Http\Controllers\ProgramAnakController::class)->only(['index', 'show']);
+    Route::get('program-anak/program-konsultan/konsultan/{id}/list-json', [App\Http\Controllers\ProgramAnakController::class, 'listProgramKonsultan'])->name('program-anak.program-konsultan.list');
   });
 
   // PPI Routes - Program Pembelajaran Individual (admin, guru & konsultan)

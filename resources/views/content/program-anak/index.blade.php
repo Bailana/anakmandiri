@@ -59,7 +59,7 @@
             <label class="form-check-label" for="groupSuggestToggle">Sarankan Terapi</label>
           </div>
         </div>
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+        <button type="button" class="btn btn-outline-secondary restore-previous-on-close" data-bs-dismiss="modal">Tutup</button>
       </div>
     </div>
   </div>
@@ -88,6 +88,81 @@
     }
   }
 
+  // Generic modal manager: hide any currently open modal, show the target, and restore previous when target closes
+  function pushModalAndShow(targetModalEl) {
+    try {
+      window._modalStack = window._modalStack || [];
+      const openModal = document.querySelector('.modal.show');
+      if (openModal && openModal !== targetModalEl) {
+        const prevId = openModal.id || null;
+        if (prevId) window._modalStack.push(prevId);
+        try {
+          bootstrap.Modal.getOrCreateInstance(openModal).hide();
+        } catch (e) {}
+
+        // mark that this target's restore is already managed
+        targetModalEl.dataset.modalStackManaged = '1';
+        const restore = function() {
+          try {
+            // only restore previous modal when close was triggered by a designated button
+            if (targetModalEl.dataset.restoreOnClose === '1') {
+              const last = (window._modalStack && window._modalStack.length) ? window._modalStack.pop() : null;
+              if (last) {
+                const prevEl = document.getElementById(last);
+                if (prevEl) bootstrap.Modal.getOrCreateInstance(prevEl).show();
+              }
+            } else {
+              // user closed via backdrop/X or other means: drop the stacked id
+              if (window._modalStack && window._modalStack.length) window._modalStack.pop();
+            }
+          } catch (e) {}
+          targetModalEl.removeEventListener('hidden.bs.modal', restore);
+          delete targetModalEl.dataset.modalStackManaged;
+          delete targetModalEl.dataset.restoreOnClose;
+        };
+        targetModalEl.addEventListener('hidden.bs.modal', restore);
+      }
+    } catch (e) {}
+    try {
+      bootstrap.Modal.getOrCreateInstance(targetModalEl).show();
+    } catch (e) {}
+  }
+
+  // Global modal show handler: ensure only one modal is visible at a time.
+  // When a modal is about to show, hide any other open modal and restore it when the new modal closes.
+  document.addEventListener('show.bs.modal', function(e) {
+    try {
+      const target = e.target;
+      // if this modal's restore is already managed by pushModalAndShow, skip global handling
+      if (target && target.dataset && target.dataset.modalStackManaged) return;
+      window._modalStack = window._modalStack || [];
+      const openModal = document.querySelector('.modal.show');
+      if (openModal && openModal !== target) {
+        const prevId = openModal.id || null;
+        if (prevId) window._modalStack.push(prevId);
+        try {
+          bootstrap.Modal.getOrCreateInstance(openModal).hide();
+        } catch (err) {}
+        const restore = function() {
+          try {
+            if (target.dataset && target.dataset.restoreOnClose === '1') {
+              const last = (window._modalStack && window._modalStack.length) ? window._modalStack.pop() : null;
+              if (last) {
+                const prev = document.getElementById(last);
+                if (prev) bootstrap.Modal.getOrCreateInstance(prev).show();
+              }
+            } else {
+              if (window._modalStack && window._modalStack.length) window._modalStack.pop();
+            }
+          } catch (err) {}
+          target.removeEventListener('hidden.bs.modal', restore);
+          delete target.dataset.restoreOnClose;
+        };
+        target.addEventListener('hidden.bs.modal', restore);
+      }
+    } catch (err) {}
+  });
+
   window.showDetailProgramGroup = function(anakDidikId, konsultanId, fallbackId) {
     if (!konsultanId) {
       // fallback to single program detail
@@ -97,8 +172,8 @@
     const modal = new bootstrap.Modal(modalEl);
     const listDiv = document.getElementById('groupProgramList');
     listDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
-    // ensure riwayat modal (if open) is hidden and will be restored when this modal closes
-    hideRiwayatBeforeShow(modalEl);
+    // ensure any open modal is hidden and will be restored when this modal closes
+    pushModalAndShow(modalEl);
     fetch(`/program-anak/riwayat-program/${anakDidikId}/konsultan/${konsultanId}`)
       .then(res => res.json())
       .then(data => {
@@ -163,7 +238,7 @@
     }
     const modalEl = document.getElementById('programGroupModal');
     const modal = new bootstrap.Modal(modalEl);
-    hideRiwayatBeforeShow(modalEl);
+    pushModalAndShow(modalEl);
     const listDiv = document.getElementById('groupProgramList');
     listDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
     const url = `/program-anak/riwayat-program/${anakDidikId}/konsultan/${konsultanId}/date/${encodeURIComponent(dateKey)}`;
@@ -250,7 +325,7 @@
     window._groupSuggest = false;
     window.currentUser = {
       id: @json(Auth::id()),
-      role: @json(optional(Auth::user())-> role),
+      role: @json(optional(Auth::user()) - > role),
       konsultanId: @json($currentKonsultanId ?? null)
     };
     const toggle = document.getElementById('groupSuggestToggle');
@@ -412,13 +487,24 @@
       <!-- Pagination -->
       <div class="card-footer d-flex justify-content-between align-items-center">
         <div class="text-body-secondary">
-          Menampilkan {{ $programAnak->firstItem() ?? 0 }} hingga {{ $programAnak->lastItem() ?? 0 }} dari
-          {{ $programAnak->total() }} data
+          Menampilkan {{ $programAnak->firstItem() ?? 0 }} hingga {{ $programAnak->lastItem() ?? 0 }} dari {{ $programAnak->total() ?? 0 }}
         </div>
         <nav>
           {{ $programAnak->links('pagination::bootstrap-4') }}
         </nav>
       </div>
+
+      <script>
+        // Wire restore-on-close buttons to mark their modal for restoration
+        try {
+          document.querySelectorAll('.restore-previous-on-close').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+              const modal = btn.closest('.modal');
+              if (modal) modal.dataset.restoreOnClose = '1';
+            });
+          });
+        } catch (err) {}
+      </script>
     </div>
   </div>
 </div>
@@ -764,23 +850,25 @@
         <input type="hidden" id="editProgramId">
         <div class="mb-3">
           <label class="form-label">Kode Program</label>
-          <input id="editKodeProgram" class="form-control">
+          <select id="editKodeProgram" class="form-select">
+            <option value="">Memuat...</option>
+          </select>
         </div>
         <div class="mb-3">
           <label class="form-label">Nama Program</label>
-          <input id="editNamaProgram" class="form-control">
+          <input id="editNamaProgram" class="form-control" disabled>
         </div>
         <div class="mb-3">
           <label class="form-label">Tujuan</label>
-          <textarea id="editTujuan" class="form-control" rows="3"></textarea>
+          <textarea id="editTujuan" class="form-control" rows="3" disabled></textarea>
         </div>
         <div class="mb-3">
           <label class="form-label">Aktivitas</label>
-          <textarea id="editAktivitas" class="form-control" rows="3"></textarea>
+          <textarea id="editAktivitas" class="form-control" rows="3" disabled></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-outline-secondary restore-previous-on-close" data-bs-dismiss="modal">Batal</button>
         <button type="button" class="btn btn-primary" id="btnSaveEditProgram">Simpan</button>
       </div>
     </div>
@@ -791,25 +879,151 @@
   function openEditProgramModal(id) {
     const modalEl = document.getElementById('programEditModal');
     const modal = new bootstrap.Modal(modalEl);
-    hideRiwayatBeforeShow(modalEl);
+    // If the programGroupModal is currently visible, hide it and restore it when edit modal closes.
+    // Otherwise, fall back to hiding/restoring the riwayat modal as before.
+    try {
+      pushModalAndShow(modalEl);
+    } catch (e) {
+      hideRiwayatBeforeShow(modalEl);
+    }
     fetch('/program-anak/' + id + '/json')
       .then(res => res.json())
       .then(data => {
         if (!data.success) return showToast('Gagal mengambil data', 'danger');
         const p = data.program;
         document.getElementById('editProgramId').value = p.id;
-        document.getElementById('editKodeProgram').value = p.kode_program || '';
-        document.getElementById('editNamaProgram').value = p.nama_program || '';
-        document.getElementById('editTujuan').value = p.tujuan || '';
-        document.getElementById('editAktivitas').value = p.aktivitas || '';
-        modal.show();
+        const kodeEl = document.getElementById('editKodeProgram');
+        const namaEl = document.getElementById('editNamaProgram');
+        const tujuanEl = document.getElementById('editTujuan');
+        const aktivitasEl = document.getElementById('editAktivitas');
+
+        // reset fields
+        namaEl.value = p.nama_program || '';
+        tujuanEl.value = p.tujuan || '';
+        aktivitasEl.value = p.aktivitas || '';
+
+        // If program has konsultan info, try to load konsultan's master list to populate select
+        const konsultanId = p.konsultan && p.konsultan.id ? p.konsultan.id : null;
+        const parent = kodeEl.parentElement;
+        if (konsultanId) {
+          // fetch program_konsultan list
+          fetch('/program-anak/program-konsultan/konsultan/' + konsultanId + '/list-json')
+            .then(r => r.json())
+            .then(listResp => {
+              // ensure element still present
+              let sel = document.getElementById('editKodeProgram');
+              if (!sel) return;
+              sel.innerHTML = '';
+              if (!listResp.success || !Array.isArray(listResp.program_konsultan) || listResp.program_konsultan.length === 0) {
+                // no master list: convert to input and allow editing
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'editKodeProgram';
+                input.className = 'form-control';
+                input.value = p.kode_program || '';
+                parent.replaceChild(input, sel);
+                namaEl.disabled = false;
+                tujuanEl.disabled = false;
+                aktivitasEl.disabled = false;
+                return;
+              }
+              // populate select options
+              listResp.program_konsultan.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = (item.kode_program ? item.kode_program + ' — ' : '') + (item.nama_program || '');
+                opt.dataset.kode = item.kode_program || '';
+                opt.dataset.nama = item.nama_program || '';
+                opt.dataset.tujuan = item.tujuan || '';
+                opt.dataset.aktivitas = item.aktivitas || '';
+                sel.appendChild(opt);
+              });
+              // select the matching program_konsultan if available, otherwise try to match by kode_program
+              let selected = null;
+              if (p.program_konsultan_id) {
+                selected = sel.querySelector('option[value="' + p.program_konsultan_id + '"]');
+              }
+              if (!selected && p.kode_program) {
+                selected = Array.from(sel.options).find(o => (o.dataset.kode || '').toString().toUpperCase() === (p.kode_program || '').toString().toUpperCase());
+              }
+              if (selected) {
+                sel.value = selected.value;
+                namaEl.value = selected.dataset.nama || '';
+                tujuanEl.value = selected.dataset.tujuan || '';
+                aktivitasEl.value = selected.dataset.aktivitas || '';
+                namaEl.disabled = true;
+                tujuanEl.disabled = true;
+                aktivitasEl.disabled = true;
+              } else {
+                // no matching: allow editing
+                namaEl.disabled = false;
+                tujuanEl.disabled = false;
+                aktivitasEl.disabled = false;
+              }
+
+              // on change, update fields to reflect selected kode
+              sel.addEventListener('change', function() {
+                const opt = sel.options[sel.selectedIndex];
+                if (opt && opt.dataset) {
+                  namaEl.value = opt.dataset.nama || '';
+                  tujuanEl.value = opt.dataset.tujuan || '';
+                  aktivitasEl.value = opt.dataset.aktivitas || '';
+                  namaEl.disabled = true;
+                  tujuanEl.disabled = true;
+                  aktivitasEl.disabled = true;
+                } else {
+                  namaEl.disabled = false;
+                  tujuanEl.disabled = false;
+                  aktivitasEl.disabled = false;
+                }
+              });
+
+            }).catch(() => {
+              // on error, fallback to simple input
+              const sel = document.getElementById('editKodeProgram');
+              if (sel) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'editKodeProgram';
+                input.className = 'form-control';
+                input.value = p.kode_program || '';
+                parent.replaceChild(input, sel);
+              }
+              namaEl.disabled = false;
+              tujuanEl.disabled = false;
+              aktivitasEl.disabled = false;
+            });
+        } else {
+          // no konsultan info; show kode as input and allow editing
+          const sel = document.getElementById('editKodeProgram');
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.id = 'editKodeProgram';
+          input.className = 'form-control';
+          input.value = p.kode_program || '';
+          parent.replaceChild(input, sel);
+          namaEl.disabled = false;
+          tujuanEl.disabled = false;
+          aktivitasEl.disabled = false;
+        }
       }).catch(() => showToast('Gagal mengambil data', 'danger'));
   }
 
   document.getElementById('btnSaveEditProgram').addEventListener('click', function() {
     const id = document.getElementById('editProgramId').value;
+    // determine kode_program value depending on whether editKodeProgram is a select or input
+    const kodeEl = document.getElementById('editKodeProgram');
+    let kodeVal = '';
+    if (kodeEl) {
+      if (kodeEl.tagName && kodeEl.tagName.toLowerCase() === 'select') {
+        const opt = kodeEl.options[kodeEl.selectedIndex];
+        kodeVal = (opt && opt.dataset && opt.dataset.kode) ? opt.dataset.kode : (opt ? opt.text : '');
+      } else {
+        kodeVal = kodeEl.value || '';
+      }
+    }
     const payload = {
-      kode_program: document.getElementById('editKodeProgram').value,
+      kode_program: kodeVal,
       nama_program: document.getElementById('editNamaProgram').value,
       tujuan: document.getElementById('editTujuan').value,
       aktivitas: document.getElementById('editAktivitas').value
@@ -874,8 +1088,8 @@
     }
     const modalEl = document.getElementById('programAllModal');
     const modal = new bootstrap.Modal(modalEl);
-    // if riwayat modal is open, hide it and restore after closing this modal
-    hideRiwayatBeforeShow(modalEl);
+    // hide any open modal and restore it when this modal closes
+    pushModalAndShow(modalEl);
     const target = document.getElementById('programAllContent');
     target.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
     fetch('/program-anak/' + anakId + '/all-json')
