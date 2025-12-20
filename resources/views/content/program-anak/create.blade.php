@@ -214,6 +214,7 @@
       items.forEach(item => {
         const opt = document.createElement('option');
         opt.value = item.kode_program || '';
+        opt.setAttribute('data-id', item.id || '');
         opt.setAttribute('data-nama', item.nama_program || item.nama || '');
         opt.setAttribute('data-tujuan', item.tujuan || '');
         opt.setAttribute('data-aktivitas', item.aktivitas || '');
@@ -222,6 +223,16 @@
       });
       // restore previous selection if still available
       sel.value = prev;
+      // if we restored a previous value, set the hidden program_konsultan_id for that row
+      if (prev) {
+        const tr = sel.closest('tr');
+        const pkInput = tr ? tr.querySelector('.program-konsultan-id') : null;
+        if (pkInput) {
+          // find matching item by kode_program
+          const match = items.find(i => (i.kode_program || '') === prev);
+          pkInput.value = match ? (match.id || '') : '';
+        }
+      }
     });
   }
 

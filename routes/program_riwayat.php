@@ -10,6 +10,19 @@ Route::middleware(['auth', 'role:admin,konsultan,terapis,guru'])->group(function
 
   // Observasi/Evaluasi dari tabel programs (baru) - view only
   Route::get('/program/riwayat-observasi-program/{anakDidikId}', [ProgramController::class, 'riwayatObservasiProgram'])->name('program.riwayat-observasi-program');
+  // Program anak riwayat (programs assigned by konsultan)
+  Route::get('/program-anak/riwayat-program/{anakDidikId}', [App\Http\Controllers\ProgramAnakController::class, 'riwayatProgram'])->name('program-anak.riwayat-program');
+  // Program anak detail JSON for modal
+  Route::get('/program-anak/{id}/json', [App\Http\Controllers\ProgramAnakController::class, 'showJson'])->name('program-anak.show.json');
+  // All programs for an anak as JSON
+  Route::get('/program-anak/{anakDidikId}/all-json', [App\Http\Controllers\ProgramAnakController::class, 'showAllForAnak'])->name('program-anak.all.json');
+  // programs for anak filtered by konsultan
+  Route::get('/program-anak/riwayat-program/{anakDidikId}/konsultan/{konsultanId}', [App\Http\Controllers\ProgramAnakController::class, 'riwayatProgramByKonsultan'])->name('program-anak.riwayat-program.konsultan');
+  // programs for anak filtered by konsultan and date (YYYY-MM-DD)
+  Route::get('/program-anak/riwayat-program/{anakDidikId}/konsultan/{konsultanId}/date/{date}', [App\Http\Controllers\ProgramAnakController::class, 'riwayatProgramByKonsultanAndDate'])->name('program-anak.riwayat-program.konsultan.date');
+  // JSON update/delete endpoints for ProgramAnak (AJAX)
+  Route::put('/program-anak/{id}/update-json', [App\Http\Controllers\ProgramAnakController::class, 'updateJson'])->name('program-anak.update.json');
+  Route::delete('/program-anak/{id}/delete-json', [App\Http\Controllers\ProgramAnakController::class, 'destroyJson'])->name('program-anak.delete.json');
   Route::get('/program/observasi-program/{id}', [ProgramController::class, 'showObservasiProgram'])->name('program.observasi-program.show');
   Route::get('/program/observasi-program/{sumber}/{id}', [ProgramController::class, 'showObservasiProgram'])->name('program.observasi-program.show.withsumber');
   // Export PDF for ProgramWicara (observasi/evaluasi)

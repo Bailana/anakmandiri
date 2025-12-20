@@ -13,7 +13,9 @@ class ProgramAnakController extends Controller
 {
   public function index()
   {
-    $query = ProgramAnak::with(['anakDidik', 'programKonsultan.konsultan'])->orderByDesc('created_at');
+    // show one row per anak didik (latest program per anak)
+    $latestIds = ProgramAnak::groupBy('anak_didik_id')->selectRaw('MAX(id) as id')->pluck('id')->toArray();
+    $query = ProgramAnak::with(['anakDidik', 'programKonsultan.konsultan'])->whereIn('id', $latestIds)->orderByDesc('created_at');
     if (request('search')) {
       $search = request('search');
       $query->where(function ($q) use ($search) {
@@ -55,6 +57,105 @@ class ProgramAnakController extends Controller
       $currentKonsultanSpesRaw = $k;
     }
     return view('content.program-anak.index', compact('programAnak', 'currentKonsultanSpesRaw'));
+  }
+
+  /**
+   * Return JSON list of programs assigned to an anak didik, grouped by konsultan/user.
+   */
+  public function riwayatProgram($anakDidikId)
+  {
+    $items = ProgramAnak::with(['programKonsultan.konsultan', 'programKonsultan'])
+      ->where('anak_didik_id', $anakDidikId)
+      ->orderByDesc('created_at')
+      ->get();
+
+    $groups = [];
+    foreach ($items as $it) {
+      $konsultan = $it->programKonsultan ? $it->programKonsultan->konsultan : null;
+      $key = $konsultan ? 'konsultan_' . $konsultan->id : 'user_' . ($it->created_by ?? 'system');
+      $name = $konsultan ? ($konsultan->nama ?? '-') : ($it->created_by_name ?? '-');
+      if (!isset($groups[$key])) $groups[$key] = ['name' => $name, 'konsultan_id' => ($konsultan ? $konsultan->id : null), 'items' => []];
+      $groups[$key]['items'][] = [
+        'id' => $it->id,
+        'kode_program' => $it->kode_program,
+        'nama_program' => $it->nama_program,
+        'tujuan' => $it->tujuan,
+        'aktivitas' => $it->aktivitas,
+        'program_konsultan_id' => $it->program_konsultan_id,
+        'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
+      ];
+    }
+
+    return response()->json(['success' => true, 'riwayat' => array_values($groups)]);
+  }
+
+  /**
+   * Return JSON list of programs for an anak didik filtered by konsultan id
+   */
+  public function riwayatProgramByKonsultan($anakDidikId, $konsultanId)
+  {
+    $items = ProgramAnak::with('programKonsultan.konsultan')
+      ->where('anak_didik_id', $anakDidikId)
+      ->whereHas('programKonsultan', function ($q) use ($konsultanId) {
+        $q->where('konsultan_id', $konsultanId);
+      })
+      ->orderByDesc('created_at')
+      ->get();
+
+    $out = [];
+    foreach ($items as $it) {
+      $out[] = [
+        'id' => $it->id,
+        'kode_program' => $it->kode_program,
+        'nama_program' => $it->nama_program,
+        'tujuan' => $it->tujuan,
+        'aktivitas' => $it->aktivitas,
+        'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
+        'konsultan' => ($it->programKonsultan && $it->programKonsultan->konsultan) ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama] : null,
+      ];
+    }
+
+    return response()->json(['success' => true, 'programs' => $out]);
+  }
+
+  /**
+   * Return programs for an anak by konsultan and specific date (YYYY-MM-DD)
+   */
+  public function riwayatProgramByKonsultanAndDate($anakDidikId, $konsultanId, $date)
+  {
+    // ensure date is in YYYY-MM-DD format (basic check)
+    try {
+      $dt = \Carbon\Carbon::createFromFormat('Y-m-d', $date);
+      $dateOnly = $dt->toDateString();
+    } catch (\Exception $e) {
+      return response()->json(['success' => false, 'message' => 'Invalid date format']);
+    }
+
+    $items = ProgramAnak::with(['programKonsultan.konsultan'])
+      ->where('anak_didik_id', $anakDidikId)
+      ->whereHas('programKonsultan', function ($q) use ($konsultanId) {
+        $q->where('konsultan_id', $konsultanId);
+      })
+      ->whereDate('created_at', $dateOnly)
+      ->orderByDesc('created_at')
+      ->get();
+
+    $out = [];
+    foreach ($items as $it) {
+      $out[] = [
+        'id' => $it->id,
+        'kode_program' => $it->kode_program,
+        'nama_program' => $it->nama_program,
+        'tujuan' => $it->tujuan,
+        'aktivitas' => $it->aktivitas,
+        'periode_mulai' => $it->periode_mulai ? $it->periode_mulai->toDateString() : null,
+        'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
+        'konsultan' => $it->programKonsultan && $it->programKonsultan->konsultan ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama] : null,
+        'created_at' => $it->created_at ? $it->created_at->toDateTimeString() : null,
+      ];
+    }
+
+    return response()->json(['success' => true, 'programs' => $out]);
   }
 
   public function create()
@@ -239,9 +340,16 @@ class ProgramAnakController extends Controller
         $nama = $it['nama_program'] ?? null;
         if (!$nama) continue; // skip empty rows
 
+        // try to resolve program_konsultan_id: prefer provided id, fallback to lookup by kode_program
+        $programKonsultanId = $it['program_konsultan_id'] ?? null;
+        if (empty($programKonsultanId) && !empty($it['kode_program'])) {
+          $rawKode = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $it['kode_program']));
+          $programKonsultanId = ProgramKonsultan::whereRaw("REPLACE(REPLACE(REPLACE(UPPER(kode_program),'-',''),' ',''),'.','') = ?", [$rawKode])->value('id');
+        }
+
         ProgramAnak::create([
           'anak_didik_id' => $request->input('anak_didik_id'),
-          'program_konsultan_id' => $it['program_konsultan_id'] ?? null,
+          'program_konsultan_id' => $programKonsultanId,
           'kode_program' => $it['kode_program'] ?? null,
           'nama_program' => $nama,
           'tujuan' => $it['tujuan'] ?? null,
@@ -289,9 +397,91 @@ class ProgramAnakController extends Controller
     return redirect()->route('program-anak.index')->with('success', 'Program Anak berhasil dihapus');
   }
 
+  /**
+   * AJAX: update a ProgramAnak record
+   */
+  public function updateJson(Request $request, $id)
+  {
+    $request->validate([
+      'kode_program' => 'nullable|string|max:100',
+      'nama_program' => 'required|string|max:255',
+      'tujuan' => 'nullable|string',
+      'aktivitas' => 'nullable|string',
+    ]);
+
+    $program = ProgramAnak::findOrFail($id);
+    $program->kode_program = $request->input('kode_program');
+    $program->nama_program = $request->input('nama_program');
+    $program->tujuan = $request->input('tujuan');
+    $program->aktivitas = $request->input('aktivitas');
+    $program->save();
+
+    return response()->json(['success' => true, 'message' => 'Program berhasil diupdate', 'program' => $program]);
+  }
+
+  /**
+   * AJAX: delete a ProgramAnak record
+   */
+  public function destroyJson($id)
+  {
+    $program = ProgramAnak::findOrFail($id);
+    $program->delete();
+    return response()->json(['success' => true, 'message' => 'Program berhasil dihapus']);
+  }
+
   public function show($id)
   {
     $program = ProgramAnak::with('anakDidik')->findOrFail($id);
     return view('content.program-anak.show', compact('program'));
+  }
+
+  /**
+   * Return program anak detail as JSON for modal display
+   */
+  public function showJson($id)
+  {
+    $program = ProgramAnak::with(['anakDidik', 'programKonsultan.konsultan'])->findOrFail($id);
+    $data = [
+      'id' => $program->id,
+      'kode_program' => $program->kode_program,
+      'nama_program' => $program->nama_program,
+      'tujuan' => $program->tujuan,
+      'aktivitas' => $program->aktivitas,
+      'periode_mulai' => $program->periode_mulai ? $program->periode_mulai->toDateString() : null,
+      'periode_selesai' => $program->periode_selesai ? $program->periode_selesai->toDateString() : null,
+      'anak' => $program->anakDidik ? ['id' => $program->anakDidik->id, 'nama' => $program->anakDidik->nama] : null,
+      'konsultan' => $program->programKonsultan && $program->programKonsultan->konsultan ? ['id' => $program->programKonsultan->konsultan->id, 'nama' => $program->programKonsultan->konsultan->nama] : null,
+      'created_at' => $program->created_at ? $program->created_at->toDateTimeString() : null,
+    ];
+
+    return response()->json(['success' => true, 'program' => $data]);
+  }
+
+  /**
+   * Return ALL programs for an anak didik as JSON (flat list)
+   */
+  public function showAllForAnak($anakDidikId)
+  {
+    $items = ProgramAnak::with(['programKonsultan.konsultan'])
+      ->where('anak_didik_id', $anakDidikId)
+      ->orderByDesc('created_at')
+      ->get();
+
+    $out = [];
+    foreach ($items as $it) {
+      $out[] = [
+        'id' => $it->id,
+        'kode_program' => $it->kode_program,
+        'nama_program' => $it->nama_program,
+        'tujuan' => $it->tujuan,
+        'aktivitas' => $it->aktivitas,
+        'periode_mulai' => $it->periode_mulai ? $it->periode_mulai->toDateString() : null,
+        'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
+        'konsultan' => $it->programKonsultan && $it->programKonsultan->konsultan ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama] : null,
+        'created_at' => $it->created_at ? $it->created_at->toDateTimeString() : null,
+      ];
+    }
+
+    return response()->json(['success' => true, 'programs' => $out]);
   }
 }
