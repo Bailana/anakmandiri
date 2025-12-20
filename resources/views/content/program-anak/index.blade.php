@@ -27,6 +27,19 @@
 </div>
 
 <!-- Modal: Group Program List -->
+<style>
+  /* Smaller badges for program-anak view only */
+  #programAnakTable .badge,
+  #riwayatObservasiList .badge,
+  #programGroupModal .badge,
+  #programAllModal .badge,
+  #programDetailModal .badge,
+  #modalAddProgramMaster .badge {
+    font-size: .65rem !important;
+    padding: .18rem .35rem !important;
+    border-radius: .35rem !important;
+  }
+</style>
 <div class="modal fade" id="programGroupModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
@@ -40,6 +53,12 @@
         </div>
       </div>
       <div class="modal-footer">
+        <div class="me-auto">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="groupSuggestToggle">
+            <label class="form-check-label" for="groupSuggestToggle">Sarankan Terapi</label>
+          </div>
+        </div>
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
       </div>
     </div>
@@ -94,23 +113,37 @@
           konsultanId: konsultanId,
           dateKey: null
         };
+        // determine if any row is editable by current user so we can show/hide the Aksi column entirely
+        let canEditAny = false;
+        try {
+          data.programs.forEach(p => {
+            let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
+            if (window.currentUser) {
+              if (window.currentUser.role === 'admin') canEditAny = true;
+              else if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEditAny = true;
+            }
+          });
+        } catch (e) {}
         let html = '<div class="table-responsive"><table class="table table-sm table-hover">';
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th><th>AKSI</th></tr></thead><tbody>';
+        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + (canEditAny ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
         data.programs.forEach(p => {
           const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
+          // determine if current user may edit/delete this program
+          let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
+          let canEdit = false;
+          if (window.currentUser) {
+            if (window.currentUser.role === 'admin') canEdit = true;
+            else if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
+          }
+          const actionsHtml = canEdit ? `<div class="d-flex gap-1"><button class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button></div>` : '';
           html += `<tr>
             <td>${p.kode_program || '-'}</td>
             <td>${p.nama_program || '-'}</td>
             <td>${p.tujuan || '-'}</td>
             <td>${p.aktivitas || '-'}</td>
-            <td>${konsultanName}</td>
-            <td>
-              <div class="d-flex gap-1">
-                <button class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>
-              </div>
-            </td>
-          </tr>`;
+            <td>${konsultanName}</td>`;
+          if (canEditAny) html += `<td>${actionsHtml}</td>`;
+          html += `</tr>`;
         });
         html += '</tbody></table></div>';
         listDiv.innerHTML = html;
@@ -139,6 +172,10 @@
       .then(data => {
         if (!data.success || !Array.isArray(data.programs) || data.programs.length === 0) {
           listDiv.innerHTML = '<div class="text-center text-muted">Tidak ada program pada tanggal tersebut.</div>';
+          // ensure the suggest toggle reflects absence of suggested programs for this date
+          const toggleEl = document.getElementById('groupSuggestToggle');
+          if (toggleEl) toggleEl.checked = false;
+          window._groupSuggest = false;
           modal.show();
           return;
         }
@@ -148,23 +185,54 @@
           konsultanId: konsultanId,
           dateKey: dateKey
         };
+        // initialize Sarankan Terapi toggle from server-provided is_suggested flag
+        try {
+          const anySuggested = data.programs.some(p => p && (p.is_suggested === 1 || p.is_suggested === '1' || p.is_suggested === true));
+          const toggleEl = document.getElementById('groupSuggestToggle');
+          if (toggleEl) toggleEl.checked = !!anySuggested;
+          window._groupSuggest = !!anySuggested;
+        } catch (e) {
+          window._groupSuggest = false;
+        }
+        // enable/disable toggle depending on current user: only admin or konsultan owner may change
+        try {
+          const toggleEl = document.getElementById('groupSuggestToggle');
+          if (toggleEl && window.currentUser) {
+            const isAdmin = (window.currentUser.role === 'admin');
+            const isOwnerKonsultan = (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanId));
+            toggleEl.disabled = !(isAdmin || isOwnerKonsultan);
+          }
+        } catch (e) {}
+        // determine if any row is editable by current user so we can show/hide the Aksi column entirely
+        let canEditAny2 = false;
+        try {
+          data.programs.forEach(p => {
+            let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
+            if (window.currentUser) {
+              if (window.currentUser.role === 'admin') canEditAny2 = true;
+              else if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEditAny2 = true;
+            }
+          });
+        } catch (e) {}
         let html = '<div class="table-responsive"><table class="table table-sm table-hover">';
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th><th>AKSI</th></tr></thead><tbody>';
+        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + (canEditAny2 ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
         data.programs.forEach(p => {
           const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
+          let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
+          let canEdit = false;
+          if (window.currentUser) {
+            if (window.currentUser.role === 'admin') canEdit = true;
+            else if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
+          }
+          const actionsHtml = canEdit ? `<div class="d-flex gap-1"><button class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button></div>` : '';
           html += `<tr>
             <td>${p.kode_program || '-'}</td>
             <td>${p.nama_program || '-'}</td>
             <td>${p.tujuan || '-'}</td>
             <td>${p.aktivitas || '-'}</td>
-            <td>${konsultanName}</td>
-            <td>
-              <div class="d-flex gap-1">
-                <button class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>
-              </div>
-            </td>
-          </tr>`;
+            <td>${konsultanName}</td>`;
+          if (canEditAny2) html += `<td>${actionsHtml}</td>`;
+          html += `</tr>`;
         });
         html += '</tbody></table></div>';
         listDiv.innerHTML = html;
@@ -175,6 +243,59 @@
         modal.show();
       });
   }
+</script>
+<script>
+  // keep group suggest toggle state available for other actions
+  document.addEventListener('DOMContentLoaded', function() {
+    window._groupSuggest = false;
+    window.currentUser = {
+      id: @json(Auth::id()),
+      role: @json(optional(Auth::user())-> role),
+      konsultanId: @json($currentKonsultanId ?? null)
+    };
+    const toggle = document.getElementById('groupSuggestToggle');
+    if (toggle) {
+      toggle.addEventListener('change', function() {
+        window._groupSuggest = !!toggle.checked;
+        // if currently viewing a konsultan+date group, persist the change to the server
+        if (window._lastGroup && window._lastGroup.dateKey) {
+          const anakId = window._lastGroup.anakDidikId;
+          const konsultanId = window._lastGroup.konsultanId;
+          const dateKey = window._lastGroup.dateKey;
+          const url = `/program-anak/${anakId}/konsultan/${konsultanId}/date/${encodeURIComponent(dateKey)}/suggest`;
+          fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              suggest: toggle.checked ? 1 : 0
+            })
+          }).then(res => res.json()).then(resp => {
+            if (resp && resp.success) {
+              showToast('Perubahan saran terapi tersimpan', 'success');
+              // refresh current group view
+              showProgramsByKonsultanAndDate(anakId, konsultanId, dateKey);
+              // refresh riwayat modal list if open
+              if (window.currentRiwayatAnakId) {
+                const dummy = document.createElement('button');
+                dummy.setAttribute('data-anak-didik-id', window.currentRiwayatAnakId);
+                loadRiwayatObservasi(dummy);
+              }
+              // update table Saran Terapi cell for this anak
+              refreshSaranTerapiForAnak(anakId);
+            } else {
+              showToast((resp && resp.message) || 'Gagal menyimpan saran', 'danger');
+            }
+          }).catch(() => {
+            showToast('Gagal menyimpan saran', 'danger');
+          });
+        }
+      });
+    }
+  });
 </script>
 <div class="row mb-4">
   <div class="col-12">
@@ -204,7 +325,7 @@
             <tr class="table-light">
               <th>No</th>
               <th>Nama Anak</th>
-              <th>Program</th>
+              <th>Guru Fokus</th>
               <th>Saran Terapi</th>
               <!-- <th>Status</th> -->
               <th>Aksi</th>
@@ -212,10 +333,10 @@
           </thead>
           <tbody>
             @forelse($programAnak as $index => $program)
-            <tr>
+            <tr data-anak-id="{{ $program->anak_didik_id }}">
               <td>{{ ($programAnak->currentPage() - 1) * $programAnak->perPage() + $index + 1 }}</td>
               <td>{{ $program->anakDidik->nama ?? '-' }}</td>
-              <td>{{ $program->nama_program }}</td>
+              <td>{{ $program->anakDidik && $program->anakDidik->guruFokus ? $program->anakDidik->guruFokus->nama : '-' }}</td>
               <td>
                 @php
                 $pk = $program->programKonsultan ?? null;
@@ -359,7 +480,7 @@
           listDiv.innerHTML = '<div class="text-center text-muted">Belum ada riwayat program.</div>';
           return;
         }
-        // res.riwayat is an array of groups: {name, items: [...]}
+        // res.riwayat is an array of groups: {name, konsultan_id, spesialisasi, items: [...]}
         let html = '';
         res.riwayat.forEach(group => {
           html += `<div class="mb-3">
@@ -381,6 +502,17 @@
             if (seenDates.has(dateKey)) return; // skip duplicate date
             seenDates.add(dateKey);
 
+            // determine if any item on this date was suggested
+            const anySuggestedForDate = group.items.some(it => {
+              let ik = '';
+              if (it.created_at) {
+                ik = (it.created_at.indexOf('T') !== -1) ? it.created_at.split('T')[0] : it.created_at.split(' ')[0];
+              } else {
+                ik = 'id_' + it.id;
+              }
+              return ik === dateKey && (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true);
+            });
+
             // format date and weekday for display
             let dt = item.created_at ? new Date(item.created_at) : null;
             let hari = dt ? dt.toLocaleDateString('id-ID', {
@@ -392,10 +524,43 @@
               year: 'numeric'
             }) : (item.created_at || '');
 
-            // clicking 'Lihat' opens the konsultan-specific group modal (shows all programs from that konsultan for the anak)
+            // determine badge from konsultan spesialisasi
+            const spec = (group.spesialisasi || item.konsultan_spesialisasi || '') + '';
+            const s = spec.toLowerCase();
+            let badgeLabel = null,
+              badgeClass = null;
+            if (s.indexOf('wicara') !== -1 || s.indexOf('wic') !== -1) {
+              badgeLabel = 'TW';
+              badgeClass = 'bg-primary';
+            } else if (s.indexOf('sensori') !== -1 || s.indexOf('integrasi') !== -1) {
+              badgeLabel = 'SI';
+              badgeClass = 'bg-success';
+            } else if (s.indexOf('psikologi') !== -1 || s.indexOf('psiko') !== -1) {
+              badgeLabel = 'TP';
+              badgeClass = 'bg-warning text-dark';
+            } else {
+              // fallback: inspect kode of item
+              const kode = (item.kode_program || '').toString().toUpperCase();
+              if (kode.startsWith('SI')) {
+                badgeLabel = 'SI';
+                badgeClass = 'bg-success';
+              } else if (kode.startsWith('WIC') || kode.startsWith('WICARA')) {
+                badgeLabel = 'TW';
+                badgeClass = 'bg-primary';
+              } else if (kode.startsWith('PS')) {
+                badgeLabel = 'TP';
+                badgeClass = 'bg-warning text-dark';
+              } else {
+                badgeLabel = null;
+                badgeClass = null;
+              }
+            }
+
             const konsultanId = group.konsultan_id || null;
+            // show therapy-type badge only when any program on that date is suggested
+            const badgeHtml = (anySuggestedForDate && badgeLabel) ? (' <span class="badge ' + badgeClass + ' ms-2">' + badgeLabel + '</span>') : '';
             html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                <div><b>${hari}</b>, ${tanggal}</div>
+                <div><b>${hari}</b>, ${tanggal}${badgeHtml}</div>
                 <div>
                   <button class="btn btn-sm btn-outline-info" onclick="showProgramsByKonsultanAndDate(${anakDidikId}, ${konsultanId}, '${dateKey}')" title="Lihat Program dari Konsultan"><i class="ri-eye-line"></i></button>
                 </div>
@@ -469,6 +634,103 @@
     });
     bsToast.show();
   }
+
+  // Refresh the Saran Terapi badge for a specific anak row by fetching riwayat and checking is_suggested
+  function refreshSaranTerapiForAnak(anakId) {
+    if (!anakId) return;
+    fetch('/program-anak/riwayat-program/' + anakId)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success || !Array.isArray(data.riwayat)) return;
+        // collect unique badges from all groups where any item is suggested
+        const badges = [];
+        data.riwayat.forEach(group => {
+          const items = group.items || [];
+          const anySuggested = items.some(it => (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true));
+          if (!anySuggested) return;
+          // determine badge from konsultan spesialisasi or from a suggested item's kode
+          const spec = (group.spesialisasi || (items[0] && items[0].konsultan_spesialisasi) || '') + '';
+          const s = spec.toLowerCase();
+          let label = null,
+            cls = null;
+          if (s.indexOf('wicara') !== -1 || s.indexOf('wic') !== -1) {
+            label = 'TW';
+            cls = 'bg-primary';
+          } else if (s.indexOf('sensori') !== -1 || s.indexOf('integrasi') !== -1) {
+            label = 'SI';
+            cls = 'bg-success';
+          } else if (s.indexOf('psikologi') !== -1 || s.indexOf('psiko') !== -1) {
+            label = 'PS';
+            cls = 'bg-warning text-dark';
+          } else {
+            // fallback: inspect kode_program from any suggested item
+            const suggestedItem = items.find(it => (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true));
+            const kode = (suggestedItem && suggestedItem.kode_program) ? suggestedItem.kode_program.toString().toUpperCase() : '';
+            if (kode.indexOf('SI') === 0) {
+              label = 'SI';
+              cls = 'bg-success';
+            } else if (kode.indexOf('WIC') === 0 || kode.indexOf('WICARA') === 0) {
+              label = 'TW';
+              cls = 'bg-primary';
+            } else if (kode.indexOf('PS') === 0) {
+              label = 'PS';
+              cls = 'bg-warning text-dark';
+            } else {
+              label = (spec.trim() ? spec.split(/\s+/).map(x => x[0].toUpperCase()).slice(0, 2).join('') : 'TW');
+              cls = 'bg-info';
+            }
+          }
+          if (label && !badges.some(b => b.label === label)) badges.push({
+            label,
+            cls
+          });
+        });
+
+        const row = document.querySelector('tr[data-anak-id="' + anakId + '"]');
+        if (!row) return;
+        const cells = row.querySelectorAll('td');
+        // Saran Terapi column is the 4th cell (index 3)
+        const targetCell = cells[3];
+        if (!targetCell) return;
+        if (!badges || badges.length === 0) {
+          targetCell.innerHTML = '-';
+          return;
+        }
+        // render all badges (unique, in order found)
+        const html = badges.map(b => `<span class="badge ${b.cls} me-1">${b.label}</span>`).join(' ');
+        targetCell.innerHTML = html;
+      }).catch(() => {});
+  }
+
+  // On page load, refresh Saran Terapi for all visible anak rows to reflect combined suggestions
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      document.querySelectorAll('tr[data-anak-id]').forEach(tr => {
+        const id = tr.getAttribute('data-anak-id');
+        if (id) refreshSaranTerapiForAnak(id);
+      });
+    } catch (e) {}
+  });
+
+  // Cleanup helper to remove stray backdrops and modal-open class
+  function cleanupModalBackdrops() {
+    try {
+      // if no modal is currently visible, remove any leftover backdrops and body class
+      const anyOpen = document.querySelectorAll('.modal.show').length > 0;
+      if (!anyOpen) {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // Attach cleanup on modal hidden events to ensure UI is interactive after closing
+  ['riwayatObservasiModal', 'programGroupModal', 'programAllModal', 'programEditModal', 'programDetailModal', 'modalAddProgramMaster'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('hidden.bs.modal', cleanupModalBackdrops);
+  });
 </script>
 <!-- Modal: All Programs for Anak -->
 <div class="modal fade" id="programAllModal" tabindex="-1" aria-hidden="true">

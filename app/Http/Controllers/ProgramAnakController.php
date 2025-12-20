@@ -45,18 +45,22 @@ class ProgramAnakController extends Controller
     // use pagination so the view can call paginator methods (currentPage, perPage, firstItem, links, etc.)
     $programAnak = $query->paginate(10)->withQueryString();
     $currentKonsultanSpesRaw = null;
+    $currentKonsultanId = null;
     if (auth()->check() && auth()->user()->role === 'konsultan') {
       $user = auth()->user();
       $k = \App\Models\Konsultan::where('user_id', $user->id)->value('spesialisasi');
+      $currentKonsultanId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
       if (!$k && $user->email) {
         $k = \App\Models\Konsultan::where('email', $user->email)->value('spesialisasi');
+        if (!$currentKonsultanId) $currentKonsultanId = \App\Models\Konsultan::where('email', $user->email)->value('id');
       }
       if (!$k) {
         $k = \App\Models\Konsultan::where('nama', $user->name)->value('spesialisasi');
+        if (!$currentKonsultanId) $currentKonsultanId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
       }
       $currentKonsultanSpesRaw = $k;
     }
-    return view('content.program-anak.index', compact('programAnak', 'currentKonsultanSpesRaw'));
+    return view('content.program-anak.index', compact('programAnak', 'currentKonsultanSpesRaw', 'currentKonsultanId'));
   }
 
   /**
@@ -74,7 +78,8 @@ class ProgramAnakController extends Controller
       $konsultan = $it->programKonsultan ? $it->programKonsultan->konsultan : null;
       $key = $konsultan ? 'konsultan_' . $konsultan->id : 'user_' . ($it->created_by ?? 'system');
       $name = $konsultan ? ($konsultan->nama ?? '-') : ($it->created_by_name ?? '-');
-      if (!isset($groups[$key])) $groups[$key] = ['name' => $name, 'konsultan_id' => ($konsultan ? $konsultan->id : null), 'items' => []];
+      $spes = $konsultan ? ($konsultan->spesialisasi ?? null) : null;
+      if (!isset($groups[$key])) $groups[$key] = ['name' => $name, 'konsultan_id' => ($konsultan ? $konsultan->id : null), 'spesialisasi' => $spes, 'items' => []];
       $groups[$key]['items'][] = [
         'id' => $it->id,
         'kode_program' => $it->kode_program,
@@ -83,6 +88,8 @@ class ProgramAnakController extends Controller
         'aktivitas' => $it->aktivitas,
         'program_konsultan_id' => $it->program_konsultan_id,
         'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
+        'is_suggested' => $it->is_suggested ? 1 : 0,
+        'konsultan_spesialisasi' => $spes,
       ];
     }
 
@@ -111,7 +118,8 @@ class ProgramAnakController extends Controller
         'tujuan' => $it->tujuan,
         'aktivitas' => $it->aktivitas,
         'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
-        'konsultan' => ($it->programKonsultan && $it->programKonsultan->konsultan) ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama] : null,
+        'is_suggested' => $it->is_suggested ? 1 : 0,
+        'konsultan' => ($it->programKonsultan && $it->programKonsultan->konsultan) ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null] : null,
       ];
     }
 
@@ -150,12 +158,61 @@ class ProgramAnakController extends Controller
         'aktivitas' => $it->aktivitas,
         'periode_mulai' => $it->periode_mulai ? $it->periode_mulai->toDateString() : null,
         'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
-        'konsultan' => $it->programKonsultan && $it->programKonsultan->konsultan ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama] : null,
+        'konsultan' => $it->programKonsultan && $it->programKonsultan->konsultan ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null] : null,
+        'is_suggested' => $it->is_suggested ? 1 : 0,
         'created_at' => $it->created_at ? $it->created_at->toDateTimeString() : null,
       ];
     }
 
     return response()->json(['success' => true, 'programs' => $out]);
+  }
+
+  /**
+   * Set or unset is_suggested for all programs for an anak+konsultan on a given date.
+   * Expects JSON body: { suggest: 1|0 }
+   */
+  public function setSuggestForGroup(Request $request, $anakDidikId, $konsultanId, $date)
+  {
+    // authorization: only admin or the konsultan owner may toggle suggestions for this konsultan
+    $user = auth()->user();
+    if (!$user) {
+      return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+    }
+    if ($user->role !== 'admin') {
+      if ($user->role !== 'konsultan') {
+        return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+      }
+      // verify konsultan ownership: the konsultan record must map to this user (fallbacks similar to other methods)
+      $konsultanRecId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
+      if (!$konsultanRecId && $user->email) {
+        $konsultanRecId = \App\Models\Konsultan::where('email', $user->email)->value('id');
+      }
+      if (!$konsultanRecId) {
+        $konsultanRecId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
+      }
+      if (!$konsultanRecId || intval($konsultanRecId) !== intval($konsultanId)) {
+        return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+      }
+    }
+    try {
+      $dt = Carbon::createFromFormat('Y-m-d', $date);
+      $dateOnly = $dt->toDateString();
+    } catch (\Exception $e) {
+      return response()->json(['success' => false, 'message' => 'Invalid date format'], 400);
+    }
+
+    $suggest = $request->input('suggest');
+    $suggestFlag = ($suggest == 1 || $suggest === true || $suggest === '1') ? 1 : 0;
+
+    // update ProgramAnak rows that belong to this anak and whose ProgramKonsultan maps to the konsultan
+    $updated = ProgramAnak::where('anak_didik_id', $anakDidikId)
+      ->whereHas('programKonsultan', function ($q) use ($konsultanId) {
+        $q->where('konsultan_id', $konsultanId);
+      })
+      ->whereDate('created_at', $dateOnly)
+      ->update(['is_suggested' => $suggestFlag]);
+
+    return response()->json(['success' => true, 'message' => 'Suggestion updated', 'updated' => $updated, 'suggest' => $suggestFlag]);
   }
 
   public function create()

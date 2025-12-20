@@ -23,6 +23,9 @@ Route::middleware(['auth', 'role:admin,konsultan,terapis,guru'])->group(function
   // JSON update/delete endpoints for ProgramAnak (AJAX)
   Route::put('/program-anak/{id}/update-json', [App\Http\Controllers\ProgramAnakController::class, 'updateJson'])->name('program-anak.update.json');
   Route::delete('/program-anak/{id}/delete-json', [App\Http\Controllers\ProgramAnakController::class, 'destroyJson'])->name('program-anak.delete.json');
+
+  // set/unset suggestion flag for all programs of a konsultan on a specific date
+  Route::put('/program-anak/{anakDidikId}/konsultan/{konsultanId}/date/{date}/suggest', [App\Http\Controllers\ProgramAnakController::class, 'setSuggestForGroup'])->name('program-anak.suggest.group');
   Route::get('/program/observasi-program/{id}', [ProgramController::class, 'showObservasiProgram'])->name('program.observasi-program.show');
   Route::get('/program/observasi-program/{sumber}/{id}', [ProgramController::class, 'showObservasiProgram'])->name('program.observasi-program.show.withsumber');
   // Export PDF for ProgramWicara (observasi/evaluasi)
