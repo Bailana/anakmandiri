@@ -26,6 +26,28 @@
   </div>
 </div>
 
+@if(session('success'))
+<div class="row">
+  <div class="col-12">
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      {{ session('success') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const el = document.querySelector('.alert-success[role="alert"]');
+    if (!el) return;
+    setTimeout(function() {
+      try {
+        bootstrap.Alert.getOrCreateInstance(el).close();
+      } catch (e) {}
+    }, 4000);
+  });
+</script>
+@endif
+
 <!-- Modal: Group Program List -->
 <style>
   /* Smaller badges for program-anak view only */
@@ -54,9 +76,11 @@
       </div>
       <div class="modal-footer">
         <div class="me-auto">
-          <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="groupSuggestToggle">
-            <label class="form-check-label" for="groupSuggestToggle">Sarankan Terapi</label>
+          <div id="groupSuggestContainer" style="display:none">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="groupSuggestToggle">
+              <label class="form-check-label" for="groupSuggestToggle">Sarankan Terapi</label>
+            </div>
           </div>
         </div>
         <button type="button" class="btn btn-outline-secondary restore-previous-on-close" data-bs-dismiss="modal">Tutup</button>
@@ -222,6 +246,15 @@
         });
         html += '</tbody></table></div>';
         listDiv.innerHTML = html;
+        // show/hide suggest toggle depending on konsultan spesialisasi (hide for 'pendidikan')
+        try {
+          const kt = (data.programs[0] && data.programs[0].konsultan && (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type)) ? (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type) : null;
+          const groupSuggestContainer = document.getElementById('groupSuggestContainer');
+          if (groupSuggestContainer) {
+            if (kt && String(kt).toLowerCase().includes('pendidikan')) groupSuggestContainer.style.display = 'none';
+            else groupSuggestContainer.style.display = 'block';
+          }
+        } catch (e) {}
         modal.show();
       })
       .catch(() => {
@@ -251,6 +284,8 @@
           const toggleEl = document.getElementById('groupSuggestToggle');
           if (toggleEl) toggleEl.checked = false;
           window._groupSuggest = false;
+          const groupSuggestContainer = document.getElementById('groupSuggestContainer');
+          if (groupSuggestContainer) groupSuggestContainer.style.display = 'none';
           modal.show();
           return;
         }
@@ -269,6 +304,15 @@
         } catch (e) {
           window._groupSuggest = false;
         }
+        // show/hide suggest toggle depending on konsultan spesialisasi (hide for 'pendidikan')
+        try {
+          const kt = (data.programs[0] && data.programs[0].konsultan && (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type)) ? (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type) : null;
+          const groupSuggestContainer = document.getElementById('groupSuggestContainer');
+          if (groupSuggestContainer) {
+            if (kt && String(kt).toLowerCase().includes('pendidikan')) groupSuggestContainer.style.display = 'none';
+            else groupSuggestContainer.style.display = 'block';
+          }
+        } catch (e) {}
         // enable/disable toggle depending on current user: only admin or konsultan owner may change
         try {
           const toggleEl = document.getElementById('groupSuggestToggle');

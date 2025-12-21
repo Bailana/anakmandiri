@@ -40,7 +40,6 @@
 
     <!-- Include Scripts -->
     @include('layouts/sections/scripts')
-    @stack('page-script')
 </body>
 
 </html>

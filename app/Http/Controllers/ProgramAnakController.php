@@ -240,7 +240,23 @@ class ProgramAnakController extends Controller
     $konsultans = \App\Models\Konsultan::all();
     // load program master grouped by konsultan for populating dropdowns in the form
     $programMasters = ProgramKonsultan::all()->groupBy('konsultan_id');
-    return view('content.program-anak.create', compact('anakDidiks', 'konsultans', 'programMasters'));
+    $currentKonsultanId = null;
+    $currentKonsultanSpesRaw = null;
+    if (auth()->check() && auth()->user()->role === 'konsultan') {
+      $user = auth()->user();
+      $k = \App\Models\Konsultan::where('user_id', $user->id)->value('spesialisasi');
+      $currentKonsultanId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
+      if (!$k && $user->email) {
+        $k = \App\Models\Konsultan::where('email', $user->email)->value('spesialisasi');
+        if (!$currentKonsultanId) $currentKonsultanId = \App\Models\Konsultan::where('email', $user->email)->value('id');
+      }
+      if (!$k) {
+        $k = \App\Models\Konsultan::where('nama', $user->name)->value('spesialisasi');
+        if (!$currentKonsultanId) $currentKonsultanId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
+      }
+      $currentKonsultanSpesRaw = $k;
+    }
+    return view('content.program-anak.create', compact('anakDidiks', 'konsultans', 'programMasters', 'currentKonsultanId', 'currentKonsultanSpesRaw'));
   }
 
   public function storeProgramKonsultan(Request $request)
@@ -400,6 +416,7 @@ class ProgramAnakController extends Controller
   public function store(Request $request)
   {
     $request->validate([
+      'konsultan_id' => 'required|exists:konsultans,id',
       'anak_didik_id' => 'required|exists:anak_didiks,id',
       'periode_mulai' => 'required|date',
       'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
@@ -411,6 +428,14 @@ class ProgramAnakController extends Controller
     $items = $request->input('program_items', []);
 
     \DB::transaction(function () use ($items, $request) {
+      // determine konsultan spesialisasi for saving to pendidikan table when relevant
+      $konsultan = null;
+      try {
+        $konsultan = \App\Models\Konsultan::find($request->input('konsultan_id'));
+      } catch (\Exception $e) {
+        $konsultan = null;
+      }
+      $konsultanSpes = $konsultan ? strtolower($konsultan->spesialisasi ?? '') : '';
       foreach ($items as $it) {
         // basic sanitation / mapping
         $nama = $it['nama_program'] ?? null;
@@ -423,7 +448,7 @@ class ProgramAnakController extends Controller
           $programKonsultanId = ProgramKonsultan::whereRaw("REPLACE(REPLACE(REPLACE(UPPER(kode_program),'-',''),' ',''),'.','') = ?", [$rawKode])->value('id');
         }
 
-        ProgramAnak::create([
+        $programAnak = ProgramAnak::create([
           'anak_didik_id' => $request->input('anak_didik_id'),
           'program_konsultan_id' => $programKonsultanId,
           'kode_program' => $it['kode_program'] ?? null,
@@ -436,6 +461,28 @@ class ProgramAnakController extends Controller
           'keterangan' => $request->input('keterangan'),
           'is_suggested' => $request->input('is_suggested') ? 1 : 0,
         ]);
+
+        // If konsultan is pendidikan, also save a copy into program_pendidikan
+        if ($konsultanSpes && strpos($konsultanSpes, 'pendidikan') !== false) {
+          try {
+            \App\Models\ProgramPendidikan::create([
+              'anak_didik_id' => $request->input('anak_didik_id'),
+              'konsultan_id' => $request->input('konsultan_id'),
+              'kode_program' => $it['kode_program'] ?? null,
+              'nama_program' => $nama,
+              'tujuan' => $it['tujuan'] ?? null,
+              'aktivitas' => $it['aktivitas'] ?? null,
+              'periode_mulai' => $request->input('periode_mulai'),
+              'periode_selesai' => $request->input('periode_selesai'),
+              'keterangan' => $request->input('keterangan'),
+              'is_suggested' => $request->input('is_suggested') ? 1 : 0,
+              'created_by' => auth()->id(),
+            ]);
+          } catch (\Exception $e) {
+            // do not abort whole transaction on failure to create pendidikan record, but log
+            \Log::error('Failed to create program_pendidikan: ' . $e->getMessage());
+          }
+        }
       }
     });
 

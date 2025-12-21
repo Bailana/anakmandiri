@@ -54,12 +54,6 @@
               <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
             </button>
           </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="terapi-tab" data-bs-toggle="tab" data-bs-target="#terapi"
-              type="button" role="tab" aria-controls="terapi" aria-selected="false">
-              <i class="ri-hospital-line me-2"></i>Program Terapi
-            </button>
-          </li>
         </ul>
 
         <!-- Tab Content -->
@@ -259,59 +253,6 @@
             </div>
           </div>
 
-          <!-- Program Terapi Tab -->
-          <div class="tab-pane fade" id="terapi" role="tabpanel" aria-labelledby="terapi-tab">
-            <div class="alert alert-info mb-4" role="alert">
-              <i class="ri-information-line me-2"></i>
-              <strong>Program Terapi:</strong> Informasi tentang program terapi yang sedang diikuti oleh anak.
-            </div>
-
-            @if($anakDidik->therapyPrograms && $anakDidik->therapyPrograms->count() > 0)
-            <div class="table-responsive">
-              <table class="table table-sm table-hover">
-                <thead>
-                  <tr>
-                    <th>Jenis Terapi</th>
-                    <th>Tanggal Mulai</th>
-                    <th>Tanggal Selesai</th>
-                    <th>Status</th>
-                    <th>Catatan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @foreach($anakDidik->therapyPrograms as $therapy)
-                  <tr>
-                    <td>
-                      @if($therapy->type_therapy === 'si')
-                      <span class="badge bg-label-primary">Sensori Integrasi</span>
-                      @elseif($therapy->type_therapy === 'wicara')
-                      <span class="badge bg-label-success">Terapi Wicara</span>
-                      @elseif($therapy->type_therapy === 'perilaku')
-                      <span class="badge bg-label-info">Terapi Perilaku</span>
-                      @endif
-                    </td>
-                    <td>{{ $therapy->tanggal_mulai?->format('d/m/Y') ?? '-' }}</td>
-                    <td>{{ $therapy->tanggal_selesai?->format('d/m/Y') ?? '-' }}</td>
-                    <td>
-                      @if($therapy->is_active)
-                      <span class="badge bg-success">Aktif</span>
-                      @else
-                      <span class="badge bg-danger">Tidak Aktif</span>
-                      @endif
-                    </td>
-                    <td><small>{{ $therapy->notes ?? '-' }}</small></td>
-                  </tr>
-                  @endforeach
-                </tbody>
-              </table>
-            </div>
-            @else
-            <div class="alert alert-warning" role="alert">
-              <i class="ri-alert-line me-2"></i>
-              Belum ada program terapi yang terdaftar untuk anak ini.
-            </div>
-            @endif
-          </div>
         </div>
         <!-- End of detail view, no form tag -->
       </div>

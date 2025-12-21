@@ -14,15 +14,34 @@
       </div>
       <div class="card-body">
         <form method="POST" action="{{ route('program-anak.store') }}">
+          @if(session('success'))
+          <div class="alert alert-success">{{ session('success') }}</div>
+          @endif
+          @if($errors->any())
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              @foreach($errors->all() as $error)
+              <li>{{ $error }}</li>
+              @endforeach
+            </ul>
+          </div>
+          @endif
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="konsultan_id" class="form-label">Nama Konsultan</label>
-              <select name="konsultan_id" id="konsultan_id" class="form-select" required>
+              <select name="konsultan_id" id="konsultan_id" class="form-select" required
+                @if(isset($currentKonsultanId) && isset($currentKonsultanSpesRaw) && preg_match('/pendidikan|wicara|psikologi|sensori/i', $currentKonsultanSpesRaw)) disabled @endif>
                 <option value="">Pilih Konsultan</option>
                 @foreach($konsultans as $konsultan)
-                <option value="{{ $konsultan->id }}" data-spesialisasi="{{ strtolower($konsultan->spesialisasi) }}">{{ $konsultan->nama }}</option>
+                <option value="{{ $konsultan->id }}" data-spesialisasi="{{ strtolower($konsultan->spesialisasi) }}"
+                  @if(isset($currentKonsultanId) && $currentKonsultanId==$konsultan->id && isset($currentKonsultanSpesRaw) && preg_match('/pendidikan|wicara|psikologi|sensori/i', $currentKonsultanSpesRaw)) selected @endif>
+                  {{ $konsultan->nama }}
+                </option>
                 @endforeach
               </select>
+              @if(isset($currentKonsultanId) && isset($currentKonsultanSpesRaw) && preg_match('/pendidikan|wicara|psikologi|sensori/i', $currentKonsultanSpesRaw))
+              <input type="hidden" name="konsultan_id" value="{{ $currentKonsultanId }}">
+              @endif
             </div>
             <div class="col-md-6">
               <label for="anak_didik_id" class="form-label">Nama Anak Didik</label>
@@ -113,6 +132,7 @@
               <textarea name="keterangan" id="keterangan" class="form-control"></textarea>
             </div>
           </div>
+          @if(!(isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw)))
           <div class="row mb-3">
             <div class="col-md-12">
               <div class="form-check form-switch">
@@ -121,6 +141,7 @@
               </div>
             </div>
           </div>
+          @endif
           <div class="d-flex justify-content-start gap-2">
             <button type="submit" class="btn btn-primary"><i class="ri-save-line me-2"></i>Simpan</button>
             <a href="{{ route('program-anak.index') }}" class="btn btn-outline-danger"><i class="ri-close-line me-2"></i>Batal</a>
@@ -243,8 +264,8 @@
     const spesialisasi = selected ? selected.getAttribute('data-spesialisasi') : '';
     const wrapper = document.getElementById('daftarProgramAnakWrapper');
     const psikologiFields = document.getElementById('psikologiFields');
-    // Tampilkan daftar program anak hanya untuk wicara/sensori integrasi
-    if (spesialisasi === 'wicara' || spesialisasi === 'sensori integrasi') {
+    // Tampilkan daftar program anak untuk wicara, sensori integrasi, atau pendidikan
+    if (spesialisasi === 'wicara' || spesialisasi === 'sensori integrasi' || spesialisasi === 'pendidikan') {
       wrapper.style.display = '';
     } else {
       wrapper.style.display = 'none';
