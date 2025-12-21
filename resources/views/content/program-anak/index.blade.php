@@ -13,9 +13,11 @@
         </div>
         @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
         <div class="d-flex align-items-center">
+          @if(!(auth()->user()->role === 'konsultan' && isset($currentKonsultanSpesRaw) && preg_match('/psikologi/i', $currentKonsultanSpesRaw)))
           <a href="{{ route('program-anak.daftar-program') }}" class="btn btn-outline-secondary me-2">
             <i class="ri-list-unordered me-2"></i>Daftar Program
           </a>
+          @endif
           <a href="{{ route('program-anak.create') }}" class="btn btn-primary">
             <i class="ri-add-line me-2"></i>Tambah Program Anak
           </a>
@@ -72,6 +74,10 @@
       <div class="modal-body">
         <div id="groupProgramList">
           <div class="text-center text-muted">Memuat data...</div>
+        </div>
+        <div id="groupLatestKeterangan" class="mt-3 pt-2 border-top text-muted" style="display:block">
+          <strong>Keterangan :</strong>
+          <div id="groupLatestKeteranganText" class="mt-1">-</div>
         </div>
       </div>
       <div class="modal-footer">
@@ -203,6 +209,10 @@
       .then(data => {
         if (!data.success || !Array.isArray(data.programs) || data.programs.length === 0) {
           listDiv.innerHTML = '<div class="text-center text-muted">Belum ada program dari konsultan ini.</div>';
+          try {
+            const latestEl = document.getElementById('groupLatestKeteranganText');
+            if (latestEl) latestEl.textContent = '-';
+          } catch (e) {}
           modal.show();
           return;
         }
@@ -246,6 +256,14 @@
         });
         html += '</tbody></table></div>';
         listDiv.innerHTML = html;
+        // set latest keterangan (outside the table)
+        try {
+          const latestEl = document.getElementById('groupLatestKeteranganText');
+          if (latestEl) {
+            const latest = (data.programs[0] && (data.programs[0].keterangan || data.programs[0].keterangan === '')) ? (data.programs[0].keterangan || '-') : '-';
+            latestEl.textContent = latest || '-';
+          }
+        } catch (e) {}
         // show/hide suggest toggle depending on konsultan spesialisasi (hide for 'pendidikan')
         try {
           const kt = (data.programs[0] && data.programs[0].konsultan && (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type)) ? (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type) : null;
@@ -286,6 +304,10 @@
           window._groupSuggest = false;
           const groupSuggestContainer = document.getElementById('groupSuggestContainer');
           if (groupSuggestContainer) groupSuggestContainer.style.display = 'none';
+          try {
+            const latestEl = document.getElementById('groupLatestKeteranganText');
+            if (latestEl) latestEl.textContent = '-';
+          } catch (e) {}
           modal.show();
           return;
         }
@@ -355,6 +377,13 @@
         });
         html += '</tbody></table></div>';
         listDiv.innerHTML = html;
+        try {
+          const latestEl = document.getElementById('groupLatestKeteranganText');
+          if (latestEl) {
+            const latest = (data.programs[0] && (data.programs[0].keterangan || data.programs[0].keterangan === '')) ? (data.programs[0].keterangan || '-') : '-';
+            latestEl.textContent = latest || '-';
+          }
+        } catch (e) {}
         modal.show();
       })
       .catch(() => {

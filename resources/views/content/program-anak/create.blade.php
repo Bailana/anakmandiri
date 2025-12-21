@@ -284,6 +284,72 @@
   // Inisialisasi saat load
   document.addEventListener('DOMContentLoaded', function() {
     toggleDaftarProgramAnak();
+    // when anak didik changes and konsultan is psikologi, fetch latest psikologi record
+    const anakSelect = document.getElementById('anak_didik_id');
+    const konsultanSelect = document.getElementById('konsultan_id');
+
+    function fetchAndFillPsikologi() {
+      try {
+        const konsultanOpt = konsultanSelect.options[konsultanSelect.selectedIndex];
+        const spes = konsultanOpt ? konsultanOpt.getAttribute('data-spesialisasi') : '';
+        if (spes !== 'psikologi') {
+          // ensure psikologi fields hidden/cleared
+          const psikologiFields = document.getElementById('psikologiFields');
+          if (psikologiFields) {
+            psikologiFields.style.display = 'none';
+            // clear and enable
+            ['latar_belakang', 'metode_assessment', 'hasil_assessment', 'diagnosa', 'kesimpulan', 'rekomendasi'].forEach(id => {
+              const el = document.getElementById(id);
+              if (el) {
+                el.value = '';
+                el.disabled = false;
+              }
+            });
+          }
+          return;
+        }
+        const anakId = anakSelect.value;
+        if (!anakId) return;
+        fetch(`/program-anak/psikologi-latest/${anakId}`)
+          .then(res => res.json())
+          .then(json => {
+            const data = json && json.data ? json.data : null;
+            const ids = ['latar_belakang', 'metode_assessment', 'hasil_assessment', 'diagnosa', 'kesimpulan'];
+            ids.forEach(id => {
+              const el = document.getElementById(id);
+              if (el) {
+                el.value = data && data[id] ? data[id] : '';
+                el.disabled = true; // make readonly/uneditable
+              }
+            });
+            // allow user to input rekomendasi — populate if available and keep enabled
+            const r = document.getElementById('rekomendasi');
+            if (r) {
+              if (data && data.rekomendasi) r.value = data.rekomendasi;
+              r.disabled = false;
+            }
+            // ensure psikologi fields visible
+            const psikologiFields = document.getElementById('psikologiFields');
+            if (psikologiFields) psikologiFields.style.display = '';
+          }).catch(() => {
+            // on error, clear psikologi fields but keep rekomendasi editable
+            ['latar_belakang', 'metode_assessment', 'hasil_assessment', 'diagnosa', 'kesimpulan'].forEach(id => {
+              const el = document.getElementById(id);
+              if (el) {
+                el.value = '';
+                el.disabled = true;
+              }
+            });
+            const rErr = document.getElementById('rekomendasi');
+            if (rErr) {
+              rErr.value = '';
+              rErr.disabled = false;
+            }
+          });
+      } catch (e) {}
+    }
+    anakSelect && anakSelect.addEventListener('change', fetchAndFillPsikologi);
+    konsultanSelect && konsultanSelect.addEventListener('change', fetchAndFillPsikologi);
   });
 </script>
 @endpush

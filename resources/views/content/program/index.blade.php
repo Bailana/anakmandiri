@@ -213,6 +213,12 @@
             </div>
             <div class="row mb-3">
               <div class="col-12">
+                <p class="text-body-secondary text-sm mb-1">Diagnosa</p>
+                <p class="fw-medium" id="detailDiagnosaPsiko"></p>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12">
                 <p class="text-body-secondary text-sm mb-1">Rekomendasi</p>
                 <p class="fw-medium" id="detailRekomendasi"></p>
               </div>
@@ -320,6 +326,12 @@
               if (kemampuanSaatIniBlock) kemampuanSaatIniBlock.style.display = 'none';
               var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
               if (saranBlock) saranBlock.style.display = 'none';
+              // hide general diagnosa block and use psikologi-specific diagnosa placed above Kesimpulan
+              var generalDiagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById('detailDiagnosa').parentElement : null;
+              if (generalDiagnosaBlock) generalDiagnosaBlock.style.display = 'none';
+              // also ensure the general rekomendasi block is hidden (if present)
+              var saranBlockGen = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
+              if (saranBlockGen) saranBlockGen.style.display = 'none';
               // populate psikologi fields
               var elLB = document.getElementById('detailLatarBelakang');
               if (elLB) elLB.textContent = program.latar_belakang || '-';
@@ -329,8 +341,11 @@
               if (elHA) elHA.textContent = program.hasil_assessment || '-';
               var elKS = document.getElementById('detailKesimpulan');
               if (elKS) elKS.textContent = program.kesimpulan || '-';
+              // hide psikologi-specific rekomendasi field (not shown for psikologi)
               var elRK = document.getElementById('detailRekomendasi');
-              if (elRK) elRK.textContent = program.rekomendasi || '-';
+              if (elRK && elRK.parentElement) elRK.parentElement.style.display = 'none';
+              var elDiagP = document.getElementById('detailDiagnosaPsiko');
+              if (elDiagP) elDiagP.textContent = program.diagnosa || '-';
             } else {
               if (psikologiBlock) psikologiBlock.style.display = 'none';
               // restore other blocks
@@ -342,11 +357,19 @@
               if (kemampuanSaatIniBlock) kemampuanSaatIniBlock.style.display = '';
               var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
               if (saranBlock) saranBlock.style.display = '';
+              // restore general diagnosa block and clear psikologi-specific diagnosa
+              var generalDiagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById('detailDiagnosa').parentElement : null;
+              if (generalDiagnosaBlock) generalDiagnosaBlock.style.display = '';
+              var elDiagP = document.getElementById('detailDiagnosaPsiko');
+              if (elDiagP) elDiagP.textContent = '';
+              // restore general rekomendasi block if present
+              var saranBlockGen = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
+              if (saranBlockGen) saranBlockGen.style.display = '';
             }
-            // Untuk SI, sembunyikan Kemampuan Saat Ini & Saran Rekomendasi
+            // Untuk SI dan Psikologi, sembunyikan Kemampuan Saat Ini & Saran Rekomendasi
             el = document.getElementById('detailKemampuanSaatIni');
             if (el && program && document.body.contains(el)) {
-              if (sumber === 'si') {
+              if (sumber === 'si' || sumber === 'psikologi') {
                 el.parentElement.style.display = 'none';
               } else {
                 el.parentElement.style.display = '';
@@ -355,7 +378,7 @@
             }
             el = document.getElementById('detailSaranRekomendasi');
             if (el && program && document.body.contains(el)) {
-              if (sumber === 'si') {
+              if (sumber === 'si' || sumber === 'psikologi') {
                 el.parentElement.style.display = 'none';
               } else {
                 el.parentElement.style.display = '';
@@ -380,7 +403,7 @@
         'detailNamaProgram', 'detailKategori', 'detailAnakDidik', 'detailGuruFokus', 'detailKonsultan',
         'detailTanggalMulai', 'detailTanggalSelesai', 'detailDeskripsi', 'detailTargetPembelajaran',
         'detailCatatanKonsultan', 'detailStatus', 'detailKemampuan', 'detailWawancara',
-        'detailKemampuanSaatIni', 'detailSaranRekomendasi'
+        'detailKemampuanSaatIni', 'detailSaranRekomendasi', 'detailDiagnosaPsiko'
       ];
       ids.forEach(id => {
         const el = document.getElementById(id);
@@ -392,6 +415,17 @@
           }
         }
       });
+      // Also clear psikologi-specific rekomendasi display/text
+      const elRK = document.getElementById('detailRekomendasi');
+      if (elRK) {
+        if (elRK.parentElement) elRK.parentElement.style.display = '';
+        elRK.textContent = '';
+      }
+      const saranGen = document.getElementById('detailSaranRekomendasi');
+      if (saranGen) {
+        if (saranGen.parentElement) saranGen.parentElement.style.display = '';
+        saranGen.textContent = '';
+      }
     }
 
     window.loadRiwayatObservasi = function(btn) {

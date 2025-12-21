@@ -338,7 +338,6 @@ class ProgramController extends Controller
         'hasil_assessment' => 'nullable|string',
         'diagnosa_psikologi' => 'nullable|string',
         'kesimpulan' => 'nullable|string',
-        'rekomendasi' => 'nullable|string',
       ];
       if (!$isKonsultan) {
         $rules['konsultan_id'] = 'required|exists:konsultans,id';
@@ -361,7 +360,6 @@ class ProgramController extends Controller
       $data['metode_assessment'] = $request->input('metode_assessment');
       $data['hasil_assessment'] = $request->input('hasil_assessment');
       $data['kesimpulan'] = $request->input('kesimpulan');
-      $data['rekomendasi'] = $request->input('rekomendasi');
       if ($request->filled('diagnosa_psikologi')) {
         $data['diagnosa_psikologi'] = $request->input('diagnosa_psikologi');
       }

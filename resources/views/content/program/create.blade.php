@@ -83,8 +83,7 @@
               <textarea name="kesimpulan" id="kesimpulan" class="form-control" rows="3"></textarea>
             </div>
             <div class="col-md-12">
-              <label for="rekomendasi" class="form-label">Rekomendasi</label>
-              <textarea name="rekomendasi" id="rekomendasi" class="form-control" rows="3"></textarea>
+
             </div>
           </div>
 

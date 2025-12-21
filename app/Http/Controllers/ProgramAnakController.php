@@ -90,6 +90,7 @@ class ProgramAnakController extends Controller
         'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
         'is_suggested' => $it->is_suggested ? 1 : 0,
         'konsultan_spesialisasi' => $spes,
+        'keterangan' => $it->keterangan ?? null,
       ];
     }
 
@@ -120,6 +121,7 @@ class ProgramAnakController extends Controller
         'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
         'is_suggested' => $it->is_suggested ? 1 : 0,
         'konsultan' => ($it->programKonsultan && $it->programKonsultan->konsultan) ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null] : null,
+        'keterangan' => $it->keterangan ?? null,
       ];
     }
 
@@ -161,6 +163,7 @@ class ProgramAnakController extends Controller
         'konsultan' => $it->programKonsultan && $it->programKonsultan->konsultan ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null] : null,
         'is_suggested' => $it->is_suggested ? 1 : 0,
         'created_at' => $it->created_at ? $it->created_at->toDateTimeString() : null,
+        'keterangan' => $it->keterangan ?? null,
       ];
     }
 
@@ -579,6 +582,28 @@ class ProgramAnakController extends Controller
     ];
 
     return response()->json(['success' => true, 'program' => $data]);
+  }
+
+  /**
+   * Return latest ProgramPsikologi record for a given anak_didik as JSON
+   */
+  public function latestPsikologiForAnak($anakDidikId)
+  {
+    $rec = \App\Models\ProgramPsikologi::where('anak_didik_id', $anakDidikId)->orderByDesc('created_at')->first();
+    if (!$rec) {
+      return response()->json(['success' => true, 'data' => null]);
+    }
+    $data = [
+      'id' => $rec->id,
+      'latar_belakang' => $rec->latar_belakang ?? null,
+      'metode_assessment' => $rec->metode_assessment ?? null,
+      'hasil_assessment' => $rec->hasil_assessment ?? null,
+      'diagnosa' => $rec->diagnosa_psikologi ?? ($rec->diagnosa ?? null),
+      'kesimpulan' => $rec->kesimpulan ?? null,
+      'rekomendasi' => $rec->rekomendasi ?? null,
+      'created_at' => $rec->created_at ? $rec->created_at->toDateTimeString() : null,
+    ];
+    return response()->json(['success' => true, 'data' => $data]);
   }
 
   /**
