@@ -63,6 +63,103 @@
     padding: .18rem .35rem !important;
     border-radius: .35rem !important;
   }
+
+  /* Read-only textarea styling for psikologi entries in the "Semua Program Anak" modal */
+  #programAllModal .pa-rekomendasi textarea[disabled],
+  #programAllModal .pa-keterangan textarea[disabled] {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    resize: none;
+    padding: .375rem .5rem;
+    min-height: 46px;
+    color: #212529;
+    cursor: default;
+  }
+
+  /* Slight row highlight for selected psikologi entry */
+  #programAllModal .table-active {
+    background-color: #f8fafb !important;
+  }
+
+  /* Ensure per-row action buttons render horizontally */
+  /* Action cell: inline-flex centered vertically within the table cell */
+  #programAllModal .pa-actions {
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: .35rem !important;
+    vertical-align: middle !important;
+    height: 100%;
+  }
+
+  #programAllModal .pa-actions .btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    width: auto !important;
+    padding: .35rem .5rem !important;
+    margin: 0 !important;
+  }
+
+  /* Fix table row rendering: align cells vertically middle and reserve action column width */
+  #programAllModal .table {
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  /* move border to the row to ensure a continuous line across columns */
+  #programAllModal .table th,
+  #programAllModal .table td {
+    vertical-align: middle !important;
+    border-bottom: none !important;
+    background: transparent !important;
+  }
+
+  #programAllModal .table tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    background: transparent !important;
+  }
+
+  #programAllModal .table tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  #programAllModal .table td.pa-rekomendasi textarea,
+  #programAllModal .table td.pa-keterangan textarea {
+    width: 100%;
+    margin: 0;
+    padding: .375rem .5rem;
+    box-sizing: border-box;
+    overflow: visible;
+    background: transparent;
+    border: none;
+  }
+
+  #programAllModal .table td.pa-actions {
+    width: 120px;
+    white-space: nowrap;
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+    background: transparent !important;
+    overflow: visible;
+  }
+
+  /* remove button box-shadow/outline that may visually break the table line */
+  #programAllModal .pa-actions .btn,
+  #programAllModal .pa-actions .btn i {
+    box-shadow: none !important;
+    outline: none !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    background-clip: padding-box !important;
+  }
+
+  /* ensure buttons render above row background but do not create white blocks */
+  #programAllModal .pa-actions .btn {
+    z-index: 2;
+    background-color: inherit;
+  }
 </style>
 <div class="modal fade" id="programGroupModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl">
@@ -401,6 +498,7 @@
       role: @json(optional(Auth::user()) - > role),
       konsultanId: @json($currentKonsultanId ?? null)
     };
+    window.currentKonsultanSpesRaw = @json($currentKonsultanSpesRaw ?? null);
     const toggle = document.getElementById('groupSuggestToggle');
     if (toggle) {
       toggle.addEventListener('change', function() {
@@ -500,7 +598,7 @@
                 } elseif (str_contains($konsultanSpes, 'sensori') || str_contains($konsultanSpes, 'integrasi')) {
                 $badge = ['label' => 'SI', 'class' => 'bg-success'];
                 } elseif (str_contains($konsultanSpes, 'psikologi')) {
-                $badge = ['label' => 'PS', 'class' => 'bg-warning text-dark'];
+                $badge = ['label' => 'TP', 'class' => 'bg-warning text-dark'];
                 } else {
                 // try to derive from kode_program if available (e.g. SI-001, WIC-001, PS-001)
                 $kode = strtoupper($program->kode_program ?? '');
@@ -509,7 +607,7 @@
                 } elseif (str_starts_with($kode, 'WIC') || str_starts_with($kode, 'WICARA')) {
                 $badge = ['label' => 'TW', 'class' => 'bg-primary'];
                 } elseif (str_starts_with($kode, 'PS')) {
-                $badge = ['label' => 'PS', 'class' => 'bg-warning text-dark'];
+                $badge = ['label' => 'TP', 'class' => 'bg-warning text-dark'];
                 } else {
                 $parts = preg_split('/\s+/', trim($konsultanSpesRaw));
                 $initials = '';
@@ -597,6 +695,9 @@
         </div>
       </div>
       <div class="modal-footer">
+        <div class="me-auto">
+          <!-- placeholder for potential extra controls -->
+        </div>
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
       </div>
     </div>
@@ -716,6 +817,35 @@
             }
 
             const konsultanId = group.konsultan_id || null;
+            // Additional detection: if no spesialisasi available but one of the suggested items
+            // is a psikologi recommendation (e.g. program_konsultan_id == null or rekomendasi present),
+            // render TP badge as well.
+            try {
+              if (!badgeLabel) {
+                // restrict detection to items on the same dateKey
+                const itemsForDate = (group.items || []).filter(it => {
+                  let ik = '';
+                  if (it.created_at) ik = (it.created_at.indexOf('T') !== -1) ? it.created_at.split('T')[0] : it.created_at.split(' ')[0];
+                  else ik = 'id_' + it.id;
+                  return ik === dateKey;
+                });
+                const psykDetected = itemsForDate.some(it => {
+                  const suggested = (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true);
+                  if (!suggested) return false;
+                  // psikologi recommendations are saved with program_konsultan_id == null and often have rekomendasi or nama_program contains 'Rekomendasi'
+                  if ((it.program_konsultan_id === null || it.program_konsultan_id === undefined) && (it.rekomendasi || (it.nama_program && it.nama_program.toString().toLowerCase().includes('rekomendasi')))) return true;
+                  // or konsultan spesialisasi explicitly says psikologi
+                  if (it.konsultan_spesialisasi && it.konsultan_spesialisasi.toString().toLowerCase().includes('psiko')) return true;
+                  // or the program was created_by current konsultan and nama_program indicates rekomendasi
+                  if (it.created_by && window.currentUser && parseInt(it.created_by) === parseInt(window.currentUser.id) && it.nama_program && it.nama_program.toString().toLowerCase().includes('rekomendasi')) return true;
+                  return false;
+                });
+                if (psykDetected) {
+                  badgeLabel = 'TP';
+                  badgeClass = 'bg-warning text-dark';
+                }
+              }
+            } catch (e) {}
             // show therapy-type badge only when any program on that date is suggested
             const badgeHtml = (anySuggestedForDate && badgeLabel) ? (' <span class="badge ' + badgeClass + ' ms-2">' + badgeLabel + '</span>') : '';
             html += `<li class="list-group-item d-flex justify-content-between align-items-center">
@@ -819,7 +949,13 @@
             label = 'SI';
             cls = 'bg-success';
           } else if (s.indexOf('psikologi') !== -1 || s.indexOf('psiko') !== -1) {
-            label = 'PS';
+            label = 'TP';
+            cls = 'bg-warning text-dark';
+          }
+          // If group/spec is empty but the current logged konsultan is psikologi and
+          // one of the suggested items was created by the current konsultan, treat as PS
+          else if ((s === null || s.trim() === '') && window.currentKonsultanSpesRaw && String(window.currentKonsultanSpesRaw).toLowerCase().indexOf('psikologi') !== -1 && Array.isArray(items) && items.some(it => it.created_by && window.currentUser && parseInt(it.created_by) === parseInt(window.currentUser.id))) {
+            label = 'TP';
             cls = 'bg-warning text-dark';
           } else {
             // fallback: inspect kode_program from any suggested item
@@ -832,7 +968,7 @@
               label = 'TW';
               cls = 'bg-primary';
             } else if (kode.indexOf('PS') === 0) {
-              label = 'PS';
+              label = 'TP';
               cls = 'bg-warning text-dark';
             } else {
               label = (spec.trim() ? spec.split(/\s+/).map(x => x[0].toUpperCase()).slice(0, 2).join('') : 'TW');
@@ -886,7 +1022,7 @@
   }
 
   // Attach cleanup on modal hidden events to ensure UI is interactive after closing
-  ['riwayatObservasiModal', 'programGroupModal', 'programAllModal', 'programEditModal', 'programDetailModal', 'modalAddProgramMaster'].forEach(id => {
+  ['riwayatObservasiModal', 'programGroupModal', 'programAllModal', 'programEditModal', 'programDetailModal', 'modalAddProgramMaster', 'programConfirmModal'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('hidden.bs.modal', cleanupModalBackdrops);
   });
@@ -905,7 +1041,26 @@
         </div>
       </div>
       <div class="modal-footer">
+        <div class="me-auto">
+          <!-- Edit/Delete apply to selected psikologi entry only -->
+        </div>
+        <!-- per-row actions now available in the table; footer buttons removed -->
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation modal used by in-modal delete actions -->
+<div class="modal fade" id="programConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body">
+        <p class="mb-0 confirm-msg">Yakin?</p>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm btn-cancel" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-sm btn-confirm">Hapus</button>
       </div>
     </div>
   </div>
@@ -1146,11 +1301,57 @@
           } else {
             showDetailProgramGroup(window._lastGroup.anakDidikId, window._lastGroup.konsultanId, 0);
           }
+          // small cleanup after modal operations to ensure no stray backdrops remain
+          setTimeout(function() {
+            try {
+              cleanupModalBackdrops();
+            } catch (e) {}
+          }, 50);
         }
       } else {
         showToast(res.message || 'Gagal hapus', 'danger');
       }
     }).catch(() => showToast('Gagal hapus', 'danger'));
+  }
+</script>
+<script>
+  // showConfirm(message) -> Promise<boolean>
+  function showConfirm(message) {
+    return new Promise(function(resolve) {
+      try {
+        const modalEl = document.getElementById('programConfirmModal');
+        const msgEl = modalEl.querySelector('.confirm-msg');
+        msgEl.textContent = message || 'Yakin?';
+        const bs = bootstrap.Modal.getOrCreateInstance(modalEl);
+        const onConfirm = function() {
+          cleanup();
+          resolve(true);
+        };
+        const onCancel = function() {
+          cleanup();
+          resolve(false);
+        };
+        const confirmBtn = modalEl.querySelector('.btn-confirm');
+        const cancelBtn = modalEl.querySelector('.btn-cancel');
+
+        function cleanup() {
+          try {
+            confirmBtn.removeEventListener('click', onConfirm);
+          } catch (e) {}
+          try {
+            cancelBtn.removeEventListener('click', onCancel);
+          } catch (e) {}
+          try {
+            bs.hide();
+          } catch (e) {}
+        }
+        confirmBtn.addEventListener('click', onConfirm);
+        cancelBtn.addEventListener('click', onCancel);
+        bs.show();
+      } catch (e) {
+        resolve(false);
+      }
+    });
   }
 </script>
 <script>
@@ -1173,19 +1374,181 @@
           modal.show();
           return;
         }
-        let html = '<div class="table-responsive"><table class="table table-sm table-hover">'
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th></tr></thead><tbody>';
-        data.programs.forEach(p => {
-          html += `<tr>
-            <td>${p.kode_program || '-'}</td>
-            <td>${p.nama_program || '-'}</td>
-            <td>${p.tujuan || '-'}</td>
-            <td>${p.aktivitas || '-'}</td>
-            <td>${p.konsultan ? p.konsultan.nama : '-'}</td>
-          </tr>`;
-        });
+        // If any program looks like a psikologi recommendation (no konsultan but has rekomendasi),
+        // render a psikologi-style editable form table. Otherwise render default program table.
+        const anyPsikologi = data.programs.some(p => (!p.konsultan) && (p.rekomendasi || p.created_by_name));
+        // determine if any psikologi row would show action buttons for current user
+        let canEditAny = false;
+        try {
+          if (anyPsikologi && window.currentUser) {
+            data.programs.forEach(p => {
+              if ((!p.konsultan) && (p.rekomendasi || p.created_by_name)) {
+                if (window.currentUser.role === 'admin') canEditAny = true;
+                else if (window.currentUser.role === 'konsultan') {
+                  if (window.currentUser.konsultanId && p.konsultan && p.konsultan.id && parseInt(window.currentUser.konsultanId) === parseInt(p.konsultan.id)) canEditAny = true;
+                  if (!canEditAny && p.created_by && parseInt(window.currentUser.id) === parseInt(p.created_by)) canEditAny = true;
+                } else {
+                  if (p.created_by && parseInt(window.currentUser.id) === parseInt(p.created_by)) canEditAny = true;
+                }
+              }
+            });
+          }
+        } catch (e) {}
+
+        let html = '<div class="table-responsive"><table class="table table-sm table-hover">';
+        if (anyPsikologi) {
+          html += '<thead><tr><th>REKOMENDASI</th><th>KETERANGAN</th><th>DIBUAT OLEH</th>' + (canEditAny ? '<th style="width:120px">AKSI</th>' : '') + '</tr></thead><tbody>';
+          data.programs.forEach(p => {
+            if ((!p.konsultan) && (p.rekomendasi || p.created_by_name)) {
+              // determine per-row action visibility: admin, creator, or owning konsultan
+              let canEditRow = false;
+              try {
+                if (window.currentUser) {
+                  if (window.currentUser.role === 'admin') canEditRow = true;
+                  else if (window.currentUser.role === 'konsultan') {
+                    if (window.currentUser.konsultanId && p.konsultan && p.konsultan.id && parseInt(window.currentUser.konsultanId) === parseInt(p.konsultan.id)) canEditRow = true;
+                    if (!canEditRow && p.created_by && parseInt(window.currentUser.id) === parseInt(p.created_by)) canEditRow = true;
+                  } else {
+                    if (p.created_by && parseInt(window.currentUser.id) === parseInt(p.created_by)) canEditRow = true;
+                  }
+                }
+              } catch (e) {}
+
+              html += `<tr data-program-id="${p.id}">
+                <td class="pa-rekomendasi"><textarea class="form-control form-control-sm" rows="2" data-field="rekomendasi" disabled>${p.rekomendasi ? p.rekomendasi : ''}</textarea></td>
+                <td class="pa-keterangan"><textarea class="form-control form-control-sm" rows="2" data-field="keterangan" disabled>${p.keterangan ? p.keterangan : ''}</textarea></td>
+                <td class="pa-created-by">${p.created_by_name ? p.created_by_name : '-'}</td>`;
+
+              if (canEditAny) {
+                if (canEditRow) {
+                  html += `
+                <td class="pa-actions">
+                  <button type="button" class="btn btn-sm btn-outline-warning btn-row-edit" title="Edit"><i class="ri-edit-line"></i></button>
+                  <button type="button" class="btn btn-sm btn-outline-danger btn-row-delete" title="Hapus"><i class="ri-delete-bin-line"></i></button>
+                </td>`;
+                } else {
+                  html += `<td class="pa-actions"></td>`;
+                }
+              }
+
+              html += `</tr>`;
+            }
+          });
+        } else {
+          html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th></tr></thead><tbody>';
+          data.programs.forEach(p => {
+            html += `<tr>
+              <td>${p.kode_program || '-'}</td>
+              <td>${p.nama_program || '-'}</td>
+              <td>${p.tujuan || '-'}</td>
+              <td>${p.aktivitas || '-'}</td>
+              <td>${p.konsultan ? p.konsultan.nama : '-'}</td>
+            </tr>`;
+          });
+        }
         html += '</tbody></table></div>';
         target.innerHTML = html;
+
+        // If psikologi table, wire per-row action buttons (Edit/Delete)
+        if (anyPsikologi) {
+          const rows = target.querySelectorAll('tr[data-program-id]');
+          rows.forEach(row => {
+            const id = row.dataset.programId;
+            const editBtnRow = row.querySelector('.btn-row-edit');
+            const delBtnRow = row.querySelector('.btn-row-delete');
+            let inEdit = false;
+
+            if (editBtnRow) {
+              editBtnRow.addEventListener('click', function() {
+                if (!inEdit) {
+                  // enable editing
+                  row.querySelectorAll('textarea[data-field]').forEach(el => el.disabled = false);
+                  editBtnRow.innerHTML = '<i class="ri-save-line"></i>';
+                  editBtnRow.title = 'Simpan';
+                  if (delBtnRow) delBtnRow.disabled = true;
+                  inEdit = true;
+                  return;
+                }
+                // save
+                const rekom = row.querySelector('textarea[data-field="rekomendasi"]').value;
+                const keterangan = row.querySelector('textarea[data-field="keterangan"]').value;
+                fetch('/program-anak/' + id + '/update-json', {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    rekomendasi: rekom,
+                    keterangan: keterangan
+                  })
+                }).then(r => r.json()).then(resp => {
+                  if (resp && resp.success) {
+                    showToast('Perubahan tersimpan', 'success');
+                    row.querySelectorAll('textarea[data-field]').forEach(el => el.disabled = true);
+                    editBtnRow.innerHTML = '<i class="ri-edit-line"></i>';
+                    editBtnRow.title = 'Edit';
+                    if (delBtnRow) delBtnRow.disabled = false;
+                    inEdit = false;
+                    showAllProgramsForAnak(anakId);
+                  } else {
+                    showToast((resp && resp.message) || 'Gagal menyimpan', 'danger');
+                  }
+                }).catch(() => showToast('Gagal menyimpan', 'danger'));
+              });
+            }
+
+            if (delBtnRow) {
+              delBtnRow.addEventListener('click', function() {
+                showConfirm('Yakin ingin menghapus entri ini?').then(function(confirmed) {
+                  if (!confirmed) return;
+                  fetch('/program-anak/' + id + '/delete-json', {
+                    method: 'DELETE',
+                    headers: {
+                      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                      'Accept': 'application/json'
+                    }
+                  }).then(r => r.json()).then(resp => {
+                    if (resp && resp.success) {
+                      showToast('Terhapus', 'success');
+                      showAllProgramsForAnak(anakId);
+                      // ensure any stray backdrops/modal-open state are cleaned up after refresh
+                      setTimeout(function() {
+                        try {
+                          cleanupModalBackdrops();
+                        } catch (e) {}
+                      }, 50);
+                      // if there are no psikologi recommendation rows left for this anak, close this modal and reopen riwayat
+                      try {
+                        fetch('/program-anak/' + anakId + '/all-json').then(r => r.json()).then(j => {
+                          if (j && j.success && Array.isArray(j.programs)) {
+                            const anyPsik = j.programs.some(p => (!p.konsultan) && (p.rekomendasi || p.created_by_name));
+                            if (!anyPsik) {
+                              try {
+                                bootstrap.Modal.getInstance(modalEl).hide();
+                              } catch (e) {}
+                              const dummy = document.createElement('button');
+                              dummy.setAttribute('data-anak-didik-id', anakId);
+                              loadRiwayatObservasi(dummy);
+                            }
+                          }
+                        }).catch(() => {});
+                      } catch (e) {}
+                      if (window.currentRiwayatAnakId) {
+                        const dummy = document.createElement('button');
+                        dummy.setAttribute('data-anak-didik-id', window.currentRiwayatAnakId);
+                        loadRiwayatObservasi(dummy);
+                      }
+                    } else {
+                      showToast((resp && resp.message) || 'Gagal hapus', 'danger');
+                    }
+                  }).catch(() => showToast('Gagal hapus', 'danger'));
+                });
+              });
+            }
+          });
+        }
         modal.show();
       })
       .catch(() => {

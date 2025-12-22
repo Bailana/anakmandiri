@@ -151,6 +151,7 @@ class PPIController extends Controller
       'periode_mulai' => 'required|date',
       'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
       'keterangan' => 'nullable|string',
+      'rekomendasi' => 'nullable|string',
     ]);
 
     $validated['status'] = 'aktif';

@@ -17,7 +17,10 @@ class ProgramAnak extends Model
     'periode_mulai',
     'periode_selesai',
     'status',
+    'rekomendasi',
     'keterangan',
+    'created_by',
+    'created_by_name',
     'is_suggested',
   ];
 

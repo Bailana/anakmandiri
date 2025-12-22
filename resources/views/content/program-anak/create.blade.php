@@ -100,7 +100,7 @@
             </div>
           </div>
           <!-- Kolom khusus untuk konsultan psikologi -->
-          <div class="row mb-3" id="psikologiFields" style="display:none;">
+          <div class="row" id="psikologiFields" style="display:none;">
             <div class="col-md-12 mb-2">
               <label for="latar_belakang" class="form-label">Latar Belakang</label>
               <textarea name="latar_belakang" id="latar_belakang" class="form-control" rows="3"></textarea>
@@ -190,6 +190,14 @@
     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
   `;
     tbody.appendChild(tr);
+    // If the program list wrapper is hidden, disable newly added inputs to avoid browser validation errors
+    const wrapperAfterAdd = document.getElementById('daftarProgramAnakWrapper');
+    const hiddenAfterAdd = wrapperAfterAdd && wrapperAfterAdd.style.display === 'none';
+    if (hiddenAfterAdd) {
+      tr.querySelectorAll('input,textarea,select').forEach(el => el.disabled = true);
+      const addBtnAfter = document.getElementById('btnTambahBaris');
+      if (addBtnAfter) addBtnAfter.disabled = true;
+    }
     barisIdx++;
   });
 
@@ -273,11 +281,27 @@
     // Tampilkan field psikologi jika konsultan psikologi
     if (spesialisasi === 'psikologi') {
       psikologiFields.style.display = '';
+      const r = document.getElementById('rekomendasi');
+      if (r) {
+        r.required = true;
+        r.disabled = false;
+      }
     } else {
       psikologiFields.style.display = 'none';
+      const r2 = document.getElementById('rekomendasi');
+      if (r2) {
+        r2.required = false;
+      }
     }
     // refresh kode options for all rows
     refreshKodeOptions();
+    // enable/disable inputs inside wrapper depending on visibility to avoid browser constraint validation
+    const hidden = wrapper.style.display === 'none';
+    wrapper.querySelectorAll('input,textarea,select').forEach(el => {
+      el.disabled = hidden;
+    });
+    const addBtn = document.getElementById('btnTambahBaris');
+    if (addBtn) addBtn.disabled = hidden;
   }
   document.getElementById('konsultan_id').addEventListener('change', toggleDaftarProgramAnak);
 

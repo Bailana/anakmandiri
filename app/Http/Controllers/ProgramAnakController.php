@@ -91,6 +91,7 @@ class ProgramAnakController extends Controller
         'is_suggested' => $it->is_suggested ? 1 : 0,
         'konsultan_spesialisasi' => $spes,
         'keterangan' => $it->keterangan ?? null,
+        'created_by' => $it->created_by ?? null,
       ];
     }
 
@@ -275,19 +276,21 @@ class ProgramAnakController extends Controller
     $rawKode = $request->input('kode_program');
     $kodeSanitized = $rawKode ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $rawKode)) : null;
 
+    // determine konsultan_id from current user (if any)
+    $konsultanId = null;
+    $user = auth()->user();
+    if ($user) {
+      $konsultanId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
+      if (!$konsultanId && $user->email) {
+        $konsultanId = \App\Models\Konsultan::where('email', $user->email)->value('id');
+      }
+      if (!$konsultanId) {
+        $konsultanId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
+      }
+    }
+
     ProgramKonsultan::create([
-      'konsultan_id' => (function () {
-        $user = auth()->user();
-        if (!$user) return null;
-        $konsultanId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
-        if (!$konsultanId && $user->email) {
-          $konsultanId = \App\Models\Konsultan::where('email', $user->email)->value('id');
-        }
-        if (!$konsultanId) {
-          $konsultanId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
-        }
-        return $konsultanId;
-      })(),
+      'konsultan_id' => $konsultanId,
       'kode_program' => $kodeSanitized,
       'nama_program' => $request->input('nama_program'),
       'tujuan' => $request->input('tujuan'),
@@ -418,6 +421,7 @@ class ProgramAnakController extends Controller
 
   public function store(Request $request)
   {
+    // Basic common validation
     $request->validate([
       'konsultan_id' => 'required|exists:konsultans,id',
       'anak_didik_id' => 'required|exists:anak_didiks,id',
@@ -425,20 +429,73 @@ class ProgramAnakController extends Controller
       'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
       'status' => 'nullable|in:aktif,selesai,nonaktif',
       'keterangan' => 'nullable|string',
+    ]);
+
+    // resolve konsultan spesialisasi
+    $konsultan = null;
+    try {
+      $konsultan = \App\Models\Konsultan::find($request->input('konsultan_id'));
+    } catch (\Exception $e) {
+      $konsultan = null;
+    }
+    $konsultanSpes = $konsultan ? strtolower($konsultan->spesialisasi ?? '') : '';
+
+    // If konsultan is psikologi, require rekomendasi and save a single ProgramAnak record
+    if ($konsultanSpes && strpos($konsultanSpes, 'psikologi') !== false) {
+      $request->validate([
+        'rekomendasi' => 'required|string',
+      ]);
+
+      // create one ProgramAnak entry representing the psikologi recommendation
+      // program_konsultan_id must be NULL here (this FK references program_konsultan.id,
+      // not konsultans.id); setting konsultan id here caused FK constraint error.
+      // attach creator info so riwayat can display konsultan/user name
+      $creatorId = auth()->check() ? auth()->id() : null;
+      $creatorName = null;
+      if (auth()->check()) {
+        $creatorName = auth()->user()->name ?? null;
+      }
+      $created = ProgramAnak::create([
+        'anak_didik_id' => $request->input('anak_didik_id'),
+        'program_konsultan_id' => null,
+        'kode_program' => null,
+        'nama_program' => 'Rekomendasi Psikologi',
+        'tujuan' => null,
+        'aktivitas' => null,
+        'periode_mulai' => $request->input('periode_mulai'),
+        'periode_selesai' => $request->input('periode_selesai'),
+        'status' => $request->input('status', 'aktif'),
+        'keterangan' => $request->input('keterangan'),
+        'rekomendasi' => $request->input('rekomendasi'),
+        'created_by' => $creatorId,
+        'created_by_name' => $creatorName,
+        'is_suggested' => $request->input('is_suggested') ? 1 : 0,
+      ]);
+      // audit: record create
+      try {
+        \DB::table('program_anak_audits')->insert([
+          'program_anak_id' => $created->id,
+          'action' => 'create',
+          'user_id' => auth()->check() ? auth()->id() : null,
+          'user_name' => auth()->check() ? (auth()->user()->name ?? null) : null,
+          'changes' => json_encode($created->toArray()),
+          'created_at' => now(),
+          'updated_at' => now(),
+        ]);
+      } catch (\Exception $e) {
+      }
+
+      return redirect()->route('program-anak.index')->with('success', 'Rekomendasi psikologi berhasil disimpan');
+    }
+
+    // Default flow for non-psikologi konsultan: program_items required
+    $request->validate([
       'program_items' => 'required|array|min:1',
     ]);
 
     $items = $request->input('program_items', []);
 
-    \DB::transaction(function () use ($items, $request) {
-      // determine konsultan spesialisasi for saving to pendidikan table when relevant
-      $konsultan = null;
-      try {
-        $konsultan = \App\Models\Konsultan::find($request->input('konsultan_id'));
-      } catch (\Exception $e) {
-        $konsultan = null;
-      }
-      $konsultanSpes = $konsultan ? strtolower($konsultan->spesialisasi ?? '') : '';
+    \DB::transaction(function () use ($items, $request, $konsultanSpes) {
       foreach ($items as $it) {
         // basic sanitation / mapping
         $nama = $it['nama_program'] ?? null;
@@ -451,6 +508,8 @@ class ProgramAnakController extends Controller
           $programKonsultanId = ProgramKonsultan::whereRaw("REPLACE(REPLACE(REPLACE(UPPER(kode_program),'-',''),' ',''),'.','') = ?", [$rawKode])->value('id');
         }
 
+        $creatorId = auth()->check() ? auth()->id() : null;
+        $creatorName = auth()->check() ? (auth()->user()->name ?? null) : null;
         $programAnak = ProgramAnak::create([
           'anak_didik_id' => $request->input('anak_didik_id'),
           'program_konsultan_id' => $programKonsultanId,
@@ -462,8 +521,25 @@ class ProgramAnakController extends Controller
           'periode_selesai' => $request->input('periode_selesai'),
           'status' => $request->input('status', 'aktif'),
           'keterangan' => $request->input('keterangan'),
+          'rekomendasi' => $request->input('rekomendasi'),
+          'created_by' => $creatorId,
+          'created_by_name' => $creatorName,
           'is_suggested' => $request->input('is_suggested') ? 1 : 0,
         ]);
+
+        // audit: record create for each program item
+        try {
+          \DB::table('program_anak_audits')->insert([
+            'program_anak_id' => $programAnak->id,
+            'action' => 'create',
+            'user_id' => auth()->check() ? auth()->id() : null,
+            'user_name' => auth()->check() ? (auth()->user()->name ?? null) : null,
+            'changes' => json_encode($programAnak->toArray()),
+            'created_at' => now(),
+            'updated_at' => now(),
+          ]);
+        } catch (\Exception $e) {
+        }
 
         // If konsultan is pendidikan, also save a copy into program_pendidikan
         if ($konsultanSpes && strpos($konsultanSpes, 'pendidikan') !== false) {
@@ -478,6 +554,7 @@ class ProgramAnakController extends Controller
               'periode_mulai' => $request->input('periode_mulai'),
               'periode_selesai' => $request->input('periode_selesai'),
               'keterangan' => $request->input('keterangan'),
+              'rekomendasi' => $request->input('rekomendasi'),
               'is_suggested' => $request->input('is_suggested') ? 1 : 0,
               'created_by' => auth()->id(),
             ]);
@@ -510,6 +587,7 @@ class ProgramAnakController extends Controller
       'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
       'status' => 'required|in:aktif,selesai,nonaktif',
       'keterangan' => 'nullable|string',
+      'rekomendasi' => 'nullable|string',
     ]);
     $program = ProgramAnak::findOrFail($id);
     $program->update($request->all());
@@ -528,19 +606,83 @@ class ProgramAnakController extends Controller
    */
   public function updateJson(Request $request, $id)
   {
-    $request->validate([
+    // Load program first so we can authorize and adjust validation rules for psikologi entries
+    $program = ProgramAnak::findOrFail($id);
+
+    // Authorization: allow only admin, the creator, or the owning konsultan
+    $user = auth()->user();
+    if (!$user) {
+      return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+    }
+    $allowed = false;
+    if ($user->role === 'admin') {
+      $allowed = true;
+    }
+    // allow original creator
+    if (!$allowed && $program->created_by && intval($program->created_by) === intval($user->id)) {
+      $allowed = true;
+    }
+    // allow konsultan owner when this program maps to a ProgramKonsultan
+    if (!$allowed && $user->role === 'konsultan' && $program->program_konsultan_id) {
+      $konsultanRecId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
+      if (!$konsultanRecId && $user->email) {
+        $konsultanRecId = \App\Models\Konsultan::where('email', $user->email)->value('id');
+      }
+      if (!$konsultanRecId) {
+        $konsultanRecId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
+      }
+      $progK = \App\Models\ProgramKonsultan::find($program->program_konsultan_id);
+      if ($progK && $progK->konsultan_id && intval($progK->konsultan_id) === intval($konsultanRecId)) {
+        $allowed = true;
+      }
+    }
+    if (!$allowed) {
+      return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+    }
+    // conditional validation: if this program maps to a ProgramKonsultan, require nama_program; otherwise allow nama_program nullable (psikologi entries)
+    $rules = [
       'kode_program' => 'nullable|string|max:100',
-      'nama_program' => 'required|string|max:255',
       'tujuan' => 'nullable|string',
       'aktivitas' => 'nullable|string',
-    ]);
+      'rekomendasi' => 'nullable|string',
+      'keterangan' => 'nullable|string',
+    ];
+    if ($program->program_konsultan_id) {
+      $rules['nama_program'] = 'required|string|max:255';
+    } else {
+      $rules['nama_program'] = 'nullable|string|max:255';
+    }
+    $request->validate($rules);
 
-    $program = ProgramAnak::findOrFail($id);
-    $program->kode_program = $request->input('kode_program');
-    $program->nama_program = $request->input('nama_program');
-    $program->tujuan = $request->input('tujuan');
-    $program->aktivitas = $request->input('aktivitas');
+    // compute changes for audit
+    $changed = [];
+    $fields = ['kode_program', 'nama_program', 'tujuan', 'aktivitas', 'rekomendasi', 'keterangan'];
+    foreach ($fields as $f) {
+      if ($request->has($f)) {
+        $old = $program->{$f};
+        $new = $request->input($f);
+        if ($old != $new) {
+          $changed[$f] = ['old' => $old, 'new' => $new];
+        }
+        $program->{$f} = $new;
+      }
+    }
     $program->save();
+    // insert audit if any change
+    if (!empty($changed)) {
+      try {
+        \DB::table('program_anak_audits')->insert([
+          'program_anak_id' => $program->id,
+          'action' => 'update',
+          'user_id' => auth()->check() ? auth()->id() : null,
+          'user_name' => auth()->check() ? (auth()->user()->name ?? null) : null,
+          'changes' => json_encode($changed),
+          'created_at' => now(),
+          'updated_at' => now(),
+        ]);
+      } catch (\Exception $e) {
+      }
+    }
 
     return response()->json(['success' => true, 'message' => 'Program berhasil diupdate', 'program' => $program]);
   }
@@ -551,6 +693,35 @@ class ProgramAnakController extends Controller
   public function destroyJson($id)
   {
     $program = ProgramAnak::findOrFail($id);
+    // Authorization: allow only admin, the creator, or the owning konsultan
+    $user = auth()->user();
+    if (!$user) {
+      return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+    }
+    $allowed = false;
+    if ($user->role === 'admin') {
+      $allowed = true;
+    }
+    if (!$allowed && $program->created_by && intval($program->created_by) === intval($user->id)) {
+      $allowed = true;
+    }
+    if (!$allowed && $user->role === 'konsultan' && $program->program_konsultan_id) {
+      $konsultanRecId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
+      if (!$konsultanRecId && $user->email) {
+        $konsultanRecId = \App\Models\Konsultan::where('email', $user->email)->value('id');
+      }
+      if (!$konsultanRecId) {
+        $konsultanRecId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
+      }
+      $progK = \App\Models\ProgramKonsultan::find($program->program_konsultan_id);
+      if ($progK && $progK->konsultan_id && intval($progK->konsultan_id) === intval($konsultanRecId)) {
+        $allowed = true;
+      }
+    }
+    if (!$allowed) {
+      return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+    }
+
     $program->delete();
     return response()->json(['success' => true, 'message' => 'Program berhasil dihapus']);
   }
@@ -627,6 +798,10 @@ class ProgramAnakController extends Controller
         'periode_mulai' => $it->periode_mulai ? $it->periode_mulai->toDateString() : null,
         'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
         'konsultan' => $it->programKonsultan && $it->programKonsultan->konsultan ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama] : null,
+        'rekomendasi' => $it->rekomendasi ?? null,
+        'keterangan' => $it->keterangan ?? null,
+        'created_by' => $it->created_by ?? null,
+        'created_by_name' => $it->created_by_name ?? null,
         'created_at' => $it->created_at ? $it->created_at->toDateTimeString() : null,
       ];
     }
