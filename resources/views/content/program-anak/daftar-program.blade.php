@@ -102,8 +102,7 @@
               btn.addEventListener('click', function() {
                 var id = this.dataset.id;
                 var form = document.getElementById('editProgramForm');
-                form.action = '{{ url('
-                program - anak / program - konsultan ') }}' + '/' + id;
+                form.action = '{{ url("program-anak/program-konsultan") }}' + '/' + id;
                 document.getElementById('editKode').value = this.dataset.kode || '';
                 document.getElementById('editNama').value = this.dataset.nama || '';
                 document.getElementById('editTujuan').value = this.dataset.tujuan || '';

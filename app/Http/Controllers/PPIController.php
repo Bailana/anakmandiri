@@ -2,137 +2,86 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AnakDidik;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
+use App\Models\Ppi;
+use App\Models\PpiItem;
+use App\Models\AnakDidik;
 use App\Models\Konsultan;
 use App\Models\Karyawan;
-use App\Http\Controllers\GuruAnakDidikController;
+use Illuminate\Support\Facades\Auth;
 
 class PPIController extends Controller
 {
   public function index(Request $request)
   {
+    $search = $request->input('search');
+    $guru_fokus = $request->input('guru_fokus');
+
     $user = Auth::user();
-
-    // If user is konsultan but not spesialisasi Pendidikan, forbid access
-    if ($user && $user->role === 'konsultan' && !$this->isKonsultanPendidikan($user)) {
-      abort(403);
+    $isGuru = $user && $user->role === 'guru';
+    $karyawanId = null;
+    if ($isGuru) {
+      $karyawan = Karyawan::where('nama', $user->name)->first();
+      $karyawanId = $karyawan ? $karyawan->id : null;
     }
 
-    $query = AnakDidik::with('guruFokus')->orderBy('nama');
-    if ($request->filled('search')) {
-      $q = $request->search;
-      $query->where(function ($s) use ($q) {
-        $s->where('nama', 'like', "%{$q}%")->orWhere('nis', 'like', "%{$q}%");
-      });
+    // Always list all AnakDidik (allow viewing the table), access to riwayat controlled via $accessMap
+    $anakQuery = AnakDidik::with('guruFokus')
+      ->when($search, function ($q, $s) {
+        $q->where('nama', 'like', "%{$s}%")->orWhere('nis', 'like', "%{$s}%");
+      })
+      ->orderBy('nama');
+
+    $anakList = $anakQuery->paginate(15)->appends($request->query());
+
+    // latest PPI status per anak on this page
+    $anakIds = $anakList->pluck('id')->toArray();
+    $latestPpis = [];
+    if (!empty($anakIds)) {
+      $ppis = \App\Models\Ppi::whereIn('anak_didik_id', $anakIds)->orderByDesc('created_at')->get();
+      foreach ($ppis as $p) {
+        if (!isset($latestPpis[$p->anak_didik_id])) $latestPpis[$p->anak_didik_id] = $p;
+      }
+    }
+    $statusMap = [];
+    foreach ($anakList as $a) {
+      $statusMap[$a->id] = isset($latestPpis[$a->id]) ? ($latestPpis[$a->id]->status ?? '') : '';
     }
 
-    // Filter by guru fokus (Karyawan id)
-    if ($request->filled('guru_fokus')) {
-      $query->where('guru_fokus_id', $request->guru_fokus);
+    // isFokusMap: whether current user is guru_fokus for each anak
+    $isFokusMap = [];
+    foreach ($anakList as $a) {
+      $isFokusMap[$a->id] = ($user && $user->role === 'guru' && isset($karyawanId) && $karyawanId && $a->guru_fokus_id == $karyawanId) ? true : false;
     }
 
-    $perPage = 15;
-    $anakPaginator = $query->paginate($perPage)->appends($request->query());
-
-    // Build access map for items on current page only
+    // build access map: whether current user can view riwayat for each anak
     $accessMap = [];
-    // Try to resolve current user to a Karyawan record (match by name) to cover guru_fokus mapping
-    $karyawanForUser = null;
-    if ($user && $user->role === 'guru') {
-      $karyawanForUser = \App\Models\Karyawan::where('nama', $user->name)->first();
-    }
-    foreach ($anakPaginator->items() as $anak) {
-      if ($user->role === 'admin') {
-        $accessMap[$anak->id] = true;
-        continue;
+    foreach ($anakList as $a) {
+      // Only allow the guru fokus to view riwayat: logged-in user must be role 'guru'
+      // and their Karyawan.id must match AnakDidik.guru_fokus_id
+      $hasAccess = false;
+      if ($user && $user->role === 'guru' && isset($karyawanId) && $karyawanId) {
+        $hasAccess = ($a->guru_fokus_id == $karyawanId);
       }
-      // Direct assignment or approved request
-      $can = GuruAnakDidikController::canAccessChild($user->id, $anak->id);
-      // Additionally, if the anak's guruFokus (Karyawan) matches this user's Karyawan record, grant access
-      if (!$can && $karyawanForUser && $anak->guru_fokus_id && $karyawanForUser->id == $anak->guru_fokus_id) {
-        $can = true;
+      $accessMap[$a->id] = $hasAccess;
+    }
+
+    $guruOptions = [];
+    $canApprovePPI = ($user && ($user->role === 'admin')) ? true : false;
+
+    // determine if current user is a konsultan spesialisasi pendidikan
+    $isKonsultanPendidikan = false;
+    if ($user && $user->role === 'konsultan') {
+      $k = Konsultan::where('user_id', $user->id)->orWhere('email', $user->email)->first();
+      if ($k && strtolower(trim($k->spesialisasi ?? '')) === 'pendidikan') {
+        $isKonsultanPendidikan = true;
       }
-      $accessMap[$anak->id] = $can;
     }
-
-    // Provide list of guru fokus options for filter dropdown
-    $guruOptions = Karyawan::whereNotNull('posisi')
-      ->whereRaw('LOWER(posisi) LIKE ?', ['%guru%'])
-      ->orderBy('nama')
-      ->get();
-
-    $user = Auth::user();
-    $canApprovePPI = $this->isKonsultanPendidikan($user);
-
-    return view('content.ppi.index', [
-      'anakList' => $anakPaginator,
-      'accessMap' => $accessMap,
-      'search' => $request->search ?? null,
-      'guruOptions' => $guruOptions,
-      'guru_fokus' => $request->guru_fokus ?? null,
-      'canApprovePPI' => $canApprovePPI,
-    ]);
-  }
-
-  /**
-   * API: Riwayat PPI untuk anak didik tertentu
-   */
-  public function riwayat($anakId)
-  {
-    $items = \App\Models\ProgramAnak::where('anak_didik_id', $anakId)
-      ->orderByDesc('created_at')
-      ->get();
-
-    $riwayat = $items->map(function ($p) {
-      return [
-        'id' => $p->id,
-        'nama_program' => $p->nama_program,
-        'periode_mulai' => $p->periode_mulai ? $p->periode_mulai->format('Y-m-d') : null,
-        'periode_selesai' => $p->periode_selesai ? $p->periode_selesai->format('Y-m-d') : null,
-        'status' => $p->status,
-        'keterangan' => $p->keterangan ?? null,
-        'created_at' => $p->created_at ? $p->created_at->format('d-m-Y H:i') : '',
-      ];
-    });
-
-    return response()->json([
-      'success' => true,
-      'riwayat' => $riwayat,
-    ]);
-  }
-
-  /**
-   * Approve a PPI entry (only konsultan pendidikan allowed)
-   */
-  public function approve(Request $request, $id)
-  {
-    $user = Auth::user();
-    if (!$this->isKonsultanPendidikan($user)) {
-      return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
-    }
-
-    $p = \App\Models\ProgramAnak::findOrFail($id);
-    $anak = $p->anakDidik;
-    // Require that anak has a guru_fokus assigned
-    if (!$anak || !$anak->guru_fokus_id) {
-      return response()->json(['success' => false, 'message' => 'Tidak ada guru fokus untuk anak ini'], 400);
-    }
-
-    $p->status = 'disetujui';
-    $p->save();
-
-    return response()->json(['success' => true, 'message' => 'PPI berhasil disetujui']);
+    return view('content.ppi.index', compact('anakList', 'search', 'guruOptions', 'guru_fokus', 'accessMap', 'canApprovePPI', 'statusMap', 'isKonsultanPendidikan', 'isFokusMap'));
   }
 
   public function create()
   {
-    $user = Auth::user();
-    if ($user && $user->role === 'konsultan' && !$this->isKonsultanPendidikan($user)) {
-      abort(403);
-    }
     $anakDidiks = AnakDidik::orderBy('nama')->get();
     $konsultans = Konsultan::orderBy('nama')->get();
     return view('content.ppi.create', compact('anakDidiks', 'konsultans'));
@@ -140,73 +89,197 @@ class PPIController extends Controller
 
   public function store(Request $request)
   {
-    $user = Auth::user();
-    if ($user && $user->role === 'konsultan' && !$this->isKonsultanPendidikan($user)) {
-      abort(403);
-    }
-
-    $validated = $request->validate([
+    $request->validate([
       'anak_didik_id' => 'required|exists:anak_didiks,id',
-      'nama_program' => 'required|string|max:255',
       'periode_mulai' => 'required|date',
       'periode_selesai' => 'required|date|after_or_equal:periode_mulai',
       'keterangan' => 'nullable|string',
-      'rekomendasi' => 'nullable|string',
+      'program_items' => 'required|array|min:1'
     ]);
 
-    $validated['status'] = 'aktif';
-    \App\Models\ProgramAnak::create($validated);
+    $ppi = Ppi::create([
+      'anak_didik_id' => $request->input('anak_didik_id'),
+      'periode_mulai' => $request->input('periode_mulai'),
+      'periode_selesai' => $request->input('periode_selesai'),
+      'keterangan' => $request->input('keterangan'),
+      'created_by' => auth()->check() ? auth()->id() : null,
+    ]);
 
-    return redirect()->route('ppi.index')->with('success', 'PPI berhasil ditambahkan');
+    $items = $request->input('program_items', []);
+    foreach ($items as $it) {
+      $nama = $it['nama_program'] ?? null;
+      if (!$nama) continue;
+      PpiItem::create([
+        'ppi_id' => $ppi->id,
+        'nama_program' => $nama,
+        'kategori' => $it['kategori'] ?? null,
+        'program_konsultan_id' => $it['program_konsultan_id'] ?? null,
+      ]);
+    }
+
+    return redirect()->route('ppi.index')->with('success', 'PPI berhasil disimpan');
   }
 
   public function show($id)
   {
-    $user = Auth::user();
-    if ($user && $user->role === 'konsultan' && !$this->isKonsultanPendidikan($user)) {
-      abort(403);
-    }
-    $anak = AnakDidik::with('guruFokus')->findOrFail($id);
-
-    $canAccess = false;
-    if ($user->role === 'admin') {
-      $canAccess = true;
-    } else {
-      $canAccess = GuruAnakDidikController::canAccessChild($user->id, $anak->id);
-      if (!$canAccess && $user->role === 'guru') {
-        $karyawan = \App\Models\Karyawan::where('nama', $user->name)->first();
-        if ($karyawan && $anak->guru_fokus_id && $karyawan->id == $anak->guru_fokus_id) {
-          $canAccess = true;
-        }
-      }
-    }
-
-    if (!$canAccess) {
-      return view('content.ppi.locked', ['anak' => $anak]);
-    }
-
-    // If allowed, show program anak detail page (reuse program-anak.show if exists)
-    return redirect()->route('program-anak.show', $anak->id);
+    $ppi = Ppi::with('items')->findOrFail($id);
+    return view('content.ppi.show', compact('ppi'));
   }
 
   /**
-   * Resolve whether the given user is a Konsultan with spesialisasi Pendidikan
+   * Return JSON riwayat PPI for a given anak didik id
    */
-  private function isKonsultanPendidikan($user)
+  public function riwayat($anakId)
   {
-    if (!$user) return false;
-    // Must be konsultan role
-    if ($user->role !== 'konsultan') return false;
-    // Try resolve Konsultan record by user_id, email, or name
-    $k = Konsultan::where('user_id', $user->id)->first();
-    if (!$k && $user->email) {
-      $k = Konsultan::where('email', $user->email)->first();
+    $user = Auth::user();
+
+    // Authorization: admin always, konsultan pendidikan allowed, guru allowed if fokus or assigned/approved
+    $allowed = false;
+    if ($user && $user->role === 'admin') {
+      $allowed = true;
+    } elseif ($user && $user->role === 'konsultan') {
+      $k = Konsultan::where('user_id', $user->id)->orWhere('email', $user->email)->first();
+      if ($k && strtolower(trim($k->spesialisasi ?? '')) === 'pendidikan') {
+        $allowed = true;
+      }
+    } elseif ($user && $user->role === 'guru') {
+      $can = \App\Http\Controllers\GuruAnakDidikController::canAccessChild($user->id, $anakId);
+      if ($can) $allowed = true;
+      // also allow if guru is guru_fokus
+      $k = Karyawan::where('nama', $user->name)->first();
+      $karyawanId = $k ? $k->id : null;
+      if ($karyawanId) {
+        $anak = AnakDidik::find($anakId);
+        if ($anak && $anak->guru_fokus_id == $karyawanId) $allowed = true;
+      }
     }
-    if (!$k && $user->name) {
-      $k = Konsultan::where('nama', 'like', "%{$user->name}%")->first();
+
+    if (!$allowed) {
+      return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses'], 403);
     }
-    if (!$k) return false;
-    $sp = strtolower($k->spesialisasi ?? '');
-    return $sp === 'pendidikan';
+
+    $ppis = Ppi::with('items')->where('anak_didik_id', $anakId)->orderByDesc('created_at')->get();
+    $riwayat = $ppis->map(function ($p) {
+      return [
+        'id' => $p->id,
+        'nama_program' => $p->keterangan ? ($p->keterangan) : ($p->items->first()->nama_program ?? ''),
+        'kategori' => $p->items->first()->kategori ?? '',
+        'created_at' => $p->created_at ? $p->created_at->toDateTimeString() : '',
+        'periode_mulai' => $p->periode_mulai ? $p->periode_mulai : null,
+        'periode_selesai' => $p->periode_selesai ? $p->periode_selesai : null,
+        'keterangan' => $p->keterangan ?? null,
+        'items' => $p->items->map(function ($it) {
+          return [
+            'id' => $it->id,
+            'nama_program' => $it->nama_program,
+            'kategori' => $it->kategori
+          ];
+        })->toArray(),
+        'status' => $p->status ?? null,
+      ];
+    });
+
+    return response()->json(['success' => true, 'riwayat' => $riwayat]);
   }
+
+  /**
+   * Delete a PPI. Only allowed for admin or the child's guru fokus.
+   */
+  public function destroy($id)
+  {
+    $ppi = Ppi::with('items')->findOrFail($id);
+    $user = Auth::user();
+
+    // resolve anak and its guru_fokus
+    $anak = \App\Models\AnakDidik::find($ppi->anak_didik_id);
+
+    $allowed = false;
+    if ($user && $user->role === 'admin') {
+      $allowed = true;
+    } elseif ($user && $user->role === 'guru') {
+      // map user -> karyawan
+      $k = Karyawan::where('nama', $user->name)->first();
+      $karyawanId = $k ? $k->id : null;
+      if ($karyawanId && $anak && $anak->guru_fokus_id == $karyawanId) {
+        $allowed = true;
+      }
+    }
+
+    if (!$allowed) {
+      return response()->json(['success' => false, 'message' => 'Anda tidak berhak menghapus PPI ini'], 403);
+    }
+
+    // delete items then ppi
+    try {
+      foreach ($ppi->items as $it) {
+        $it->delete();
+      }
+      $ppi->delete();
+      return response()->json(['success' => true, 'message' => 'PPI berhasil dihapus']);
+    } catch (\Exception $e) {
+      return response()->json(['success' => false, 'message' => 'Gagal menghapus PPI'], 500);
+    }
+  }
+
+  /**
+   * Update PPI items (only admin or guru_fokus allowed)
+   */
+  public function update(Request $request, $id)
+  {
+    $ppi = Ppi::with('items')->findOrFail($id);
+    $user = Auth::user();
+
+    // authorization: admin or guru_fokus
+    $allowed = false;
+    if ($user && $user->role === 'admin') $allowed = true;
+    elseif ($user && $user->role === 'guru') {
+      $k = Karyawan::where('nama', $user->name)->first();
+      $karyawanId = $k ? $k->id : null;
+      $anak = AnakDidik::find($ppi->anak_didik_id);
+      if ($karyawanId && $anak && $anak->guru_fokus_id == $karyawanId) $allowed = true;
+    }
+
+    if (!$allowed) {
+      return response()->json(['success' => false, 'message' => 'Anda tidak berhak mengedit PPI ini'], 403);
+    }
+
+    $data = $request->all();
+    $items = isset($data['program_items']) && is_array($data['program_items']) ? $data['program_items'] : [];
+
+    // basic validation: each item must have nama_program
+    $validItems = [];
+    foreach ($items as $it) {
+      $name = isset($it['nama_program']) ? trim($it['nama_program']) : '';
+      if ($name === '') continue;
+      $validItems[] = [
+        'nama_program' => $name,
+        'kategori' => $it['kategori'] ?? null,
+        'program_konsultan_id' => $it['program_konsultan_id'] ?? null,
+      ];
+    }
+
+    // replace items in transaction
+
+    try {
+      \DB::beginTransaction();
+      // delete existing
+      foreach ($ppi->items as $it) $it->delete();
+      // recreate
+      foreach ($validItems as $vi) {
+        PpiItem::create([
+          'ppi_id' => $ppi->id,
+          'nama_program' => $vi['nama_program'],
+          'kategori' => $vi['kategori'],
+          'program_konsultan_id' => $vi['program_konsultan_id'] ?? null,
+        ]);
+      }
+      \DB::commit();
+      return response()->json(['success' => true, 'message' => 'PPI berhasil diperbarui']);
+    } catch (\Exception $e) {
+      \DB::rollBack();
+      return response()->json(['success' => false, 'message' => 'Gagal menyimpan perubahan'], 500);
+    }
+  }
+
+  // additional methods (riwayat, approve) can be added later
 }

@@ -207,6 +207,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('ppi/request-access', [App\Http\Controllers\GuruAnakDidikController::class, 'requestAccess'])->name('ppi.request-access');
     Route::get('ppi/riwayat/{id}', [App\Http\Controllers\PPIController::class, 'riwayat'])->name('ppi.riwayat');
     Route::post('ppi/{id}/approve', [App\Http\Controllers\PPIController::class, 'approve'])->name('ppi.approve');
+    Route::put('ppi/{id}', [App\Http\Controllers\PPIController::class, 'update'])->name('ppi.update');
+    Route::delete('ppi/{id}', [App\Http\Controllers\PPIController::class, 'destroy'])->name('ppi.destroy');
   });
 
   // Pasien Terapis - accessible to admin and terapis

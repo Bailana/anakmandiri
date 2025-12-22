@@ -64,6 +64,7 @@
               <th>No</th>
               <th>Anak Didik</th>
               <th>Guru Fokus</th>
+              <th>Status</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -77,13 +78,33 @@
               </td>
               <td>{{ $anak->guruFokus ? $anak->guruFokus->nama : '-' }}</td>
               <td>
+                @php
+                $s = strtolower(trim($statusMap[$anak->id] ?? ''));
+                @endphp
+                @if($s === 'menunggu' || $s === 'pending' || $s === '')
+                <span class="badge bg-warning">Menunggu</span>
+                @elseif($s === 'disetujui' || $s === 'approved')
+                <span class="badge bg-success">Disetujui</span>
+                @elseif($s === 'revisi' || $s === 'rejected' || $s === 'revise')
+                <span class="badge bg-danger">Revisi</span>
+                @else
+                <span class="badge bg-secondary">{{ ucfirst($statusMap[$anak->id] ?? '-') }}</span>
+                @endif
+              </td>
+              <td>
                 <div class="d-flex gap-2 align-items-center">
+                  @if(isset($isKonsultanPendidikan) && $isKonsultanPendidikan)
+                  <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#riwayatPpiModal" data-anak-didik-id="{{ $anak->id }}" data-is-fokus="{{ isset($isFokusMap[$anak->id]) && $isFokusMap[$anak->id] ? '1' : '0' }}" onclick="loadRiwayatPpi(this)" title="Lihat" aria-label="Lihat">
+                    <i class="ri-eye-line"></i>
+                  </button>
+                  @else
                   @if(isset($accessMap[$anak->id]) && $accessMap[$anak->id])
-                  <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#riwayatPpiModal" data-anak-didik-id="{{ $anak->id }}" onclick="loadRiwayatPpi(this)" title="Riwayat PPI">
+                  <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#riwayatPpiModal" data-anak-didik-id="{{ $anak->id }}" data-is-fokus="{{ isset($isFokusMap[$anak->id]) && $isFokusMap[$anak->id] ? '1' : '0' }}" onclick="loadRiwayatPpi(this)" title="Riwayat PPI">
                     <i class="ri-history-line"></i>
                   </button>
                   @else
                   <button class="btn btn-sm btn-icon btn-outline-danger btn-request-access" data-id="{{ $anak->id }}" title="Minta Akses" aria-label="Minta Akses" data-bs-toggle="tooltip" data-bs-placement="top"><i class="ri-lock-line"></i></button>
+                  @endif
                   @endif
                 </div>
               </td>
@@ -183,6 +204,7 @@
       var listDiv = document.getElementById('riwayatPpiList');
       listDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
       var anakId = btn.getAttribute('data-anak-didik-id');
+      var isFokus = (btn.getAttribute('data-is-fokus') === '1');
       var currentUserId = @json(Auth::id());
       var canApprove = @json($canApprovePPI ?? false);
       fetch('/ppi/riwayat/' + anakId)
@@ -192,21 +214,96 @@
             listDiv.innerHTML = '<div class="text-center text-muted">Belum ada riwayat PPI.</div>';
             return;
           }
+          // helper to format dates to Indonesian with weekday (no time)
+          function formatDateIndo(dateStr) {
+            if (!dateStr) return '';
+            // normalize separator and remove time if present
+            const d = new Date(dateStr.replace(' ', 'T'));
+            if (isNaN(d)) return dateStr;
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            const dayName = days[d.getDay()];
+            const day = d.getDate();
+            const month = months[d.getMonth()];
+            const year = d.getFullYear();
+            return `${dayName}, ${(''+day).padStart(2,'0')} ${month} ${year}`;
+          }
+
           let html = '';
+          // store riwayat globally for edit operations and build program options
+          window._ppiRiwayat = res.riwayat || [];
+          // build unique program options from riwayat items
+          window._ppiProgramOptions = window._ppiProgramOptions || [];
+          const progSet = new Set(window._ppiProgramOptions);
+          (res.riwayat || []).forEach(r => {
+            if (r.items && r.items.length) {
+              r.items.forEach(it => {
+                if (it.nama_program) progSet.add(it.nama_program);
+              });
+            }
+          });
+          window._ppiProgramOptions = Array.from(progSet);
           res.riwayat.forEach(item => {
-            html += `<div class="mb-2 p-2 border rounded d-flex justify-content-between align-items-center"><div><strong>${item.nama_program}</strong><div class="text-muted small">${item.created_at}${item.periode_mulai ? ' — ' + item.periode_mulai + (item.periode_selesai ? ' s/d ' + item.periode_selesai : '') : ''}</div><div class="text-muted small">${item.keterangan || ''}</div></div><div class="text-end">`;
-            html += `<button class="btn btn-sm btn-outline-info me-1" onclick="viewPpiDetail(${item.id})" title="Lihat"><i class='ri-eye-line'></i></button>`;
-            if (canApprove && item.status !== 'disetujui') {
+            // compact row: show created date and action buttons
+            html += `<div class="mb-2 p-2 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <div class="text-muted small">${formatDateIndo(item.created_at)}</div>
+                          <div class="text-end">`;
+            // view button toggles details
+            html += `<button class="btn btn-sm btn-outline-info me-1" onclick="viewPpiDetail(this)" data-ppi-id="${item.id}" title="Lihat"><i class='ri-eye-line'></i></button>`;
+            if (isFokus) {
+              html += `<button class="btn btn-sm btn-outline-secondary me-1" onclick="editPpi(this)" data-ppi-id="${item.id}" title="Edit"><i class='ri-edit-2-line'></i></button>`;
+              html += `<button class="btn btn-sm btn-outline-danger" onclick="deletePpi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>`;
+            } else if (canApprove && item.status !== 'disetujui') {
               html += `<button class="btn btn-sm btn-success" onclick="approvePpi(${item.id})" title="Setujui"><i class='ri-check-line'></i></button>`;
             } else {
               html += `<span class="badge bg-secondary">${item.status || 'aktif'}</span>`;
             }
-            html += `</div></div>`;
+            html += `</div>
+                        </div>
+                        <div class="ppi-details mt-2" style="display:none;">
+                          <div><strong>Program yang diinput:</strong></div>
+                          <ul class="mb-1">`;
+            if (item.items && item.items.length) {
+              item.items.forEach(it => {
+                html += `<li>${it.nama_program}${it.kategori ? ' — ' + it.kategori : ''}</li>`;
+              });
+            } else {
+              html += `<li>(tidak ada program tercatat)</li>`;
+            }
+            html += `</ul>
+                          <div class="text-muted small">${item.periode_mulai ? formatDateIndo(item.periode_mulai) + (item.periode_selesai ? ' s/d ' + formatDateIndo(item.periode_selesai) : '') : ''}</div>
+                          <div class="text-muted small mt-1">${item.keterangan || ''}</div>
+                        </div>
+                      </div>`;
           });
           listDiv.innerHTML = html;
         }).catch(() => {
           listDiv.innerHTML = '<div class="text-danger text-center">Gagal memuat data.</div>';
         });
+    }
+
+    // Delete PPI (only for guru fokus)
+    window.deletePpi = function(id) {
+      if (!confirm('Hapus PPI ini? Tindakan ini tidak dapat dibatalkan.')) return;
+      const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      fetch('/ppi/' + id, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-TOKEN': token,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      }).then(r => r.json()).then(res => {
+        if (res.success) {
+          // refresh modal list
+          var lastBtn = document.querySelector('button[data-bs-target="#riwayatPpiModal"]:focus') || document.querySelector('button[data-bs-target="#riwayatPpiModal"]');
+          if (lastBtn) loadRiwayatPpi(lastBtn);
+          alert(res.message || 'PPI berhasil dihapus');
+        } else {
+          alert(res.message || 'Gagal menghapus PPI');
+        }
+      }).catch(() => alert('Terjadi kesalahan jaringan'));
     }
 
     window.approvePpi = function(id) {
@@ -231,9 +328,171 @@
       }).catch(() => alert('Terjadi kesalahan jaringan'));
     }
 
-    function viewPpiDetail(id) {
-      // fallback: redirect to show page
-      window.location.href = '/ppi/' + id;
+    window.viewPpiDetail = function(btnOrId) {
+      // If called with a DOM element (button), toggle inline details
+      try {
+        if (btnOrId && btnOrId.tagName) {
+          const btn = btnOrId;
+          const wrapper = btn.closest('.mb-2');
+          if (!wrapper) return;
+          const details = wrapper.querySelector('.ppi-details');
+          if (!details) return;
+          if (details.style.display === 'none' || details.style.display === '') {
+            details.style.display = 'block';
+            btn.classList.add('active');
+          } else {
+            details.style.display = 'none';
+            btn.classList.remove('active');
+          }
+          return;
+        }
+      } catch (e) {
+        // fall through to redirect if something unexpected
+      }
+      // fallback: if called with an id, redirect to show page
+      if (typeof btnOrId === 'number' || (!btnOrId || !btnOrId.tagName)) {
+        const id = btnOrId;
+        window.location.href = '/ppi/' + id;
+      }
+    }
+
+    // Enter edit mode for a PPI entry (guru fokus)
+    window.editPpi = function(btn) {
+      try {
+        const ppiId = btn.getAttribute('data-ppi-id');
+        if (!ppiId) return;
+        const wrapper = btn.closest('.mb-2');
+        const details = wrapper.querySelector('.ppi-details');
+        if (!details) return;
+        // find item data from global map
+        const entry = (window._ppiRiwayat || []).find(x => String(x.id) === String(ppiId));
+        const items = entry && entry.items ? entry.items : [];
+        // build program options from all riwayat entries if available
+        const programOptions = (window._ppiProgramOptions || []).slice();
+        // ensure current item names are included
+        items.forEach(it => {
+          if (it.nama_program && !programOptions.includes(it.nama_program)) programOptions.push(it.nama_program);
+        });
+
+        // build editable form with dropdowns
+        let formHtml = `<form class="ppi-edit-form" onsubmit="event.preventDefault(); savePpiEdit(${ppiId}, this);">
+                          <div class="mb-2"><strong>Program yang diinput (edit):</strong></div>
+                          <div class="ppi-edit-items">`;
+        if (items.length) {
+          items.forEach(it => {
+            // build program select options
+            let progOpts = '';
+            progOpts += `<option value="">-- Pilih program --</option>`;
+            programOptions.forEach(po => {
+              const sel = (po === it.nama_program) ? 'selected' : '';
+              progOpts += `<option ${sel}>${po}</option>`;
+            });
+            // category options
+            const cats = ['Akademik', 'Bina Diri', 'Motorik', 'Perilaku', 'Vokasi'];
+            let catOpts = `<option value="">-- Kategori --</option>`;
+            cats.forEach(c => {
+              const s = (c === it.kategori) ? 'selected' : '';
+              catOpts += `<option ${s}>${c}</option>`;
+            });
+
+            formHtml += `<div class="d-flex gap-2 mb-2 align-items-start edit-item-row">
+                          <input type="hidden" name="item_id[]" value="${it.id}">
+                          <select name="nama_program[]" class="form-select">${progOpts}</select>
+                          <select name="kategori[]" class="form-select">${catOpts}</select>
+                          <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.edit-item-row').remove()"><i class='ri-close-line'></i></button>
+                        </div>`;
+          });
+        } else {
+          formHtml += `<div class="text-muted small">(tidak ada program tercatat)</div>`;
+        }
+
+        formHtml += `</div>
+                     <div class="d-flex gap-2 mt-2">
+                       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addPpiEditRow(this)"><i class='ri-add-line'></i></button>
+                       <button type="submit" class="btn btn-sm btn-primary"><i class='ri-save-3-line'></i></button>
+                       <button type="button" class="btn btn-sm btn-outline-secondary" onclick="cancelPpiEdit(this)"><i class='ri-close-line'></i></button>
+                     </div>
+                   </form>`;
+        details.dataset.prevHtml = details.innerHTML;
+        details.innerHTML = formHtml;
+        details.style.display = 'block';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    window.addPpiEditRow = function(btn) {
+      const container = btn.closest('.ppi-details').querySelector('.ppi-edit-items');
+      if (!container) return;
+      const row = document.createElement('div');
+      row.className = 'd-flex gap-2 mb-2 align-items-start edit-item-row';
+      // build select options from global program options
+      const programs = window._ppiProgramOptions || [];
+      let progOpts = `<option value="">-- Pilih program --</option>`;
+      programs.forEach(p => {
+        progOpts += `<option>${p}</option>`;
+      });
+      const cats = ['Akademik', 'Bina Diri', 'Motorik', 'Perilaku', 'Vokasi'];
+      let catOpts = `<option value="">-- Kategori --</option>`;
+      cats.forEach(c => {
+        catOpts += `<option>${c}</option>`;
+      });
+      row.innerHTML = `<input type="hidden" name="item_id[]" value=""><select name="nama_program[]" class="form-select">${progOpts}</select><select name="kategori[]" class="form-select">${catOpts}</select><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.edit-item-row').remove()"><i class='ri-close-line'></i></button>`;
+      container.appendChild(row);
+    }
+
+    window.cancelPpiEdit = function(btn) {
+      const details = btn.closest('.ppi-details');
+      if (!details) return;
+      if (details.dataset && details.dataset.prevHtml) {
+        details.innerHTML = details.dataset.prevHtml;
+        delete details.dataset.prevHtml;
+      }
+      details.style.display = 'none';
+    }
+
+    window.savePpiEdit = function(ppiId, form) {
+      const data = new FormData(form);
+      const items = [];
+      const ids = data.getAll('item_id[]');
+      const names = data.getAll('nama_program[]');
+      const kategories = data.getAll('kategori[]');
+      for (let i = 0; i < names.length; i++) {
+        if (!names[i] || names[i].trim() === '') continue;
+        items.push({
+          id: ids[i] || null,
+          nama_program: names[i].trim(),
+          kategori: kategories[i] || null
+        });
+      }
+      if (items.length === 0) {
+        if (!confirm('Tidak ada program tersisa — simpan tetap akan menghapus semua item. Lanjutkan?')) return;
+      }
+      const payload = {
+        program_items: items
+      };
+      const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      fetch('/ppi/' + ppiId, {
+        method: 'PUT',
+        headers: {
+          'X-CSRF-TOKEN': token,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }).then(r => r.json()).then(res => {
+        if (res.success) {
+          // refresh modal list
+          var lastBtn = document.querySelector('button[data-bs-target="#riwayatPpiModal"]:focus') || document.querySelector('button[data-bs-target="#riwayatPpiModal"]');
+          if (lastBtn) loadRiwayatPpi(lastBtn);
+          alert(res.message || 'PPI berhasil diperbarui');
+        } else {
+          alert(res.message || 'Gagal menyimpan perubahan');
+        }
+      }).catch(err => {
+        console.error(err);
+        alert('Terjadi kesalahan jaringan');
+      });
     }
   });
 </script>

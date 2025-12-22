@@ -179,6 +179,13 @@
     return html;
   }
 
+  // (removed nama-select population — Nama Program is a plain input)
+  // nama-select removed; provide a no-op refresher to avoid JS errors from leftover calls
+  function refreshNamaOptions() {
+    // no-op: Nama Program is a plain text input now
+    return;
+  }
+
   document.getElementById('btnTambahBaris').addEventListener('click', function() {
     const tbody = document.querySelector('#programItemsTable tbody');
     const tr = document.createElement('tr');
@@ -190,6 +197,8 @@
     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
   `;
     tbody.appendChild(tr);
+    // Refresh nama selects for the new row
+    refreshNamaOptions();
     // If the program list wrapper is hidden, disable newly added inputs to avoid browser validation errors
     const wrapperAfterAdd = document.getElementById('daftarProgramAnakWrapper');
     const hiddenAfterAdd = wrapperAfterAdd && wrapperAfterAdd.style.display === 'none';
@@ -265,6 +274,13 @@
     });
   }
 
+  // ensure nama selects are refreshed whenever konsultan or anak changes
+  function onKonsultanOrAnakChange() {
+    // invalidate cache when anak changes (no-op since childProgramsCache removed)
+    refreshKodeOptions();
+    refreshNamaOptions();
+  }
+
   // Tampilkan/hidden form daftar program anak & field psikologi sesuai konsultan
   function toggleDaftarProgramAnak() {
     const select = document.getElementById('konsultan_id');
@@ -303,7 +319,10 @@
     const addBtn = document.getElementById('btnTambahBaris');
     if (addBtn) addBtn.disabled = hidden;
   }
-  document.getElementById('konsultan_id').addEventListener('change', toggleDaftarProgramAnak);
+  document.getElementById('konsultan_id').addEventListener('change', function() {
+    toggleDaftarProgramAnak();
+    onKonsultanOrAnakChange();
+  });
 
   // Inisialisasi saat load
   document.addEventListener('DOMContentLoaded', function() {
@@ -372,8 +391,14 @@
           });
       } catch (e) {}
     }
-    anakSelect && anakSelect.addEventListener('change', fetchAndFillPsikologi);
-    konsultanSelect && konsultanSelect.addEventListener('change', fetchAndFillPsikologi);
+    anakSelect && anakSelect.addEventListener('change', function() {
+      fetchAndFillPsikologi();
+      onKonsultanOrAnakChange();
+    });
+    konsultanSelect && konsultanSelect.addEventListener('change', function() {
+      fetchAndFillPsikologi();
+      onKonsultanOrAnakChange();
+    });
   });
 </script>
 @endpush
