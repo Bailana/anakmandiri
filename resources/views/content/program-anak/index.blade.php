@@ -495,7 +495,7 @@
     window._groupSuggest = false;
     window.currentUser = {
       id: @json(Auth::id()),
-      role: @json(optional(Auth::user()) - > role),
+      role: @json(optional(Auth::user())-> role),
       konsultanId: @json($currentKonsultanId ?? null)
     };
     window.currentKonsultanSpesRaw = @json($currentKonsultanSpesRaw ?? null);
@@ -1492,6 +1492,14 @@
                     if (delBtnRow) delBtnRow.disabled = false;
                     inEdit = false;
                     showAllProgramsForAnak(anakId);
+                    // small safety cleanup in case a backdrop or body.modal-open remains
+                    setTimeout(function() {
+                      try {
+                        cleanupModalBackdrops();
+                        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                        document.body.classList.remove('modal-open');
+                      } catch (e) {}
+                    }, 80);
                   } else {
                     showToast((resp && resp.message) || 'Gagal menyimpan', 'danger');
                   }
