@@ -587,12 +587,9 @@
                 @php
                 $pk = $program->programKonsultan ?? null;
                 $konsultanSpesRaw = optional($pk)->konsultan->spesialisasi ?? null;
-                if (!$konsultanSpesRaw && isset($currentKonsultanSpesRaw)) {
-                $konsultanSpesRaw = $currentKonsultanSpesRaw;
-                }
                 $konsultanSpes = strtolower($konsultanSpesRaw ?? '');
                 $badge = null;
-                if ($program->is_suggested && $konsultanSpesRaw) {
+                if ($program->is_suggested) {
                 if (str_contains($konsultanSpes, 'wicara')) {
                 $badge = ['label' => 'TW', 'class' => 'bg-primary'];
                 } elseif (str_contains($konsultanSpes, 'sensori') || str_contains($konsultanSpes, 'integrasi')) {
@@ -609,6 +606,10 @@
                 } elseif (str_starts_with($kode, 'PS')) {
                 $badge = ['label' => 'TP', 'class' => 'bg-warning text-dark'];
                 } else {
+                // If program appears to be a psikologi recommendation (no program_konsultan and has rekomendasi), show TP
+                if (($program->program_konsultan_id === null || $program->program_konsultan_id === 0) && ($program->rekomendasi || (isset($program->nama_program) && stripos($program->nama_program, 'rekomendasi') !== false))) {
+                $badge = ['label' => 'TP', 'class' => 'bg-warning text-dark'];
+                } else {
                 $parts = preg_split('/\s+/', trim($konsultanSpesRaw));
                 $initials = '';
                 foreach (array_slice($parts, 0, 2) as $p) {
@@ -616,6 +617,7 @@
                 }
                 $label = $initials ?: strtoupper(substr($konsultanSpesRaw, 0, 2));
                 $badge = ['label' => $label, 'class' => 'bg-info'];
+                }
                 }
                 }
                 }
@@ -952,9 +954,15 @@
             label = 'TP';
             cls = 'bg-warning text-dark';
           }
-          // If group/spec is empty but the current logged konsultan is psikologi and
-          // one of the suggested items was created by the current konsultan, treat as PS
-          else if ((s === null || s.trim() === '') && window.currentKonsultanSpesRaw && String(window.currentKonsultanSpesRaw).toLowerCase().indexOf('psikologi') !== -1 && Array.isArray(items) && items.some(it => it.created_by && window.currentUser && parseInt(it.created_by) === parseInt(window.currentUser.id))) {
+          // If group/spec is empty, detect psikologi from the suggested items themselves
+          // (program_konsultan_id null + rekomendasi present, or konsultan_spesialisasi contains 'psiko')
+          else if (Array.isArray(items) && items.some(it => {
+              const suggested = (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true);
+              if (!suggested) return false;
+              if ((it.program_konsultan_id === null || it.program_konsultan_id === undefined) && (it.rekomendasi || (it.nama_program && it.nama_program.toString().toLowerCase().includes('rekomendasi')))) return true;
+              if (it.konsultan_spesialisasi && it.konsultan_spesialisasi.toString().toLowerCase().includes('psiko')) return true;
+              return false;
+            })) {
             label = 'TP';
             cls = 'bg-warning text-dark';
           } else {
