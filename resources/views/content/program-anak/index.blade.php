@@ -1660,9 +1660,9 @@
       .catch(() => alert('Gagal mengambil detail program'));
   }
 </script>
-<div class="modal fade" id="modalAddProgramMaster" tabindex="-1" aria-labelledby="modalAddProgramMasterLabel"
+<div class="modal fade modalScrollable" id="modalAddProgramMaster" tabindex="-1" aria-labelledby="modalAddProgramMasterLabel"
   aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-scrollable">
     <form action="{{ route('program-anak.program-konsultan.store') }}" method="POST" class="modal-content">
       @csrf
       <div class="modal-header">
@@ -1685,6 +1685,10 @@
         <div class="mb-3">
           <label class="form-label">Aktivitas</label>
           <textarea name="aktivitas" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Keterangan</label>
+          <textarea name="keterangan" class="form-control" rows="3"></textarea>
         </div>
       </div>
       <div class="modal-footer">

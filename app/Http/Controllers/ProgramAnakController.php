@@ -270,6 +270,7 @@ class ProgramAnakController extends Controller
       'nama_program' => 'required|string|max:255',
       'tujuan' => 'nullable|string',
       'aktivitas' => 'nullable|string',
+      'keterangan' => 'nullable|string',
     ]);
 
     // normalize kode_program: remove non-alphanumeric and uppercase (no hyphens)
@@ -295,6 +296,7 @@ class ProgramAnakController extends Controller
       'nama_program' => $request->input('nama_program'),
       'tujuan' => $request->input('tujuan'),
       'aktivitas' => $request->input('aktivitas'),
+      'keterangan' => $request->input('keterangan'),
     ]);
 
     return redirect()->back()->with('success', 'Daftar program berhasil ditambahkan');
@@ -395,6 +397,7 @@ class ProgramAnakController extends Controller
       'nama_program' => 'required|string|max:255',
       'tujuan' => 'nullable|string',
       'aktivitas' => 'nullable|string',
+      'keterangan' => 'nullable|string',
     ]);
 
     $program = ProgramKonsultan::findOrFail($id);
@@ -407,7 +410,15 @@ class ProgramAnakController extends Controller
       'nama_program' => $request->input('nama_program'),
       'tujuan' => $request->input('tujuan'),
       'aktivitas' => $request->input('aktivitas'),
+      'keterangan' => $request->input('keterangan'),
     ]);
+
+    // refresh model to ensure latest values
+    $program->refresh();
+
+    if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
+      return response()->json(['success' => true, 'message' => 'Daftar program berhasil diupdate', 'program' => $program]);
+    }
 
     return redirect()->route('program-anak.daftar-program')->with('success', 'Daftar program berhasil diupdate');
   }
@@ -668,6 +679,7 @@ class ProgramAnakController extends Controller
       }
     }
     $program->save();
+
     // insert audit if any change
     if (!empty($changed)) {
       try {

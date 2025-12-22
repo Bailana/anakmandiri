@@ -13,6 +13,7 @@ class ProgramKonsultan extends Model
     'nama_program',
     'tujuan',
     'aktivitas',
+    'keterangan',
   ];
 
   public function konsultan()
