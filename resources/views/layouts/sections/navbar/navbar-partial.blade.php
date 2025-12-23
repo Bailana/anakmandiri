@@ -23,14 +23,7 @@ use Illuminate\Support\Facades\Route;
 @endif
 
 <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
-    <!-- Search -->
-    <div class="navbar-nav align-items-center">
-        <div class="nav-item d-flex align-items-center">
-            <i class="icon-base ri ri-search-line icon-lg lh-0"></i>
-            <input type="text" class="form-control border-0 shadow-none" placeholder="Search..." aria-label="Search...">
-        </div>
-    </div>
-    <!-- /Search -->
+    <!-- Search removed per request -->
     <ul class="navbar-nav flex-row align-items-center ms-auto">
         <!-- Notifications -->
         <li class="nav-item dropdown-notifications dropdown me-3">
@@ -180,7 +173,7 @@ use Illuminate\Support\Facades\Route;
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const list = document.getElementById('nav-notifications-list');
-        const CURRENT_USER_IS_ADMIN = @json(Auth::check() && Auth::user() && Auth::user() - > role === 'admin');
+        const CURRENT_USER_IS_ADMIN = @json(Auth::check() && Auth::user() && Auth::user()->role === 'admin');
         // mark single notification read when clicked
         if (list) {
             list.addEventListener('click', function(e) {

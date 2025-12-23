@@ -10,6 +10,10 @@ use App\Models\GuruAnakDidikApproval;
 use App\Models\Karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\PpiItem;
+use App\Models\Program;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AssessmentController extends Controller
 {
@@ -115,16 +119,77 @@ class AssessmentController extends Controller
       'rekomendasi' => 'nullable|string',
       'saran' => 'nullable|string',
       'tanggal_assessment' => 'nullable|date',
-      'kemampuan' => 'required|array',
-      'kemampuan.*.judul' => 'required|string',
-      'kemampuan.*.skala' => 'required|in:1,2,3,4,5',
+      'kemampuan' => 'nullable|array',
+      'kemampuan.*.judul' => 'nullable|string',
+      'kemampuan.*.skala' => 'nullable|in:1,2,3,4,5',
     ]);
 
+    // Ensure kemampuan is an array (store empty array if not provided)
     $validated['kemampuan'] = array_values($request->input('kemampuan', []));
 
     Assessment::create($validated);
 
     return redirect()->route('assessment.index')->with('success', 'Penilaian berhasil ditambahkan');
+  }
+
+  /**
+   * Return PPI programs for a given anak didik and kategori (creates Program rows if missing)
+   */
+  public function ppiPrograms(Request $request)
+  {
+    $anakId = $request->query('anak_didik_id');
+    $kategori = $request->query('kategori');
+
+    if (!$anakId || !$kategori) {
+      return response()->json(['success' => false, 'programs' => []]);
+    }
+
+    // normalize kategori: user selects values like 'bina_diri' but PPI may store 'Bina Diri'
+    $normalizedKategori = str_replace('_', ' ', $kategori);
+
+    // match kategori case-insensitively against PPI items
+    $itemsQuery = PpiItem::whereHas('ppi', function ($q) use ($anakId) {
+      $q->where('anak_didik_id', $anakId);
+    })->whereRaw('LOWER(kategori) = ?', [strtolower($normalizedKategori)]);
+
+    $items = $itemsQuery->get();
+
+    // fallback: if none found, try a LIKE match on kategori
+    if ($items->isEmpty()) {
+      $items = PpiItem::whereHas('ppi', function ($q) use ($anakId) {
+        $q->where('anak_didik_id', $anakId);
+      })->where('kategori', 'like', "%{$normalizedKategori}%")->get();
+    }
+
+    // If `programs` table exists, try to ensure a Program record; otherwise return names from PPI items
+    $names = [];
+    foreach ($items as $it) {
+      $name = trim($it->nama_program ?? '');
+      if ($name === '') continue;
+      $names[$name] = $name;
+    }
+
+    $result = [];
+    if (Schema::hasTable('programs')) {
+      foreach ($names as $name) {
+        $prog = Program::firstOrCreate([
+          'anak_didik_id' => $anakId,
+          'nama_program' => $name,
+          'kategori' => $kategori,
+        ], [
+          'konsultan_id' => null,
+          'deskripsi' => null,
+        ]);
+        $result[] = ['id' => $prog->id, 'nama_program' => $prog->nama_program];
+      }
+    } else {
+      // return names with null id so frontend can display them; selection will leave program_id null
+      foreach ($names as $name) {
+        $result[] = ['id' => null, 'nama_program' => $name];
+      }
+    }
+
+    return response()->json(['success' => true, 'programs' => $result]);
   }
 
   /**

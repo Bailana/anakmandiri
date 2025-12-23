@@ -181,7 +181,8 @@ Route::middleware(['auth'])->group(function () {
 
   // Assessment: admin & guru (guru hanya index/show)
   Route::middleware(['auth', 'role:admin,guru'])->group(function () {
-    Route::resource('assessment', 'App\Http\Controllers\AssessmentController');
+    Route::get('assessment/ppi-programs', [App\Http\Controllers\AssessmentController::class, 'ppiPrograms'])->name('assessment.ppi-programs');
+    Route::resource('assessment', 'App\\Http\\Controllers\\AssessmentController');
     Route::get('assessment/{id}/export-pdf', [App\Http\Controllers\AssessmentController::class, 'exportPdf'])->name('assessment.export-pdf');
   });
 

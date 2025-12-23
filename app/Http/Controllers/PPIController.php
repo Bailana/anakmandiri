@@ -10,6 +10,7 @@ use App\Models\Konsultan;
 use App\Models\Karyawan;
 use App\Models\ProgramKonsultan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PPIController extends Controller
 {
@@ -30,6 +31,10 @@ class PPIController extends Controller
     $anakQuery = AnakDidik::with('guruFokus')
       ->when($search, function ($q, $s) {
         $q->where('nama', 'like', "%{$s}%")->orWhere('nis', 'like', "%{$s}%");
+      })
+      ->when($guru_fokus, function ($q, $gf) {
+        // filter by guru fokus id when provided
+        $q->where('guru_fokus_id', $gf);
       })
       ->orderBy('nama');
 
@@ -70,7 +75,21 @@ class PPIController extends Controller
       $accessMap[$a->id] = $hasAccess;
     }
 
-    $guruOptions = [];
+    // build guru fokus options for the filter: only karyawan who are users with role 'guru'
+    $guruOptions = Karyawan::where(function ($q) {
+      $q->whereExists(function ($q2) {
+        $q2->select(DB::raw(1))
+          ->from('users')
+          ->whereColumn('users.email', 'karyawans.email')
+          ->where('users.role', 'guru');
+      })->orWhereExists(function ($q2) {
+        // fallback: match by name if email not available
+        $q2->select(DB::raw(1))
+          ->from('users')
+          ->whereColumn('users.name', 'karyawans.nama')
+          ->where('users.role', 'guru');
+      });
+    })->orderBy('nama')->get();
     $canApprovePPI = ($user && ($user->role === 'admin')) ? true : false;
 
     // determine if current user is a konsultan spesialisasi pendidikan

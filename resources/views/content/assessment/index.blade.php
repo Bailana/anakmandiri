@@ -1,9 +1,9 @@
-<!-- Modal Riwayat Observasi/Evaluasi -->
+<!-- Modal Riwayat Penilaian -->
 <div class="modal fade" id="riwayatObservasiModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Riwayat Observasi/Evaluasi</h5>
+        <h5 class="modal-title">Riwayat Penilaian</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -22,24 +22,55 @@
     const wrapper = document.getElementById('riwayatObservasiTableWrapper');
     wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Memuat data...</div>';
     modal.show();
-    fetch(`/assessment/riwayat/${anakDidikId}`)
+
+    // Fetch program history (program-anak) and display programs from first to last
+    fetch(`/program-anak/riwayat-program/${anakDidikId}`)
       .then(res => res.json())
       .then(data => {
         if (!data.success || !Array.isArray(data.riwayat) || data.riwayat.length === 0) {
-          wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Belum ada riwayat observasi/evaluasi.</div>';
+          wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Belum ada riwayat penilaian.</div>';
           return;
         }
-        let html = `<div class='table-responsive'><table class='table table-bordered'><thead><tr><th>Hari, Tanggal</th><th>Guru Fokus</th><th>Aksi</th></tr></thead><tbody>`;
-        data.riwayat.forEach(item => {
-          html += `<tr><td>
-          ${item.hari}, ${item.tanggal}<br><small>${item.created_at}</small>
-        </td><td>${item.guru_fokus ?? '-'}</td><td>
-          <a href='/assessment/${item.id}/edit' class='btn btn-sm btn-warning me-1'><i class='ri-edit-line'></i> Edit</a>
-          <button class='btn btn-sm btn-danger' onclick='konfirmasiHapusObservasi(${item.id})'><i class='ri-delete-bin-line'></i> Hapus</button>
-        </td></tr>`;
+
+        // Flatten groups into items with group name
+        let items = [];
+        data.riwayat.forEach(group => {
+          const groupName = group.name || '-';
+          (group.items || []).forEach(it => {
+            items.push({
+              nama_program: it.nama_program || it.nama_program,
+              created_at: it.created_at || null,
+              group_name: groupName,
+              id: it.id || null,
+            });
+          });
         });
-        html += '</tbody></table></div>';
+
+        // Sort ascending by created_at (first -> last)
+        items.sort((a, b) => {
+          if (!a.created_at) return 1;
+          if (!b.created_at) return -1;
+          return new Date(a.created_at) - new Date(b.created_at);
+        });
+
+        let html = '<div class="list-group">';
+        items.forEach(it => {
+          const dateText = it.created_at ? it.created_at : '-';
+          html += `
+            <div class="list-group-item d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-semibold">${it.nama_program}</div>
+                <div class="text-muted small">${dateText}</div>
+              </div>
+              <div class="text-muted small">${it.group_name}</div>
+            </div>`;
+        });
+        html += '</div>';
+
         wrapper.innerHTML = html;
+      }).catch(err => {
+        console.error('Failed to load riwayat penilaian', err);
+        wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Gagal memuat data.</div>';
       });
   }
 
@@ -100,7 +131,7 @@
 @endif
 
 <!-- Search & Filter -->
-<div class="row mb-4">
+<div class="row">
   <div class="col-12">
     <form method="GET" action="{{ route('assessment.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <!-- Search Field -->
@@ -140,15 +171,21 @@
               <th>No</th>
               <th>Anak Didik</th>
               <th>Guru Fokus</th>
-              <th>Program</th>
-              <th>Kategori</th>
-              <th>Tanggal Observasi/Evaluasi</th>
-              <th>Penilaian Perkembangan</th>
               <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
-            @forelse($assessments as $index => $assessment)
+            @php
+            // Deduplicate by anak didik on the current page, keeping first occurrence
+            $unique = [];
+            foreach ($assessments as $a) {
+            $id = optional($a->anakDidik)->id ?? 0;
+            if (!isset($unique[$id])) $unique[$id] = $a;
+            }
+            $unique = array_values($unique);
+            @endphp
+
+            @forelse($unique as $index => $assessment)
             <tr id="row-{{ $assessment->id }}">
               <td>{{ ($assessments->currentPage() - 1) * 15 + $index + 1 }}</td>
               <td>
@@ -162,64 +199,21 @@
                 {{ $guruFokus }}
               </td>
               <td>
-                @if($assessment->program_id && $assessment->program)
-                {{ $assessment->program->nama_program }}
-                @else
-                <span class="text-body-secondary">-</span>
-                @endif
-              </td>
-              <td>
-                @php
-                $kategoriColors = [
-                'bina_diri' => 'primary',
-                'akademik' => 'info',
-                'motorik' => 'success',
-                'perilaku' => 'warning',
-                'vokasi' => 'danger',
-                ];
-                $kategoriLabels = [
-                'bina_diri' => 'Bina Diri',
-                'akademik' => 'Akademik',
-                'motorik' => 'Motorik',
-                'perilaku' => 'Perilaku',
-                'vokasi' => 'Vokasi',
-                ];
-                @endphp
-                <span class="badge bg-label-{{ $kategoriColors[$assessment->kategori] ?? 'secondary' }}">
-                  {{ $kategoriLabels[$assessment->kategori] ?? $assessment->kategori }}
-                </span>
-              </td>
-              <td>{{ $assessment->tanggal_assessment ? $assessment->tanggal_assessment->format('d M Y') : '-' }}</td>
-              <td>
-                @php
-                $perkembanganLabels = [
-                1 => '1 - Ada perkembangan 25%',
-                2 => '2 - Ada perkembangan 50%',
-                3 => '3 - Ada perkembangan 75%',
-                4 => '4 - Ada perkembangan 100%'
-                ];
-                @endphp
-                @if(isset($assessment->perkembangan) && $assessment->perkembangan)
-                <span class="badge bg-label-info">{{ $perkembanganLabels[$assessment->perkembangan] ?? $assessment->perkembangan }}</span>
-                @else
-                <span class="text-body-secondary">-</span>
-                @endif
-              </td>
-              <td>
                 <div class="d-flex gap-2 align-items-center">
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-info"
                     onclick="showRiwayatObservasi({{ $assessment->anakDidik->id ?? 0 }})"
-                    title="Riwayat Observasi/Evaluasi">
-                    <i class="ri-history-line"></i> Riwayat Observasi/Evaluasi
+                    title="Riwayat Observasi/Evaluasi"
+                    aria-label="Riwayat Observasi/Evaluasi">
+                    <i class="ri-history-line" style="font-size:1.1rem"></i>
                   </button>
                 </div>
               </td>
             </tr>
             @empty
             <tr>
-              <td colspan="7" class="text-center py-5">
+              <td colspan="4" class="text-center py-5">
                 <div class="mb-3">
                   <i class="ri-search-line" style="font-size: 3rem; color: #ccc;"></i>
                 </div>

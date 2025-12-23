@@ -156,3 +156,58 @@
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const anakEl = document.querySelector('select[name="anak_didik_id"]');
+    const kategoriEl = document.querySelector('select[name="kategori"]');
+    const programEl = document.getElementById('program_id');
+
+    function loadPrograms() {
+      const anak = anakEl ? anakEl.value : '';
+      const kategori = kategoriEl ? kategoriEl.value : '';
+      if (!programEl) return;
+      if (!anak || !kategori) {
+        programEl.innerHTML = '<option value="">Pilih Program</option>';
+        return;
+      }
+      programEl.innerHTML = '<option value="">Memuat...</option>';
+      const url = `/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anak)}&kategori=${encodeURIComponent(kategori)}`;
+      console.debug('Loading programs from', url);
+      fetch(url, {
+          credentials: 'same-origin'
+        })
+        .then(r => {
+          console.debug('Response status', r.status);
+          return r.json().catch(e => {
+            console.error('Failed parsing JSON', e);
+            return null;
+          });
+        })
+        .then(j => {
+          console.debug('Response JSON', j);
+          if (!j || !j.success || !Array.isArray(j.programs) || j.programs.length === 0) {
+            programEl.innerHTML = '<option value="">(Tidak ada program untuk kategori ini)</option>';
+            return;
+          }
+          const opts = j.programs || [];
+          let html = '<option value="">Pilih Program</option>';
+          opts.forEach(p => {
+            html += `<option value="${p.id}">${p.nama_program}</option>`;
+          });
+          programEl.innerHTML = html;
+        }).catch(err => {
+          console.error('Failed to load programs', err);
+          programEl.innerHTML = '<option value="">Pilih Program</option>';
+        });
+    }
+
+    if (anakEl) anakEl.addEventListener('change', loadPrograms);
+    if (kategoriEl) kategoriEl.addEventListener('change', loadPrograms);
+
+    // load on page load if both selected (old input)
+    if (anakEl && kategoriEl && anakEl.value && kategoriEl.value) loadPrograms();
+  });
+</script>
+@endpush
