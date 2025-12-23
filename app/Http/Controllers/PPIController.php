@@ -46,11 +46,26 @@ class PPIController extends Controller
     // build access map: whether current user can view riwayat for each anak
     $accessMap = [];
     foreach ($anakList as $a) {
-      // Only allow the guru fokus to view riwayat: logged-in user must be role 'guru'
-      // and their Karyawan.id must match AnakDidik.guru_fokus_id
       $hasAccess = false;
-      if ($user && $user->role === 'guru' && isset($karyawanId) && $karyawanId) {
-        $hasAccess = ($a->guru_fokus_id == $karyawanId);
+      // Admin can always view
+      if ($user && $user->role === 'admin') {
+        $hasAccess = true;
+      }
+      // Konsultan pendidikan can view
+      if (!$hasAccess && $user && $user->role === 'konsultan') {
+        $k = Konsultan::where('user_id', $user->id)->orWhere('email', $user->email)->first();
+        if ($k && strtolower(trim($k->spesialisasi ?? '')) === 'pendidikan') $hasAccess = true;
+      }
+      // For guru: allow if guru_fokus OR if they have an approved assignment/request
+      if (!$hasAccess && $user && $user->role === 'guru') {
+        // guru fokus
+        if (isset($karyawanId) && $karyawanId && $a->guru_fokus_id == $karyawanId) {
+          $hasAccess = true;
+        } else {
+          // check GuruAnakDidik assignment or approved request
+          $can = \App\Http\Controllers\GuruAnakDidikController::canAccessChild($user->id, $a->id);
+          if ($can) $hasAccess = true;
+        }
       }
       $accessMap[$a->id] = $hasAccess;
     }
@@ -66,7 +81,25 @@ class PPIController extends Controller
         $isKonsultanPendidikan = true;
       }
     }
-    return view('content.ppi.index', compact('anakList', 'search', 'guruOptions', 'guru_fokus', 'accessMap', 'canApprovePPI', 'isKonsultanPendidikan', 'isFokusMap'));
+    // build expiry map for temporary approvals (approved within last 600 minutes)
+    $expiryMap = [];
+    foreach ($anakList as $a) {
+      $expiryMap[$a->id] = null;
+      if ($user && $user->role === 'guru') {
+        $approval = \App\Models\GuruAnakDidikApproval::where('requester_user_id', $user->id)
+          ->where('anak_didik_id', $a->id)
+          ->where('status', 'approved')
+          ->whereNotNull('approved_at')
+          ->where('approved_at', '>=', now()->subMinutes(600))
+          ->orderByDesc('approved_at')
+          ->first();
+        if ($approval && $approval->approved_at) {
+          $expiryMap[$a->id] = $approval->approved_at->copy()->addMinutes(600)->format('Y-m-d H:i');
+        }
+      }
+    }
+
+    return view('content.ppi.index', compact('anakList', 'search', 'guruOptions', 'guru_fokus', 'accessMap', 'canApprovePPI', 'isKonsultanPendidikan', 'isFokusMap', 'expiryMap'));
   }
 
   public function create()

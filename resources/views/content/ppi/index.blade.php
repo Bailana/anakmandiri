@@ -20,12 +20,14 @@
         </div>
       </div>
     </div>
-    <div class="small text-muted mb-2">Program disembunyikan. Tekan tombol <strong>Lihat</strong> untuk memuat detail program.</div>
+
     <div id="ppiDetailContainer${item.id}" class="ppi-detail-container d-none"></div>
   </div>
 
   <!-- Alert Messages -->
   <div id="ppi-alert-wrapper">@if (session('success'))<div class="alert alert-success alert-dismissible fade show" role="alert">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>@endif</div>
+  <!-- Toast container for request-access notifications -->
+  <div id="ppi-toast-container" class="position-fixed top-0 end-0 p-3" style="z-index:1080"></div>
 
   <!-- Search & Filter -->
   <div class="row mb-4">
@@ -174,9 +176,9 @@
       });
 
       function showAlert(message, type = 'success') {
-        const el = document.getElementById('ppi-alert');
-        el.innerHTML = `<div class="alert alert-${type} alert-dismissible">${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
-        el.style.display = 'block';
+        const wrapper = document.getElementById('ppi-alert-wrapper');
+        if (!wrapper) return;
+        wrapper.innerHTML = `<div id="ppi-alert" class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
       }
 
       document.querySelectorAll('.btn-request-access').forEach(btn => {
@@ -195,17 +197,63 @@
               'Accept': 'application/json'
             },
             body: formData
-          }).then(r => r.json()).then(j => {
-            if (j.success) {
-              showAlert(j.message || 'Permintaan berhasil dikirim');
-            } else {
-              showAlert(j.message || 'Terjadi kesalahan', 'danger');
+          }).then(r => {
+            if (!r.ok) {
+              // try to get message from response, otherwise throw generic
+              return r.text().then(t => {
+                throw new Error((t && t.length) ? t : 'HTTP ' + r.status);
+              });
             }
+            return r.json();
+          }).then(j => {
+            // gunakan hanya showAlert untuk memberi umpan balik kepada pengguna
+            if (j && j.success) showAlert(j.message || 'Permintaan berhasil dikirim');
+            else showAlert(j && j.message ? j.message : 'Terjadi kesalahan', 'danger');
           }).catch(err => {
-            showAlert('Terjadi kesalahan jaringan', 'danger');
+            showAlert(err && err.message ? err.message : 'Terjadi kesalahan jaringan', 'danger');
           });
         });
       });
+
+      // Check unread notifications and show alert for approved access
+      (function checkUnreadNotificationsForApproval() {
+        const tokenEl = document.querySelector('meta[name="csrf-token"]');
+        const token = tokenEl ? tokenEl.getAttribute('content') : '';
+        fetch('/notifications/unread-json', {
+            credentials: 'same-origin'
+          })
+          .then(r => r.json())
+          .then(j => {
+            if (!j || !j.success) return;
+            const notifs = j.notifications || [];
+            notifs.forEach(n => {
+              try {
+                const d = n.data || {};
+                if (d.action === 'approved') {
+                  // show alert to the requester
+                  showAlert(d.message || 'Permintaan akses Anda telah disetujui');
+                  // mark notification as read so we don't show it repeatedly
+                  if (n.id && token) {
+                    fetch("{{ route('notifications.mark-read') }}", {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        id: n.id
+                      }),
+                      credentials: 'same-origin'
+                    }).catch(() => {});
+                  }
+                }
+              } catch (e) {
+                // ignore
+              }
+            });
+          }).catch(() => {});
+      })();
 
       // Load riwayat PPI for an anak didik and render list
       window.loadRiwayatPpi = function(btn) {
@@ -363,9 +411,30 @@
               groups[cat].push(item);
             });
 
-            // render each category with its programs
+            // render each category with its programs (show category as a colored badge)
             Object.keys(groups).forEach(cat => {
-              html += `<div class="mb-2"><strong>${cat}</strong></div>`;
+              // choose badge color per category
+              let badgeClass = 'bg-info';
+              switch ((cat || '').toLowerCase()) {
+                case 'akademik':
+                  badgeClass = 'bg-primary';
+                  break;
+                case 'bina diri':
+                  badgeClass = 'bg-success';
+                  break;
+                case 'motorik':
+                  badgeClass = 'bg-warning text-dark';
+                  break;
+                case 'perilaku':
+                  badgeClass = 'bg-danger';
+                  break;
+                case 'vokasi':
+                  badgeClass = 'bg-secondary';
+                  break;
+                default:
+                  badgeClass = 'bg-info';
+              }
+              html += `<div class="mb-2"><span class="badge ${badgeClass}">${cat}</span></div>`;
               html += '<ul class="list-group list-group-flush mb-3">';
               groups[cat].forEach((item, idx) => {
                 const num = idx + 1;

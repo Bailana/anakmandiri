@@ -210,6 +210,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('ppi/{id}/approve', [App\Http\Controllers\PPIController::class, 'approve'])->name('ppi.approve');
     Route::put('ppi/{id}', [App\Http\Controllers\PPIController::class, 'update'])->name('ppi.update');
     Route::delete('ppi/{id}', [App\Http\Controllers\PPIController::class, 'destroy'])->name('ppi.destroy');
+    // Notification routes for in-site notifications
+    Route::post('notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.mark-read');
+    Route::post('notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+    Route::get('notifications/unread-json', [App\Http\Controllers\NotificationController::class, 'unreadJson'])->name('notifications.unread-json');
+    // Approve/Reject access requests (for guru fokus)
+    Route::get('guru-anak/approval-requests', [App\Http\Controllers\GuruAnakDidikController::class, 'approvalRequests'])->name('guru-anak.approvals.index')->middleware('role:admin');
+    Route::post('guru-anak/approvals/{id}/approve', [App\Http\Controllers\GuruAnakDidikController::class, 'approveRequest'])->name('guru-anak.approvals.approve');
+    Route::post('guru-anak/approvals/{id}/reject', [App\Http\Controllers\GuruAnakDidikController::class, 'rejectRequest'])->name('guru-anak.approvals.reject');
+    Route::put('guru-anak/approvals/{id}', [App\Http\Controllers\GuruAnakDidikController::class, 'updateApproval'])->name('guru-anak.approvals.update');
+    Route::delete('guru-anak/approvals/{id}', [App\Http\Controllers\GuruAnakDidikController::class, 'destroyApproval'])->name('guru-anak.approvals.destroy');
   });
 
   // Pasien Terapis - accessible to admin and terapis

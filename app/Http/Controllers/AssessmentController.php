@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Assessment;
 use App\Models\AnakDidik;
 use App\Models\Konsultan;
+use App\Models\GuruAnakDidik;
+use App\Models\GuruAnakDidikApproval;
+use App\Models\Karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -63,8 +66,31 @@ class AssessmentController extends Controller
    */
   public function create()
   {
-    $anakDidiks = AnakDidik::all();
-    $konsultans = Konsultan::all();
+    $user = Auth::user();
+    // For guru users, only show children assigned to them or those they have approved access for
+    if ($user && $user->role === 'guru') {
+      $assignedIds = GuruAnakDidik::where('user_id', $user->id)->where('status', 'aktif')->pluck('anak_didik_id')->toArray();
+      $approvedIds = GuruAnakDidikApproval::where('requester_user_id', $user->id)->where('status', 'approved')->pluck('anak_didik_id')->toArray();
+
+      // also include anak didik where this guru is recorded as guru_fokus (via Karyawan mapping)
+      $karyawan = Karyawan::where('nama', $user->name)->first();
+      $fokusIds = [];
+      if ($karyawan) {
+        $fokusIds = AnakDidik::where('guru_fokus_id', $karyawan->id)->pluck('id')->toArray();
+      }
+
+      $ids = array_unique(array_merge($assignedIds, $approvedIds, $fokusIds));
+      if (count($ids) > 0) {
+        $anakDidiks = AnakDidik::whereIn('id', $ids)->orderBy('nama')->get();
+      } else {
+        // return empty collection to view
+        $anakDidiks = collect();
+      }
+    } else {
+      $anakDidiks = AnakDidik::orderBy('nama')->get();
+    }
+
+    $konsultans = Konsultan::orderBy('nama')->get();
 
     return view('content.assessment.create', [
       'anakDidiks' => $anakDidiks,
