@@ -206,6 +206,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('ppi/{id}', [App\Http\Controllers\PPIController::class, 'show'])->name('ppi.show');
     Route::post('ppi/request-access', [App\Http\Controllers\GuruAnakDidikController::class, 'requestAccess'])->name('ppi.request-access');
     Route::get('ppi/riwayat/{id}', [App\Http\Controllers\PPIController::class, 'riwayat'])->name('ppi.riwayat');
+    Route::get('ppi/{id}/detail-json', [App\Http\Controllers\PPIController::class, 'detailJson'])->name('ppi.detail.json');
     Route::post('ppi/{id}/approve', [App\Http\Controllers\PPIController::class, 'approve'])->name('ppi.approve');
     Route::put('ppi/{id}', [App\Http\Controllers\PPIController::class, 'update'])->name('ppi.update');
     Route::delete('ppi/{id}', [App\Http\Controllers\PPIController::class, 'destroy'])->name('ppi.destroy');

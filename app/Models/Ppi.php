@@ -24,4 +24,9 @@ class Ppi extends Model
   {
     return $this->hasMany(PpiItem::class, 'ppi_id');
   }
+
+  public function anak()
+  {
+    return $this->belongsTo(AnakDidik::class, 'anak_didik_id');
+  }
 }

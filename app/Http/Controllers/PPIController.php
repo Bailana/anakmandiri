@@ -8,6 +8,7 @@ use App\Models\PpiItem;
 use App\Models\AnakDidik;
 use App\Models\Konsultan;
 use App\Models\Karyawan;
+use App\Models\ProgramKonsultan;
 use Illuminate\Support\Facades\Auth;
 
 class PPIController extends Controller
@@ -34,19 +35,7 @@ class PPIController extends Controller
 
     $anakList = $anakQuery->paginate(15)->appends($request->query());
 
-    // latest PPI status per anak on this page
-    $anakIds = $anakList->pluck('id')->toArray();
-    $latestPpis = [];
-    if (!empty($anakIds)) {
-      $ppis = \App\Models\Ppi::whereIn('anak_didik_id', $anakIds)->orderByDesc('created_at')->get();
-      foreach ($ppis as $p) {
-        if (!isset($latestPpis[$p->anak_didik_id])) $latestPpis[$p->anak_didik_id] = $p;
-      }
-    }
-    $statusMap = [];
-    foreach ($anakList as $a) {
-      $statusMap[$a->id] = isset($latestPpis[$a->id]) ? ($latestPpis[$a->id]->status ?? '') : '';
-    }
+    // (status removed) no longer building latest status per anak
 
     // isFokusMap: whether current user is guru_fokus for each anak
     $isFokusMap = [];
@@ -77,7 +66,7 @@ class PPIController extends Controller
         $isKonsultanPendidikan = true;
       }
     }
-    return view('content.ppi.index', compact('anakList', 'search', 'guruOptions', 'guru_fokus', 'accessMap', 'canApprovePPI', 'statusMap', 'isKonsultanPendidikan', 'isFokusMap'));
+    return view('content.ppi.index', compact('anakList', 'search', 'guruOptions', 'guru_fokus', 'accessMap', 'canApprovePPI', 'isKonsultanPendidikan', 'isFokusMap'));
   }
 
   public function create()
@@ -181,6 +170,45 @@ class PPIController extends Controller
 
     return response()->json(['success' => true, 'riwayat' => $riwayat]);
   }
+
+  public function detailJson($id)
+  {
+    $ppi = Ppi::with(['items.programKonsultan', 'anak'])
+      ->findOrFail($id);
+
+    $data = [
+      'id' => $ppi->id,
+      'tanggal' => $ppi->created_at->format('Y-m-d'),
+      'anak' => $ppi->anak ? ['id' => $ppi->anak->id, 'nama' => $ppi->anak->nama] : null,
+      'konsultan' => null,
+      'keterangan' => $ppi->keterangan ?? null,
+      'status' => $ppi->status,
+      'review_comment' => $ppi->review_comment ?? null,
+      'items' => []
+    ];
+
+    foreach ($ppi->items as $item) {
+      $pk = $item->programKonsultan;
+      $data['items'][] = [
+        'id' => $item->id,
+        'notes' => $item->notes ?? null,
+        'nama_program' => $item->nama_program ?? null,
+        'kategori' => $item->kategori ?? null,
+        'program_konsultan' => $pk ? [
+          'id' => $pk->id,
+          'kode_program' => $pk->kode_program ?? null,
+          'nama_program' => $pk->nama_program ?? null,
+          'tujuan' => $pk->tujuan ?? null,
+          'aktivitas' => $pk->aktivitas ?? null,
+          'keterangan' => $pk->keterangan ?? null,
+        ] : null,
+      ];
+    }
+
+    return response()->json($data);
+  }
+
+
 
   /**
    * Delete a PPI. Only allowed for admin or the child's guru fokus.

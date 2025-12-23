@@ -29,7 +29,7 @@
 
           <div class="row mb-3">
             <div class="col-md-12">
-              
+
               <div class="row mb-3">
                 <div class="col-md-6">
                   <label for="periode_mulai" class="form-label">Periode Mulai</label>
@@ -188,15 +188,19 @@
         console.error('Failed fetching child programs', err);
       }
 
+      // For 'pendidikan' konsultan, only include programs that were actually assigned to this anak
       const pendidikanIds = Object.keys(konsultanSpecs).filter(id => konsultanSpecs[id] === 'pendidikan');
       for (const id of pendidikanIds) {
         try {
-          let items = pendidikanCache[id];
+          // cache key should include anakId since results vary by anak
+          const cacheKey = `${anakId}::${id}`;
+          let items = pendidikanCache[cacheKey];
           if (!items) {
-            const r2 = await fetch('/program-anak/program-konsultan/konsultan/' + encodeURIComponent(id) + '/list-json');
+            // fetch programs for this anak filtered by konsultan
+            const r2 = await fetch('/program-anak/riwayat-program/' + encodeURIComponent(anakId) + '/konsultan/' + encodeURIComponent(id));
             const j2 = await r2.json();
-            items = j2 && j2.program_konsultan ? j2.program_konsultan : [];
-            pendidikanCache[id] = items;
+            items = j2 && j2.programs ? j2.programs : [];
+            pendidikanCache[cacheKey] = items;
           }
           items.forEach(it => {
             const label = (it.kode_program ? (it.kode_program + ' - ') : '') + (it.nama_program || it.nama || '');
@@ -205,7 +209,7 @@
                 value: it.nama_program || it.nama || '',
                 label: label,
                 data: {
-                  id: it.id || it.program_konsultan_id || '',
+                  id: it.id || '',
                   kode: it.kode_program || '',
                   tujuan: it.tujuan || '',
                   aktivitas: it.aktivitas || ''
