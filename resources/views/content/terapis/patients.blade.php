@@ -22,21 +22,6 @@
               <i class="ri-add-line me-2"></i>Tambah Pasien Terapis
             </a>
             @endif
-
-            @if(isset($user) && $user->role === 'admin')
-            <form method="get" class="d-flex gap-2 align-items-end" action="{{ route('terapis.pasien.index') }}">
-              <div style="min-width: 200px;">
-                <select name="user_id" class="form-select">
-                  <option value="">-- Semua Terapis --</option>
-                  @foreach($therapists as $t)
-                  <option value="{{ $t->id }}" @if((string)$t->id === (string)($selectedTherapisId ?? '')) selected @endif>{{ $t->name }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <button type="submit" class="btn btn-outline-primary">Filter</button>
-              <a href="{{ route('terapis.pasien.index') }}" class="btn btn-outline-secondary">Reset</a>
-            </form>
-            @endif
           </div>
         </div>
       </div>
@@ -54,6 +39,30 @@
 
 <div class="row">
   <div class="col-12">
+    <!-- Search & Filter (like /program) -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <form method="GET" action="{{ route('terapis.pasien.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
+          <div class="flex-grow-1" style="min-width:200px;">
+            <input type="text" name="search" class="form-control" placeholder="Cari nama anak atau NIS..." value="{{ request('search') }}">
+          </div>
+          @if(isset($user) && $user->role === 'admin')
+          <select name="user_id" class="form-select" style="max-width:200px;">
+            <option value="">-- Semua Terapis --</option>
+            @foreach($therapists as $t)
+            <option value="{{ $t->id }}" {{ request('user_id') == $t->id ? 'selected' : '' }}>{{ $t->name }}</option>
+            @endforeach
+          </select>
+          @endif
+          <button type="submit" class="btn btn-outline-primary" title="Filter">
+            <i class="ri-search-line"></i>
+          </button>
+          <a href="{{ route('terapis.pasien.index') }}" class="btn btn-outline-secondary" title="Reset">
+            <i class="ri-refresh-line"></i>
+          </a>
+        </form>
+      </div>
+    </div>
     <div class="card">
       <div class="table-responsive">
         <table class="table table-hover" id="patientsTable" style="font-size: 1rem;">
@@ -71,7 +80,7 @@
           <tbody>
             @forelse($assignments as $index => $assign)
             <tr>
-              <td>{{ $index + 1 }}</td>
+              <td>{{ (method_exists($assignments, 'currentPage') ? ($assignments->currentPage() - 1) * $assignments->perPage() : 0) + $index + 1 }}</td>
               <td>
                 @if($assign->anakDidik)
                 <a href="{{ route('anak-didik.show', $assign->anak_didik) }}">{{ $assign->anakDidik->nama }}</a>
@@ -103,7 +112,7 @@
       </div>
       <div class="card-footer d-flex justify-content-between align-items-center">
         <div class="text-body-secondary">
-          Menampilkan {{ $assignments->count() }} data
+          Menampilkan {{ method_exists($assignments, 'firstItem') ? ($assignments->firstItem() ?? 0) : $assignments->count() }} hingga {{ method_exists($assignments, 'lastItem') ? ($assignments->lastItem() ?? 0) : $assignments->count() }} dari {{ method_exists($assignments, 'total') ? $assignments->total() : $assignments->count() }} data
         </div>
         <nav>
           @if(method_exists($assignments, 'links'))

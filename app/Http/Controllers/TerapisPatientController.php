@@ -19,12 +19,21 @@ class TerapisPatientController extends Controller
   {
     $user = Auth::user();
     $selectedTherapisId = $request->query('user_id');
+    $search = $request->query('search');
     $therapists = collect();
 
+    // Build base query depending on role
     if ($user->role === 'terapis') {
-      $assignments = GuruAnakDidik::with(['anakDidik', 'user'])
-        ->where('user_id', $user->id)
-        ->get();
+      $query = GuruAnakDidik::with(['anakDidik', 'user'])
+        ->where('user_id', $user->id);
+
+      if ($request->filled('search')) {
+        $query->whereHas('anakDidik', function ($q) use ($search) {
+          $q->where('nama', 'like', "%{$search}%");
+        });
+      }
+
+      $assignments = $query->orderBy('id', 'desc')->paginate(10)->appends($request->query());
 
       return view('content.terapis.patients', compact('assignments', 'therapists', 'user', 'selectedTherapisId'));
     }
@@ -32,15 +41,20 @@ class TerapisPatientController extends Controller
     // admin view: list therapists and optionally filter by therapist id
     $therapists = User::where('role', 'terapis')->get();
 
+    $query = GuruAnakDidik::with(['anakDidik', 'user']);
     if ($selectedTherapisId) {
-      $assignments = GuruAnakDidik::with(['anakDidik', 'user'])
-        ->where('user_id', $selectedTherapisId)
-        ->get();
+      $query->where('user_id', $selectedTherapisId);
     } else {
-      $assignments = GuruAnakDidik::with(['anakDidik', 'user'])
-        ->whereIn('user_id', $therapists->pluck('id')->toArray())
-        ->get();
+      $query->whereIn('user_id', $therapists->pluck('id')->toArray());
     }
+
+    if ($request->filled('search')) {
+      $query->whereHas('anakDidik', function ($q) use ($search) {
+        $q->where('nama', 'like', "%{$search}%");
+      });
+    }
+
+    $assignments = $query->orderBy('id', 'desc')->paginate(10)->appends($request->query());
 
     return view('content.terapis.patients', compact('assignments', 'therapists', 'user', 'selectedTherapisId'));
   }
