@@ -1,12 +1,12 @@
 <!-- Modal Riwayat Penilaian -->
 <div class="modal fade" id="riwayatObservasiModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Riwayat Penilaian</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
         <div id="riwayatObservasiTableWrapper">
           <div class="text-center py-4 text-body-secondary">Memuat data...</div>
         </div>
@@ -101,7 +101,6 @@
             return 'bg-dark';
         }
       };
-
       // Build history index: map program id or name -> array of dates
       const historyIndex = {};
       data.riwayat.forEach(group => {
@@ -462,63 +461,264 @@
   </div>
 </div>
 
-<!-- Charts Area -->
-<div class="row mt-4">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <div>
-          <h5 class="mb-0">Grafik Program Anak</h5>
-          <small class="text-body-secondary">Grafik per program (klik ikon riwayat pada baris anak)</small>
-        </div>
-        <div id="assessment-charts-meta" class="text-end text-body-secondary"></div>
+<!-- Charts Area removed to simplify page (per request) -->
+
+<!-- Modal Grafik Program (ditampilkan saat tombol Lihat ditekan) -->
+<div class="modal fade" id="programChartModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="programChartTitle">Grafik Program</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="card-body">
-        <div class="mb-3">
-          <div class="row g-2">
-            <div class="col-12 col-md-4">
-              <label class="form-label small">Pilih Anak</label>
-              <select id="select-anak" class="form-select">
-                <option value="">-- Pilih Anak --</option>
-                @php $seen = []; @endphp
-                @foreach($assessments as $a)
-                @php $kid = optional($a->anakDidik)->id ?? 0; @endphp
-                @if($kid && !isset($seen[$kid]))
-                @php $seen[$kid] = true; @endphp
-                <option value="{{ $kid }}">{{ $a->anakDidik->nama ?? '-' }} ({{ $a->anakDidik->nis ?? '' }})</option>
-                @endif
-                @endforeach
-              </select>
+      <div class="modal-body">
+        <div id="programChartContainer" style="min-height:240px;">
+          <div id="programChartLegend" class="mb-2 d-flex gap-3 align-items-center justify-content-center w-100">
+            <div class="d-flex align-items-center gap-2">
+              <span style="display:inline-block;width:14px;height:14px;background:#10b981;border-radius:3px;border:1px solid rgba(0,0,0,0.05);"></span>
+              <span class="small text-body-secondary">Ada penilaian</span>
             </div>
-            <div class="col-12 col-md-3">
-              <label class="form-label small">Kategori</label>
-              <select id="select-kategori" class="form-select">
-                <option value="">Semua Kategori</option>
-                <option value="bina_diri">Bina Diri</option>
-                <option value="akademik">Akademik</option>
-                <option value="motorik">Motorik</option>
-                <option value="perilaku">Perilaku</option>
-                <option value="vokasi">Vokasi</option>
-              </select>
-            </div>
-            <div class="col-12 col-md-4">
-              <label class="form-label small">Program</label>
-              <select id="select-program" class="form-select">
-                <option value="">-- Pilih Program --</option>
-              </select>
-              <div id="select-program-help" class="text-body-secondary small mt-1">&nbsp;</div>
-            </div>
-            <div class="col-12 col-md-1 d-flex align-items-end">
-              <button id="btn-tampilkan" class="btn btn-primary w-100">Tampilkan</button>
+            <div class="d-flex align-items-center gap-2">
+              <span style="display:inline-block;width:14px;height:14px;background:#ef4444;border-radius:3px;border:1px solid rgba(0,0,0,0.05);"></span>
+              <span class="small text-body-secondary">Tidak ada penilaian</span>
             </div>
           </div>
+          <canvas id="programChartCanvas" style="width:100%;height:320px" height="320"></canvas>
         </div>
-
-        <div id="assessment-charts" class="row g-3">Pilih anak untuk menampilkan grafik.</div>
       </div>
     </div>
   </div>
 </div>
+
+@push('page-script')
+<script>
+  // dynamic script loader
+  function _loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function renderProgramChart(anakId, programIdOrName) {
+    const canvas = document.getElementById('programChartCanvas');
+    const titleEl = document.getElementById('programChartTitle');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    try {
+      await _loadScript('https://cdn.jsdelivr.net/npm/chart.js');
+      await _loadScript('https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2');
+    } catch (e) {
+      console.error('Failed loading chart scripts', e);
+      if (titleEl) titleEl.textContent = 'Gagal memuat Chart.js';
+      return;
+    }
+
+    // register datalabels if available
+    try {
+      if (window.Chart && window.ChartDataLabels) Chart.register(ChartDataLabels);
+    } catch (e) {}
+
+    // fetch program history
+    try {
+      const res = await fetch(`/assessment/${anakId}/program-history`, {
+        credentials: 'same-origin'
+      });
+      if (!res.ok) {
+        if (titleEl) titleEl.textContent = 'Gagal memuat data program.';
+        return;
+      }
+      const json = await res.json().catch(() => null);
+      if (!json || !json.success || !Array.isArray(json.programs)) {
+        if (titleEl) titleEl.textContent = 'Tidak ada data program.';
+        return;
+      }
+
+      const prog = json.programs.find(p => String(p.id) === String(programIdOrName) || p.nama_program === programIdOrName);
+      if (!prog) {
+        if (titleEl) titleEl.textContent = 'Program tidak ditemukan.';
+        return;
+      }
+      if (titleEl) titleEl.textContent = prog.nama_program || 'Grafik Program';
+
+      // prepare daily buckets between min and max date from datapoints
+      const dps = Array.isArray(prog.datapoints) ? prog.datapoints : [];
+      if (!dps.length) {
+        if (titleEl) titleEl.textContent = prog.nama_program + ' — (Belum ada penilaian)';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+
+      // find min and max date among datapoints
+      let minDate = null,
+        maxDate = null;
+      dps.forEach(d => {
+        if (!d || !d.tanggal) return;
+        const dt = new Date(d.tanggal);
+        if (isNaN(dt)) return;
+        if (!minDate || dt < minDate) minDate = dt;
+        if (!maxDate || dt > maxDate) maxDate = dt;
+      });
+      if (!minDate || !maxDate) {
+        if (titleEl) titleEl.textContent = prog.nama_program + ' — (Belum ada penilaian)';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+
+      // build map date(yyyy-mm-dd) -> aggregated avg score
+      const dayMap = {};
+      dps.forEach(d => {
+        if (!d || !d.tanggal) return;
+        const dt = new Date(d.tanggal);
+        if (isNaN(dt)) return;
+        const key = dt.toISOString().slice(0, 10);
+        dayMap[key] = dayMap[key] || {
+          sum: 0,
+          count: 0
+        };
+        const s = (typeof d.score === 'number') ? d.score : Number(d.score);
+        if (!isNaN(s)) {
+          dayMap[key].sum += s;
+          dayMap[key].count += 1;
+        }
+      });
+
+      // generate labels & data for each day in range
+      const labels = [];
+      const data = [];
+      const pointBg = [];
+      const pointBorder = [];
+      const dateList = [];
+      for (let dt = new Date(minDate); dt <= maxDate; dt.setDate(dt.getDate() + 1)) {
+        const key = dt.toISOString().slice(0, 10);
+        dateList.push(new Date(dt));
+        labels.push(new Date(key).toLocaleDateString('id-ID', {
+          day: '2-digit',
+          month: 'short'
+        }));
+        if (dayMap[key] && dayMap[key].count) {
+          const avg = Math.round((dayMap[key].sum / dayMap[key].count) * 100) / 100;
+          data.push(avg);
+          pointBg.push('#10b981');
+          pointBorder.push('#10b981');
+        } else {
+          // mark missing days as 0 and color red
+          data.push(0);
+          pointBg.push('#ef4444');
+          pointBorder.push('#ef4444');
+        }
+      }
+
+      if (window._programChartInstance && typeof window._programChartInstance.destroy === 'function') {
+        try {
+          window._programChartInstance.destroy();
+        } catch (e) {}
+        window._programChartInstance = null;
+      }
+
+      window._programChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: prog.nama_program,
+            data: data,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.06)',
+            tension: 0.2,
+            pointRadius: 6,
+            pointBackgroundColor: pointBg,
+            pointBorderColor: pointBorder,
+            pointStyle: 'circle'
+          }]
+        },
+        options: {
+          // render at fixed canvas size to avoid Chart.js triggering continuous resizes
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            x: {
+              grid: {
+                color: '#f8fafc'
+              }
+            },
+            y: {
+              grid: {
+                color: '#f1f5f9'
+              },
+              suggestedMin: 0,
+              suggestedMax: 4,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              display: false
+            },
+            datalabels: {
+              display: true,
+              align: 'top',
+              anchor: 'end',
+              backgroundColor: '#fff',
+              borderRadius: 4,
+              color: '#111',
+              font: {
+                size: 11
+              },
+              formatter: function(v, ctxLabel) {
+                // show value for scored days, show '-' for missing (value 0 treated as missing)
+                return (v && v !== 0) ? v : (v === 0 ? '' : v);
+              }
+            }
+          }
+        }
+      });
+      // ensure chart uses canvas pixel size correctly
+      try {
+        window._programChartInstance.resize();
+      } catch (e) {}
+
+    } catch (err) {
+      console.error('renderProgramChart failed', err);
+      if (titleEl) titleEl.textContent = 'Gagal memuat grafik.';
+    }
+  }
+
+  // override selectProgramAndClose to show chart modal
+  window.selectProgramAndClose = function(anakId, programId) {
+    try {
+      const modalEl = document.getElementById('riwayatObservasiModal');
+      const inst = bootstrap.Modal.getInstance(modalEl);
+      if (inst) inst.hide();
+    } catch (e) {}
+    try {
+      const chartModalEl = document.getElementById('programChartModal');
+      const chartModal = new bootstrap.Modal(chartModalEl);
+      // render chart after modal is fully shown to ensure correct sizing
+      const onShown = function() {
+        try {
+          renderProgramChart(anakId, programId);
+        } catch (err) {
+          console.error(err);
+        }
+        chartModalEl.removeEventListener('shown.bs.modal', onShown);
+      };
+      chartModalEl.addEventListener('shown.bs.modal', onShown);
+      chartModal.show();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+</script>
+@endpush
 
 <!-- Modal Detail -->
 <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
@@ -641,439 +841,5 @@
     return labels[kategori] || kategori;
   }
 </script>
-<script>
-  (function() {
-      function loadScript(src) {
-        return new Promise((resolve, reject) => {
-          if (document.querySelector(`script[src="${src}"]`)) return resolve();
-          const s = document.createElement('script');
-          s.src = src;
-          s.onload = resolve;
-          s.onerror = reject;
-          document.head.appendChild(s);
-        });
-      }
-
-      async function renderChartsForAnak(anakId, anakName = null) {
-        const container = document.getElementById('assessment-charts');
-        const meta = document.getElementById('assessment-charts-meta');
-        if (!container) return;
-        container.innerHTML = '<div class="text-body-secondary">Memuat grafik...</div>';
-        if (meta) meta.textContent = anakName ? anakName : '';
-        try {
-          await loadScript('https://cdn.jsdelivr.net/npm/chart.js');
-          await loadScript('https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2');
-          const res = await fetch(`/assessment/${anakId}/program-history`, {
-            credentials: 'same-origin'
-          });
-          const json = await res.json();
-          if (!json.success || !Array.isArray(json.programs) || json.programs.length === 0) {
-            container.innerHTML = '<div class="text-body-secondary">Belum ada data penilaian untuk program.</div>';
-            return;
-          }
-
-          // register datalabels if available
-          if (window.Chart && window.ChartDataLabels) {
-            try {
-              Chart.register(ChartDataLabels);
-            } catch (e) {}
-          }
-
-          container.innerHTML = '';
-          // try to match table card height for consistent sizing
-          const tableResponsive = document.querySelector('.card .table-responsive');
-          const targetHeight = tableResponsive ? Math.max(240, tableResponsive.clientHeight) : 240;
-          json.programs.forEach((prog, idx) => {
-            const col = document.createElement('div');
-            col.className = 'col-12';
-
-            const card = document.createElement('div');
-            // match table card styling and spacing
-            card.className = 'card mb-4';
-
-            const body = document.createElement('div');
-            body.className = 'card-body';
-            body.style.minHeight = targetHeight + 'px';
-
-            const title = document.createElement('h6');
-            title.className = 'card-title mb-2';
-            title.textContent = prog.nama_program || '-';
-
-            const canvasWrap = document.createElement('div');
-            const canvasHeight = Math.max(180, targetHeight - 80);
-            canvasWrap.style.height = canvasHeight + 'px';
-            canvasWrap.style.position = 'relative';
-
-            const canvas = document.createElement('canvas');
-            canvas.id = `assessment-chart-${anakId}-${idx}`;
-            canvas.style.width = '100%';
-            canvas.style.height = canvasHeight + 'px';
-
-            canvasWrap.appendChild(canvas);
-            body.appendChild(title);
-            body.appendChild(canvasWrap);
-
-            const footer = document.createElement('div');
-            footer.className = 'card-footer bg-transparent';
-            footer.style.borderTop = 'none';
-            const latest = (prog.datapoints && prog.datapoints.length) ? prog.datapoints[prog.datapoints.length - 1].score : null;
-            footer.innerHTML = `<small class="text-muted">Terakhir: ${latest !== null ? (Math.round(latest*100)/100) : '-'}</small>`;
-
-            card.appendChild(body);
-            card.appendChild(footer);
-            col.appendChild(card);
-            container.appendChild(col);
-
-            const labels = prog.datapoints.map(d => d.tanggal || '').filter(Boolean);
-            const data = prog.datapoints.map(d => d.score !== null ? Number(d.score) : NaN);
-
-            try {
-              new Chart(canvas.getContext('2d'), {
-                type: 'line',
-                data: {
-                  labels: labels.map(l => {
-                    try {
-                      return new Date(l).toLocaleDateString('id-ID', {
-                        month: 'short',
-                        year: 'numeric'
-                      });
-                    } catch (e) {
-                      return l;
-                    }
-                  }),
-                  datasets: [{
-                    label: prog.nama_program,
-                    data: data,
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16,185,129,0.06)',
-                    tension: 0.3,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#10b981'
-                  }]
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    x: {
-                      display: true,
-                      grid: {
-                        color: '#f8fafc'
-                      },
-                      ticks: {
-                        maxRotation: 0,
-                        autoSkip: true
-                      }
-                    },
-                    y: {
-                      display: true,
-                      grid: {
-                        color: '#f1f5f9'
-                      },
-                      suggestedMin: 0,
-                      suggestedMax: 5
-                    }
-                  },
-                  plugins: {
-                    legend: {
-                      display: false
-                    },
-                    tooltip: {
-                      enabled: true,
-                      mode: 'index',
-                      intersect: false
-                    },
-                    datalabels: {
-                      display: true,
-                      align: 'top',
-                      formatter: function(v) {
-                        return isNaN(v) ? '' : Math.round(v * 100) / 100;
-                      },
-                      backgroundColor: 'rgba(255,255,255,0.95)',
-                      borderRadius: 4,
-                      color: '#111',
-                      font: {
-                        size: 11
-                      }
-                    }
-                  }
-                }
-              });
-            } catch (e) {
-              console.error('Chart render failed', e);
-            }
-          });
-        } catch (err) {
-          console.error('Failed to render charts', err);
-          container.innerHTML = '<div class="text-body-secondary">Gagal memuat grafik.</div>';
-        }
-      }
-
-      // simple in-memory cache for fetched programs per anak
-      const _programsCache = {};
-
-      async function fetchProgramsForAnak(anakId) {
-        if (!anakId) return [];
-        if (_programsCache[anakId]) return _programsCache[anakId];
-        try {
-          const res = await fetch(`/assessment/${anakId}/program-history`);
-          const json = await res.json();
-          if (!json.success) return [];
-          _programsCache[anakId] = json.programs || [];
-          return _programsCache[anakId];
-        } catch (e) {
-          console.error('Fetch programs failed', e);
-          return [];
-        }
-      }
-
-      // populate program select based on selected anak and category
-      async function populateProgramSelect(anakId, kategori) {
-        const sel = document.getElementById('select-program');
-        const help = document.getElementById('select-program-help');
-        sel.innerHTML = '<option value="">Memuat...</option>';
-        if (help) help.textContent = '\u00A0';
-        if (!anakId) return;
-
-        // Primary: ask server for PPI-derived programs (same as create page)
-        try {
-          const q = new URLSearchParams({
-            anak_didik_id: anakId,
-            kategori: kategori || ''
-          });
-          const res = await fetch(`/assessment/ppi-programs?${q.toString()}`, {
-            credentials: 'same-origin'
-          });
-          if (!res.ok) {
-            console.warn('ppi-programs responded with', res.status);
-            if (help) help.textContent = res.status === 403 ? 'Akses ditolak (403) — Anda tidak memiliki izin melihat program PPI.' : `Gagal memuat program (status ${res.status}).`;
-          } else {
-            const j = await res.json().catch(e => null);
-            if (j && j.success && Array.isArray(j.programs) && j.programs.length) {
-              // populate from PPI programs (these may create Program rows server-side)
-              sel.innerHTML = '<option value="">-- Pilih Program --</option>';
-              j.programs.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id || p.nama_program;
-                opt.textContent = p.nama_program + (p.kategori ? (' — ' + p.kategori) : '');
-                opt.dataset.kategori = p.kategori || '';
-                sel.appendChild(opt);
-              });
-              if (help) help.textContent = `PPI: ${j.programs.length} item`;
-              // auto-select first and render
-              if (sel.options.length > 1) {
-                sel.selectedIndex = 1;
-                setTimeout(() => renderSelectedProgram(anakId, sel.value), 120);
-                return;
-              }
-            } else {
-              if (help) help.textContent = 'PPI: 0 item — memeriksa riwayat penilaian...';
-            }
-          }
-        } catch (e) {
-          console.error('ppi-programs request failed', e);
-          if (help) help.textContent = 'Gagal memuat program dari PPI.';
-        }
-
-        // Fallback: use program-history (programs that have assessments)
-        try {
-          const historyPrograms = await fetchProgramsForAnak(anakId);
-          const normSelKat = kategori ? String(kategori).toLowerCase().replace(/\s+/g, '_') : '';
-          const filtered = historyPrograms.filter(p => {
-            const pk = p.kategori || '';
-            const normPk = String(pk).toLowerCase().replace(/\s+/g, '_');
-            if (normSelKat && normPk && normSelKat !== normPk) return false;
-            return true;
-          });
-          if (filtered.length) {
-            sel.innerHTML = '<option value="">-- Pilih Program --</option>';
-            filtered.forEach(p => {
-              const opt = document.createElement('option');
-              opt.value = p.id || p.nama_program;
-              opt.textContent = p.nama_program + (p.kategori ? (' — ' + p.kategori) : '');
-              opt.dataset.kategori = p.kategori || '';
-              sel.appendChild(opt);
-            });
-            if (help) help.textContent = `Riwayat: ${filtered.length} item`;
-            sel.selectedIndex = 1;
-            setTimeout(() => renderSelectedProgram(anakId, sel.value), 120);
-            return;
-          } else {
-            if (help) help.textContent = 'Tidak ada program ditemukan untuk anak/ kategori ini.';
-            sel.innerHTML = '<option value="">(Tidak ada program)</option>';
-          }
-        } catch (e) {
-          console.error('fetchProgramsForAnak failed', e);
-          if (help) help.textContent = 'Gagal mengambil riwayat program.';
-          sel.innerHTML = '<option value="">(Tidak ada program)</option>';
-        }
-      }
-
-      // render only selected program for anak
-      async function renderSelectedProgram(anakId, programIdOrName) {
-        const programs = await fetchProgramsForAnak(anakId);
-        const prog = programs.find(p => String(p.id) === String(programIdOrName) || p.nama_program === programIdOrName);
-        const container = document.getElementById('assessment-charts');
-        const meta = document.getElementById('assessment-charts-meta');
-        if (!container) return;
-        container.innerHTML = '';
-        if (!prog) {
-          container.innerHTML = '<div class="text-body-secondary">Program tidak ditemukan.</div>';
-          return;
-        }
-        if (meta) meta.textContent = prog.nama_program || '';
-
-        const col = document.createElement('div');
-        col.className = 'col-12';
-        const card = document.createElement('div');
-        card.className = 'card mb-4';
-        const body = document.createElement('div');
-        body.className = 'card-body';
-        const title = document.createElement('h6');
-        title.className = 'card-title mb-2';
-        title.textContent = prog.nama_program;
-        const canvasWrap = document.createElement('div');
-        canvasWrap.style.height = '320px';
-        canvasWrap.style.position = 'relative';
-        const canvas = document.createElement('canvas');
-        canvas.id = `assessment-chart-single-${anakId}`;
-        canvas.style.width = '100%';
-        canvas.style.height = '320px';
-        canvasWrap.appendChild(canvas);
-        body.appendChild(title);
-        body.appendChild(canvasWrap);
-        const footer = document.createElement('div');
-        footer.className = 'card-footer bg-transparent';
-        footer.style.borderTop = 'none';
-        const latest = (prog.datapoints && prog.datapoints.length) ? prog.datapoints[prog.datapoints.length - 1].score : null;
-        footer.innerHTML = `<small class="text-muted">Terakhir: ${latest !== null ? (Math.round(latest*100)/100) : '-'}</small>`;
-        card.appendChild(body);
-        card.appendChild(footer);
-        col.appendChild(card);
-        container.appendChild(col);
-
-        // draw chart
-        try {
-          const labels = prog.datapoints.map(d => d.tanggal || '').filter(Boolean).map(l => {
-            try {
-              return new Date(l).toLocaleDateString('id-ID', {
-                month: 'short',
-                year: 'numeric'
-              });
-            } catch (e) {
-              return l;
-            }
-          });
-          const data = prog.datapoints.map(d => d.score !== null ? Number(d.score) : NaN);
-          if (window.Chart && window.ChartDataLabels) {
-            try {
-              Chart.register(ChartDataLabels);
-            } catch (e) {}
-          }
-          new Chart(canvas.getContext('2d'), {
-              type: 'line',
-              data: {
-                labels: labels,
-                datasets: [{
-                  label: prog.nama_program,
-                  data: data,
-                  borderColor: '#10b981',
-                  backgroundColor: 'rgba(16,185,129,0.06)',
-                  tension: 0.3,
-                  pointRadius: 6,
-                  pointBackgroundColor: '#fff',
-                  pointBorderColor: '#10b981'
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  x: {
-                    grid: {
-                      color: '#f8fafc'
-                    }
-                  },
-                  y: {
-                    grid: {
-                      color: '#f1f5f9'
-                    },
-                    suggestedMin: 0,
-                    suggestedMax: 5
-                  }
-                },
-                plugins: {
-                  legend: {
-                    display: false
-                  },
-                  tooltip: {
-                    enabled: true
-                  },
-                  datalabels: {
-                    display: true,
-                    align: 'top',
-                    formatter: function(v) {
-                      return isNaN(v) ? '' : Math.round(v * 100) / 100;
-                    },
-                    backgroundColor: 'rgba(255,255,255,0.95)',
-                    borderRadius: 4,
-                    color: '#111',
-                    font: {
-                      size: 11
-                    }
-                  }
-                }
-              });
-          }
-          catch (e) {
-            console.error('Chart failed', e);
-          }
-        }
-
-        // wire up selects
-        document.addEventListener('DOMContentLoaded', function() {
-          const selAnak = document.getElementById('select-anak');
-          const selKategori = document.getElementById('select-kategori');
-          const selProgram = document.getElementById('select-program');
-          const btn = document.getElementById('btn-tampilkan');
-
-          if (selAnak) {
-            selAnak.addEventListener('change', function() {
-              const anakId = this.value;
-              populateProgramSelect(anakId, selKategori ? selKategori.value : '');
-            });
-          }
-          if (selKategori) {
-            selKategori.addEventListener('change', function() {
-              const anakId = document.getElementById('select-anak').value;
-              populateProgramSelect(anakId, this.value);
-            });
-          }
-          if (btn) {
-            btn.addEventListener('click', function(e) {
-              e.preventDefault();
-              const anakId = document.getElementById('select-anak').value;
-              const programVal = document.getElementById('select-program').value;
-              if (!anakId || !programVal) {
-                alert('Pilih anak dan program terlebih dahulu');
-                return;
-              }
-              renderSelectedProgram(anakId, programVal);
-            });
-          }
-
-          // expose helper globally
-          window.populateProgramSelect = populateProgramSelect;
-          window.renderSelectedProgram = renderSelectedProgram;
-          // auto-populate if both anak and kategori are preselected
-          if (selAnak && selKategori && selAnak.value && selKategori.value) {
-            populateProgramSelect(selAnak.value, selKategori.value);
-          }
-        });
-
-        // Expose renderChartsForAnak for backward compatibility (renders all programs)
-        window.renderChartsForAnak = renderChartsForAnak;
-      })();
-</script>
+<!-- Chart-related scripts removed to declutter view and logic per request -->
 @endsection
