@@ -15,7 +15,12 @@ class ProgramAnakController extends Controller
   {
     // show one row per anak didik (latest program per anak)
     $latestIds = ProgramAnak::groupBy('anak_didik_id')->selectRaw('MAX(id) as id')->pluck('id')->toArray();
-    $query = ProgramAnak::with(['anakDidik', 'programKonsultan.konsultan'])->whereIn('id', $latestIds)->orderByDesc('created_at');
+    // order by anak didik name A-Z so listings are alphabetical by child
+    $query = ProgramAnak::with(['anakDidik', 'programKonsultan.konsultan'])
+      ->whereIn('program_anak.id', $latestIds)
+      ->join('anak_didiks', 'program_anak.anak_didik_id', '=', 'anak_didiks.id')
+      ->select('program_anak.*')
+      ->orderBy('anak_didiks.nama', 'asc');
     if (request('search')) {
       $search = request('search');
       $query->where(function ($q) use ($search) {

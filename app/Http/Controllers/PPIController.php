@@ -35,10 +35,46 @@ class PPIController extends Controller
       ->when($guru_fokus, function ($q, $gf) {
         // filter by guru fokus id when provided
         $q->where('guru_fokus_id', $gf);
-      })
-      ->orderBy('nama');
+      });
 
-    $anakList = $anakQuery->paginate(15)->appends($request->query());
+    // Determine which AnakDidik are accessible by current user so we can order them first
+    $isAdmin = $user && $user->role === 'admin';
+    $isKonsultanPendidikan = false;
+    if ($user && $user->role === 'konsultan') {
+      $k = Konsultan::where('user_id', $user->id)->orWhere('email', $user->email)->first();
+      if ($k && strtolower(trim($k->spesialisasi ?? '')) === 'pendidikan') $isKonsultanPendidikan = true;
+    }
+
+    $allAnakForAccess = $anakQuery->get();
+    $accessibleIds = [];
+    foreach ($allAnakForAccess as $a) {
+      $hasAccess = false;
+      if ($isAdmin) {
+        $hasAccess = true;
+      }
+      if (!$hasAccess && $isKonsultanPendidikan) {
+        $hasAccess = true;
+      }
+      if (!$hasAccess && $user && $user->role === 'guru') {
+        if (isset($karyawanId) && $karyawanId && $a->guru_fokus_id == $karyawanId) {
+          $hasAccess = true;
+        } else {
+          $can = \App\Http\Controllers\GuruAnakDidikController::canAccessChild($user->id, $a->id);
+          if ($can) $hasAccess = true;
+        }
+      }
+      if ($hasAccess) $accessibleIds[] = $a->id;
+    }
+
+    // order query so accessible children appear first, then by name
+    if (!empty($accessibleIds)) {
+      $idsCsv = implode(',', array_map('intval', $accessibleIds));
+      $anakQuery = $anakQuery->orderByRaw("CASE WHEN id IN ($idsCsv) THEN 0 ELSE 1 END")->orderBy('nama');
+    } else {
+      $anakQuery = $anakQuery->orderBy('nama');
+    }
+
+    $anakList = $anakQuery->paginate(10)->appends($request->query());
 
     // (status removed) no longer building latest status per anak
 
@@ -74,6 +110,8 @@ class PPIController extends Controller
       }
       $accessMap[$a->id] = $hasAccess;
     }
+
+
 
     // build guru fokus options for the filter: only karyawan who are users with role 'guru'
     $guruOptions = Karyawan::where(function ($q) {

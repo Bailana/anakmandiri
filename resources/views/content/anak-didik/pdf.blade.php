@@ -265,7 +265,7 @@
       </div>
       <div class="info-item">
         <div class="info-label">Nomor Induk Siswa (NIS)</div>
-        <div class="info-value">{{ $anakDidik->nis }}</div>
+        <div class="info-value">{{ $anakDidik->nis ?: '-' }}</div>
       </div>
       <div class="info-item">
         <div class="info-label">Jenis Kelamin</div>

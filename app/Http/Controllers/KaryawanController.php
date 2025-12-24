@@ -42,6 +42,7 @@ class KaryawanController extends Controller
       $query->where('status_kepegawaian', $request->status_kepegawaian);
     }
 
+    $query->orderBy('nama', 'asc');
     $karyawans = $query->paginate(15)->appends($request->query());
 
     // Get unique values for filter dropdowns

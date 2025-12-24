@@ -79,7 +79,9 @@
             @forelse($programs as $index => $program)
             <tr id="row-{{ $program->sumber }}-{{ $program->id }}">
               <td class="no-col">{{ ($programs->currentPage() - 1) * $programs->perPage() + $index + 1 }}</td>
-              <td>{{ $program->anakDidik->nama ?? '-' }}</td>
+              <td>
+                <p class="text-heading mb-0 fw-medium">{{ $program->anakDidik->nama ?? '-' }}</p>
+              </td>
               <td>
                 @php
                 $jk = $program->anakDidik->jenis_kelamin ?? null;

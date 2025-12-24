@@ -68,10 +68,10 @@
                   @enderror
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">NIS <span class="text-danger">*</span></label>
+                  <label class="form-label">NIS <small class="text-muted">(opsional)</small></label>
                   <input type="text" name="nis" id="nis" inputmode="numeric" pattern="\\d*" maxlength="20"
                     oninput="this.value=this.value.replace(/\\D/g,'').slice(0,20)"
-                    class="form-control @error('nis') is-invalid @enderror" placeholder="Nomor Induk Siswa" value="{{ old('nis') }}" required>
+                    class="form-control @error('nis') is-invalid @enderror" placeholder="Nomor Induk Siswa" value="{{ old('nis') }}">
                   @error('nis')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror

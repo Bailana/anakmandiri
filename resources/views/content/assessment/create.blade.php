@@ -21,8 +21,8 @@
           @csrf
 
 
-          <div class="row mb-3 g-3 align-items-end">
-            <div class="col-md-4">
+          <div class="row mb-3 g-3">
+            <div class="col-12">
               <label class="form-label">Anak Didik <span class="text-danger">*</span></label>
               <select name="anak_didik_id" class="form-select @error('anak_didik_id') is-invalid @enderror" required>
                 <option value="">Pilih Anak Didik</option>
@@ -36,7 +36,10 @@
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>
-            <div class="col-md-4">
+          </div>
+
+          <div class="row mb-3 g-3 align-items-end">
+            <div class="col-md-6">
               <label class="form-label">Kategori Penilaian <span class="text-danger">*</span></label>
               <select name="kategori" class="form-select @error('kategori') is-invalid @enderror" required>
                 <option value="">Pilih Kategori</option>
@@ -50,7 +53,7 @@
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label class="form-label">Program</label>
               <select name="program_id" id="program_id" class="form-select @error('program_id') is-invalid @enderror">
                 <option value="">Pilih Program</option>
@@ -79,7 +82,7 @@
               @enderror
             </div>
             @endif
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label class="form-label">Tanggal Penilaian</label>
               <input type="date" name="tanggal_assessment" class="form-control @error('tanggal_assessment') is-invalid @enderror"
                 value="{{ old('tanggal_assessment') }}">
@@ -88,7 +91,7 @@
               @enderror
             </div>
             @if(auth()->user() && auth()->user()->role === 'guru')
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label class="form-label">Penilaian Perkembangan <span class="text-danger">*</span></label>
               <select name="perkembangan" class="form-select @error('perkembangan') is-invalid @enderror" required>
                 <option value="">Pilih Penilaian</option>

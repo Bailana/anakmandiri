@@ -77,8 +77,7 @@
               <tr>
                 <td>{{ ($anakList->currentPage() - 1) * $anakList->perPage() + $index + 1 }}</td>
                 <td>
-                  <strong>{{ $anak->nama }}</strong><br>
-                  <small class="text-body-secondary">{{ $anak->nis ?? '-' }}</small>
+                  <strong>{{ $anak->nama }}</strong>
                 </td>
                 <td>{{ $anak->guruFokus ? $anak->guruFokus->nama : '-' }}</td>
 
@@ -262,6 +261,7 @@
         var anakId = btn.getAttribute('data-anak-didik-id');
         var isFokus = (btn.getAttribute('data-is-fokus') === '1');
         var currentUserId = @json(Auth::id());
+        var currentUserRole = @json(optional(Auth::user())->role);
         var canApprove = @json($canApprovePPI ?? false);
         fetch('/ppi/riwayat/' + anakId)
           .then(r => r.json())
@@ -312,7 +312,8 @@
               if (isFokus) {
                 html += `<button class="btn btn-sm btn-outline-secondary me-1" onclick="editPpi(this)" data-ppi-id="${item.id}" title="Edit"><i class='ri-edit-2-line'></i></button>`;
                 html += `<button class="btn btn-sm btn-outline-danger" onclick="deletePpi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>`;
-              } else if (canApprove && item.status !== 'disetujui') {
+              } else if (canApprove && item.status !== 'disetujui' && currentUserRole !== 'admin') {
+                // show approve button only when user is not admin
                 html += `<button class="btn btn-sm btn-success me-1" onclick="approvePpi(${item.id})" title="Setujui"><i class='ri-check-line'></i></button>`;
               } else {
                 if (item.status) html += `<span class="badge bg-secondary me-1">${item.status}</span>`;

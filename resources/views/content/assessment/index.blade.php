@@ -409,10 +409,9 @@
 
             @forelse($unique as $index => $assessment)
             <tr id="row-{{ $assessment->id }}">
-              <td>{{ ($assessments->currentPage() - 1) * 15 + $index + 1 }}</td>
+              <td>{{ ($assessments->currentPage() - 1) * $assessments->perPage() + $index + 1 }}</td>
               <td>
-                <strong>{{ $assessment->anakDidik->nama ?? '-' }}</strong><br>
-                <small class="text-body-secondary">{{ $assessment->anakDidik->nis ?? '-' }}</small>
+                <p class="text-heading mb-0 fw-medium">{{ $assessment->anakDidik->nama ?? '-' }}</p>
               </td>
               <td>
                 @php

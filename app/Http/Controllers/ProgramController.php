@@ -231,8 +231,13 @@ class ProgramController extends Controller
       ->map(function ($group) {
         return $group->first(); // data terbaru per anak
       })->values();
+
+    // Order the grouped results by anak didik name A-Z
+    $merged = $merged->sortBy(function ($item) {
+      return strtolower($item->anakDidik->nama ?? '');
+    })->values();
     // Manual pagination
-    $perPage = 15;
+    $perPage = 10;
     $currentPage = $request->input('page', 1);
     $total = $merged->count();
     $items = $merged->slice(($currentPage - 1) * $perPage, $perPage)->all();

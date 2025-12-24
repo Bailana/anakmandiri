@@ -75,7 +75,9 @@
         @forelse($users as $index => $user)
         <tr>
           <td>{{ ($users->currentPage() - 1) * $users->perPage() + $index + 1 }}</td>
-          <td>{{ $user->name }}</td>
+          <td>
+            <p class="text-heading mb-0 fw-medium">{{ $user->name }}</p>
+          </td>
           <td>{{ $user->email }}</td>
           <td>
             @php

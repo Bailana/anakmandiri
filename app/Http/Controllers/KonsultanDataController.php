@@ -40,6 +40,7 @@ class KonsultanDataController extends Controller
       $query->where('status_hubungan', $request->status_hubungan);
     }
 
+    $query->orderBy('nama', 'asc');
     $konsultans = $query->paginate(15)->appends($request->query());
 
     // Get unique values for filter dropdowns

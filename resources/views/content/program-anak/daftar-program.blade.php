@@ -11,7 +11,7 @@
           <h4 class="mb-0">Daftar Program</h4>
           <p class="text-body-secondary mb-0">Daftar program master berdasarkan konsultan</p>
         </div>
-        @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
+        @if(auth()->check())
 
         <!-- Modal: View Program (refreshed UI with gradient badge and icons) -->
         <style>
@@ -96,23 +96,25 @@
                     <h4 id="viewNama" class="mb-1 fw-bold">-</h4>
                     <div class="d-flex gap-2 align-items-center mb-2">
                       <span id="viewKategori" class="pv-meta-badge badge bg-light text-muted">-</span>
-                      <span id="viewKonsultan" class="pv-meta-badge badge bg-light text-muted">-</span>
+                      <span id="viewKonsultan" class="pv-meta-badge badge bg-warning text-dark">-</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="row">
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <div class="mb-3">
                       <div class="text-muted small mb-1">Tujuan</div>
                       <div id="viewTujuan" class="text-body-secondary">-</div>
                     </div>
+                  </div>
+                  <div class="col-md-4">
                     <div class="mb-3">
                       <div class="text-muted small mb-1">Aktivitas</div>
                       <div id="viewAktivitas" class="text-body-secondary">-</div>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <div class="mb-3">
                       <div class="text-muted small mb-1">Keterangan</div>
                       <div id="viewKeterangan" class="text-body-secondary">-</div>
@@ -393,12 +395,16 @@
           });
         </script>
         <div>
+          @if(auth()->user()->role === 'konsultan')
           <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddProgramMaster">
             <i class="ri-add-line me-2"></i>Tambah Daftar Program
           </button>
-          <a href="{{ route('program-anak.index') }}" class="btn btn-outline-secondary ms-2">
+          @endif
+          @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
+          <a href="{{ route('program-anak.index') }}" class="btn btn-secondary btn-sm ms-2">
             <i class="ri-arrow-left-line me-2"></i>Kembali
           </a>
+          @endif
         </div>
         @endif
       </div>
@@ -447,7 +453,9 @@
               <th>Tujuan</th>
               <th>Aktivitas</th>
               <th>Konsultan</th>
+              @if(auth()->check() && auth()->user()->role !== 'admin')
               <th>Aksi</th>
+              @endif
             </tr>
           </thead>
           <tbody>
@@ -459,6 +467,7 @@
               <td>{{ Str::limit($p->tujuan, 100) }}</td>
               <td>{{ Str::limit($p->aktivitas, 100) }}</td>
               <td>{{ optional($p->konsultan)->nama ?? optional($p->konsultan)->spesialisasi ?? '-' }}</td>
+              @if(auth()->check() && auth()->user()->role !== 'admin')
               <td>
                 <div class="d-flex gap-2 align-items-center">
                   <button type="button" class="btn btn-sm btn-icon btn-outline-info btn-view-program"
@@ -475,6 +484,7 @@
                     <i class="ri-eye-line"></i>
                   </button>
 
+                  @if(auth()->check() && auth()->user()->role === 'konsultan')
                   <button type="button" class="btn btn-sm btn-icon btn-outline-warning btn-edit-program"
                     data-id="{{ $p->id }}"
                     data-kode="{{ $p->kode_program }}"
@@ -494,12 +504,14 @@
                       <i class="ri-delete-bin-line"></i>
                     </button>
                   </form>
+                  @endif
                 </div>
               </td>
+              @endif
             </tr>
             @empty
             <tr>
-              <td colspan="7" class="text-center">Tidak ada data ditemukan.</td>
+              <td colspan="{{ auth()->check() && auth()->user()->role === 'admin' ? 6 : 7 }}" class="text-center">Tidak ada data ditemukan.</td>
             </tr>
             @endforelse
           </tbody>
@@ -520,7 +532,7 @@
 @endsection
 
 <!-- Modal: Tambah Daftar Program -->
-@if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
+@if(auth()->check() && auth()->user()->role === 'konsultan')
 <div class="modal fade modalScrollable" id="modalAddProgramMaster" tabindex="-1" aria-labelledby="modalAddProgramMasterLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable">
     <form action="{{ route('program-anak.program-konsultan.store') }}" method="POST" class="modal-content">

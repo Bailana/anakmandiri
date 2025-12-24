@@ -91,7 +91,7 @@
           <tbody>
             @forelse($anakDidiks as $index => $anak)
             <tr id="row-{{ $anak->id }}">
-              <td>{{ ($anakDidiks->currentPage() - 1) * 15 + $index + 1 }}</td>
+              <td>{{ ($anakDidiks->currentPage() - 1) * $anakDidiks->perPage() + $index + 1 }}</td>
               <td>
                 <div class="d-flex align-items-center">
                   <div class="avatar avatar-sm me-3">
@@ -102,7 +102,7 @@
                   </div>
                 </div>
               </td>
-              <td>{{ $anak->nis }}</td>
+              <td>{{ $anak->nis ?: '-' }}</td>
               <td>
                 <span class="badge bg-label-{{ $anak->jenis_kelamin === 'laki-laki' ? 'info' : 'warning' }}">
                   {{ ucfirst($anak->jenis_kelamin) }}
@@ -260,7 +260,7 @@
   window.showDetail = function(button) {
     const anakId = button.getAttribute('data-anak-id');
     let url = `/anak-didik/${anakId}`;
-    @if(auth()-> user() && auth()-> user()-> role === 'guru')
+    @if(auth()->user() && auth()->user()->role === 'guru')
     url = `{{ url('anak-didik') }}/${anakId}`;
     @endif
     fetch(url, {

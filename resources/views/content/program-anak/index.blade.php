@@ -11,16 +11,20 @@
           <h4 class="mb-0">Program Anak</h4>
           <p class="text-body-secondary mb-0">Kelola program anak didik</p>
         </div>
-        @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
+        @if(auth()->check())
         <div class="d-flex align-items-center">
+          @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
           @if(!(auth()->user()->role === 'konsultan' && isset($currentKonsultanSpesRaw) && preg_match('/psikologi/i', $currentKonsultanSpesRaw)))
           <a href="{{ route('program-anak.daftar-program') }}" class="btn btn-outline-secondary me-2">
             <i class="ri-list-unordered me-2"></i>Daftar Program
           </a>
           @endif
+          @endif
+          @if(auth()->user()->role === 'konsultan')
           <a href="{{ route('program-anak.create') }}" class="btn btn-primary">
             <i class="ri-add-line me-2"></i>Tambah Program Anak
           </a>
+          @endif
         </div>
         @endif
       </div>
@@ -447,8 +451,7 @@
           data.programs.forEach(p => {
             let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
             if (window.currentUser) {
-              if (window.currentUser.role === 'admin') canEditAny2 = true;
-              else if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEditAny2 = true;
+              if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEditAny2 = true;
             }
           });
         } catch (e) {}
@@ -459,8 +462,7 @@
           let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
           let canEdit = false;
           if (window.currentUser) {
-            if (window.currentUser.role === 'admin') canEdit = true;
-            else if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
+            if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
           }
           const actionsHtml = canEdit ? `<div class="d-flex gap-1"><button class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button></div>` : '';
           html += `<tr>
@@ -495,7 +497,7 @@
     window._groupSuggest = false;
     window.currentUser = {
       id: @json(Auth::id()),
-      role: @json(optional(Auth::user())-> role),
+      role: @json(optional(Auth::user()) - > role),
       konsultanId: @json($currentKonsultanId ?? null)
     };
     window.currentKonsultanSpesRaw = @json($currentKonsultanSpesRaw ?? null);
@@ -581,7 +583,9 @@
             @forelse($programAnak as $index => $program)
             <tr data-anak-id="{{ $program->anak_didik_id }}">
               <td>{{ ($programAnak->currentPage() - 1) * $programAnak->perPage() + $index + 1 }}</td>
-              <td>{{ $program->anakDidik->nama ?? '-' }}</td>
+              <td>
+                <p class="text-heading mb-0 fw-medium">{{ $program->anakDidik->nama ?? '-' }}</p>
+              </td>
               <td>{{ $program->anakDidik && $program->anakDidik->guruFokus ? $program->anakDidik->guruFokus->nama : '-' }}</td>
               <td>
                 @php
@@ -635,7 +639,7 @@
                   onclick="loadRiwayatObservasi(this)" title="Riwayat Program">
                   <i class="ri-history-line"></i>
                 </button>
-                @if(auth()->user()->role === 'admin')
+                @if(auth()->check() && auth()->user()->role === 'konsultan')
                 <a href="{{ route('program-anak.edit', $program->id) }}" class="btn btn-sm btn-outline-warning"
                   title="Edit"><i class="ri-edit-line"></i></a>
                 <form action="{{ route('program-anak.destroy', $program->id) }}" method="POST" class="d-inline"
@@ -1410,8 +1414,8 @@
           if (anyPsikologi && window.currentUser) {
             data.programs.forEach(p => {
               if ((!p.konsultan) && (p.rekomendasi || p.created_by_name)) {
-                if (window.currentUser.role === 'admin') canEditAny = true;
-                else if (window.currentUser.role === 'konsultan') {
+                // grant edit-any only to konsultan owners or the original creator (not admin)
+                if (window.currentUser.role === 'konsultan') {
                   if (window.currentUser.konsultanId && p.konsultan && p.konsultan.id && parseInt(window.currentUser.konsultanId) === parseInt(p.konsultan.id)) canEditAny = true;
                   if (!canEditAny && p.created_by && parseInt(window.currentUser.id) === parseInt(p.created_by)) canEditAny = true;
                 } else {
@@ -1431,8 +1435,8 @@
               let canEditRow = false;
               try {
                 if (window.currentUser) {
-                  if (window.currentUser.role === 'admin') canEditRow = true;
-                  else if (window.currentUser.role === 'konsultan') {
+                  // do NOT grant edit rights to admin; only konsultan owners or creators may edit
+                  if (window.currentUser.role === 'konsultan') {
                     if (window.currentUser.konsultanId && p.konsultan && p.konsultan.id && parseInt(window.currentUser.konsultanId) === parseInt(p.konsultan.id)) canEditRow = true;
                     if (!canEditRow && p.created_by && parseInt(window.currentUser.id) === parseInt(p.created_by)) canEditRow = true;
                   } else {

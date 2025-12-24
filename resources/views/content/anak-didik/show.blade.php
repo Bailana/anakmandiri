@@ -67,7 +67,7 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">NIS</label>
-                <input type="text" class="form-control" value="{{ $anakDidik->nis }}" readonly>
+                <input type="text" class="form-control" value="{{ $anakDidik->nis ?: '-' }}" readonly>
               </div>
             </div>
 

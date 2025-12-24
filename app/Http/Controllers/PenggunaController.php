@@ -21,7 +21,8 @@ class PenggunaController extends Controller
     if ($request->filled('role')) {
       $query->where('role', $request->role);
     }
-    $users = $query->paginate(15)->appends($request->all());
+    $query->orderBy('name', 'asc');
+    $users = $query->paginate(10)->appends($request->all());
     $roleOptions = ['admin', 'guru', 'konsultan', 'terapis'];
     return view('content.pengguna.index', compact('users', 'roleOptions'));
   }

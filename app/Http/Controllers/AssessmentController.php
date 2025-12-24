@@ -30,7 +30,10 @@ class AssessmentController extends Controller
    */
   public function index(Request $request)
   {
-    $query = Assessment::with('anakDidik', 'konsultan');
+    $query = Assessment::with('anakDidik', 'konsultan')
+      ->join('anak_didiks', 'assessments.anak_didik_id', '=', 'anak_didiks.id')
+      ->select('assessments.*')
+      ->orderBy('anak_didiks.nama', 'asc');
 
     // Filter by konsultan for non-admin
     $user = Auth::user();
@@ -55,7 +58,7 @@ class AssessmentController extends Controller
       $query->where('kategori', $request->kategori);
     }
 
-    $assessments = $query->paginate(15)->appends($request->query());
+    $assessments = $query->paginate(10)->appends($request->query());
 
     $data = [
       'title' => 'Penilaian Anak',

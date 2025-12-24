@@ -38,7 +38,9 @@ class AnakDidikController extends Controller
       $query->where('guru_fokus_id', $request->guru_fokus);
     }
 
-    $anakDidiks = $query->paginate(15)->appends($request->query());
+    // Default ordering: nama A -> Z
+    $query->orderBy('nama', 'asc');
+    $anakDidiks = $query->paginate(10)->appends($request->query());
 
     // Get unique values for filter dropdowns
     // Ambil semua karyawan dengan posisi Guru Fokus
@@ -84,7 +86,7 @@ class AnakDidikController extends Controller
     $validated = $request->validate([
       'guru_fokus_id' => 'nullable|exists:karyawans,id',
       'nama' => 'required|string|max:255',
-      'nis' => 'required|digits_between:1,20|unique:anak_didiks',
+      'nis' => 'nullable|digits_between:1,20|unique:anak_didiks',
       'jenis_kelamin' => 'required|in:laki-laki,perempuan',
       'tanggal_lahir' => 'nullable|date',
       'tempat_lahir' => 'nullable|string',
@@ -193,7 +195,7 @@ class AnakDidikController extends Controller
     $validated = $request->validate([
       'guru_fokus_id' => 'required|exists:karyawans,id',
       'nama' => 'required|string|max:255',
-      'nis' => 'required|digits_between:1,20|unique:anak_didiks,nis,' . $id,
+      'nis' => 'nullable|digits_between:1,20|unique:anak_didiks,nis,' . $id,
       'jenis_kelamin' => 'required|in:laki-laki,perempuan',
       'tanggal_lahir' => 'nullable|date',
       'tempat_lahir' => 'nullable|string',
