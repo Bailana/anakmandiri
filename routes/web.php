@@ -182,6 +182,8 @@ Route::middleware(['auth'])->group(function () {
   // Assessment: admin & guru (guru hanya index/show)
   Route::middleware(['auth', 'role:admin,guru'])->group(function () {
     Route::get('assessment/ppi-programs', [App\Http\Controllers\AssessmentController::class, 'ppiPrograms'])->name('assessment.ppi-programs');
+    // Program history per anak (used for small charts on index)
+    Route::get('assessment/{anakId}/program-history', [App\Http\Controllers\AssessmentController::class, 'programHistory'])->name('assessment.program-history');
     Route::resource('assessment', 'App\\Http\\Controllers\\AssessmentController');
     Route::get('assessment/{id}/export-pdf', [App\Http\Controllers\AssessmentController::class, 'exportPdf'])->name('assessment.export-pdf');
   });

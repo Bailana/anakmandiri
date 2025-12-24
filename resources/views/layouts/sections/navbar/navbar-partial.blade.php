@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Route;
     <!-- Search removed per request -->
     <ul class="navbar-nav flex-row align-items-center ms-auto">
         <!-- Notifications -->
+        @if(!(Auth::check() && in_array(Auth::user()->role ?? '', ['konsultan', 'terapis'])))
         <li class="nav-item dropdown-notifications dropdown me-3">
             <a class="nav-link" href="javascript:void(0)" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="ri-notification-3-line icon-base"></i>
@@ -85,7 +86,7 @@ use Illuminate\Support\Facades\Route;
                 <li>
                     <div class="dropdown-divider"></div>
                 </li>
-                @if(!(isset($hasAccessRequestNotif) && $hasAccessRequestNotif))
+                @if((!(isset($hasAccessRequestNotif) && $hasAccessRequestNotif)) || (Auth::check() && Auth::user()->role === 'admin'))
                 <li class="px-3 py-2">
                     <div class="d-flex justify-content-between">
                         <button class="btn btn-sm btn-outline-secondary" id="btn-mark-all-read">Tandai semua dibaca</button>
@@ -97,6 +98,7 @@ use Illuminate\Support\Facades\Route;
                 @endif
             </ul>
         </li>
+        @endif
 
         <!-- User -->
         <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -143,12 +145,7 @@ use Illuminate\Support\Facades\Route;
                         <i class="icon-base ri ri-settings-4-line icon-md me-4"></i><span>Settings</span>
                     </a>
                 </li>
-                <li>
-                    <a class="dropdown-item" href="{{ route('auth-reset-password-basic') }}">
-                        <i class="icon-base ri ri-lock-password-line icon-md me-3"></i>
-                        <span>Reset Password</span>
-                    </a>
-                </li>
+                <!-- Reset Password menu removed per request -->
                 <li>
                     <div class="dropdown-divider my-1"></div>
                 </li>

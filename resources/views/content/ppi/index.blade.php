@@ -184,7 +184,7 @@
       document.querySelectorAll('.btn-request-access').forEach(btn => {
         btn.addEventListener('click', function() {
           const anakId = this.dataset.id;
-          if (!confirm('Kirim permintaan akses ke guru fokus?')) return;
+          if (!confirm('Kirim permintaan akses ke admin?')) return;
           const formData = new FormData();
           formData.append('anak_didik_id', anakId);
           // CSRF token from meta tag

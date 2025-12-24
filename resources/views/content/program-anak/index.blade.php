@@ -330,7 +330,7 @@
             }
           });
         } catch (e) {}
-        let html = '<div class="table-responsive"><table class="table table-sm table-hover">';
+        let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
         html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + (canEditAny ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
         data.programs.forEach(p => {
           const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
@@ -452,7 +452,7 @@
             }
           });
         } catch (e) {}
-        let html = '<div class="table-responsive"><table class="table table-sm table-hover">';
+        let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
         html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + (canEditAny2 ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
         data.programs.forEach(p => {
           const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
@@ -1036,6 +1036,25 @@
   });
 </script>
 <!-- Modal: All Programs for Anak -->
+<style>
+  /* Scoped styles to ensure table header and borders show inside the modal */
+  #programAllModal .table thead th {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  }
+
+  #programAllModal .table thead tr.table-light th {
+    background-color: #f8f9fa !important;
+  }
+
+  #programAllModal .table.table-bordered td,
+  #programAllModal .table.table-bordered th {
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
+
+  #programAllModal .table tbody td {
+    border-top: 1px solid rgba(0, 0, 0, 0.04) !important;
+  }
+</style>
 <div class="modal fade" id="programAllModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
@@ -1403,9 +1422,9 @@
           }
         } catch (e) {}
 
-        let html = '<div class="table-responsive"><table class="table table-sm table-hover">';
+        let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
         if (anyPsikologi) {
-          html += '<thead><tr><th>REKOMENDASI</th><th>KETERANGAN</th><th>DIBUAT OLEH</th>' + (canEditAny ? '<th style="width:120px">AKSI</th>' : '') + '</tr></thead><tbody>';
+          html += '<thead><tr class="table-light"><th>REKOMENDASI</th><th>KETERANGAN</th><th>DIBUAT OLEH</th>' + (canEditAny ? '<th style="width:120px">AKSI</th>' : '') + '</tr></thead><tbody>';
           data.programs.forEach(p => {
             if ((!p.konsultan) && (p.rekomendasi || p.created_by_name)) {
               // determine per-row action visibility: admin, creator, or owning konsultan
@@ -1443,7 +1462,7 @@
             }
           });
         } else {
-          html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th></tr></thead><tbody>';
+          html += '<thead><tr class="table-light"><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th></tr></thead><tbody>';
           data.programs.forEach(p => {
             html += `<tr>
               <td>${p.kode_program || '-'}</td>

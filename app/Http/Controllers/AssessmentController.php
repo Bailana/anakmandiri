@@ -205,6 +205,64 @@ class AssessmentController extends Controller
   }
 
   /**
+   * Return per-program assessment history for a given anak didik
+   * Response: { success: true, programs: [ { id, nama_program, datapoints: [{tanggal, score}] } ] }
+   */
+  public function programHistory($anakId)
+  {
+    $assessments = Assessment::with('program')
+      ->where('anak_didik_id', $anakId)
+      ->orderBy('tanggal_assessment')
+      ->get();
+
+    $grouped = [];
+    foreach ($assessments as $a) {
+      $progName = $a->program ? $a->program->nama_program : ($a->program_id ? ('Program #' . $a->program_id) : 'Umum');
+      $pid = $a->program_id ?? 'general';
+
+      // determine a numeric score: prefer 'perkembangan', else average kemampuan skala
+      $score = null;
+      if (!is_null($a->perkembangan)) {
+        $score = (float) $a->perkembangan;
+      } elseif (is_array($a->kemampuan) && count($a->kemampuan) > 0) {
+        $vals = array_map(function ($k) {
+          return isset($k['skala']) ? (float) $k['skala'] : null;
+        }, $a->kemampuan);
+        $vals = array_filter($vals, function ($v) {
+          return $v !== null;
+        });
+        if (count($vals) > 0) $score = array_sum($vals) / count($vals);
+      }
+
+      if (!isset($grouped[$pid])) {
+        $grouped[$pid] = [
+          'id' => $pid,
+          'nama_program' => $progName,
+          'kategori' => $a->program ? $a->program->kategori : null,
+          'datapoints' => []
+        ];
+      }
+
+      $grouped[$pid]['datapoints'][] = [
+        'tanggal' => $a->tanggal_assessment ? $a->tanggal_assessment->toDateString() : ($a->created_at ? $a->created_at->toDateString() : null),
+        'score' => $score !== null ? $score : null,
+      ];
+    }
+
+    // Convert grouped to indexed array and sort datapoints by tanggal
+    $programs = array_values($grouped);
+    foreach ($programs as &$p) {
+      usort($p['datapoints'], function ($x, $y) {
+        if (!$x['tanggal']) return 1;
+        if (!$y['tanggal']) return -1;
+        return strtotime($x['tanggal']) - strtotime($y['tanggal']);
+      });
+    }
+
+    return response()->json(['success' => true, 'programs' => $programs]);
+  }
+
+  /**
    * Show the form for editing the specified resource.
    */
   public function edit(string $id)
