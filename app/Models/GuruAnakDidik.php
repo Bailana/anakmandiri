@@ -13,6 +13,9 @@ class GuruAnakDidik extends Model
     'anak_didik_id',
     'status',
     'tanggal_mulai',
+    'jam_mulai',
+    'jenis_terapi',
+    'terapis_nama',
     'tanggal_selesai',
     'catatan',
   ];
@@ -30,6 +33,11 @@ class GuruAnakDidik extends Model
   public function anakDidik()
   {
     return $this->belongsTo(AnakDidik::class);
+  }
+
+  public function schedules()
+  {
+    return $this->hasMany(GuruAnakDidikSchedule::class, 'guru_anak_didik_id');
   }
 
   public function approvalRequests()

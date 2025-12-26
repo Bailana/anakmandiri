@@ -65,15 +65,14 @@
     </div>
     <div class="card">
       <div class="table-responsive">
-        <table class="table table-hover" id="patientsTable" style="font-size: 1rem;">
+        <table class="table table-hover" id="patientsTable">
           <thead>
             <tr class="table-light">
               <th>No</th>
               <th>Anak Didik</th>
-              <th>Tanggal Lahir</th>
+              <th>Jenis Terapi</th>
               <th>Terapis</th>
               <th>Status</th>
-              <th>Tgl Mulai</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -83,24 +82,40 @@
               <td>{{ (method_exists($assignments, 'currentPage') ? ($assignments->currentPage() - 1) * $assignments->perPage() : 0) + $index + 1 }}</td>
               <td>
                 @if($assign->anakDidik)
-                <a href="{{ route('anak-didik.show', $assign->anak_didik) }}">{{ $assign->anakDidik->nama }}</a>
+                <p class="text-heading mb-0 fw-medium"><a href="{{ route('anak-didik.show', $assign->anakDidik->id) }}" class="text-decoration-none text-reset">{{ $assign->anakDidik->nama }}</a></p>
                 @else
                 -
                 @endif
               </td>
-              <td>{{ optional($assign->anakDidik->tanggal_lahir)->format('Y-m-d') ?? '-' }}</td>
+              <td>{{ $assign->jenis_terapi ?? '-' }}</td>
               <td>{{ $assign->user->name ?? '-' }}</td>
-              <td>{{ $assign->status ?? '-' }}</td>
-              <td>{{ optional($assign->tanggal_mulai)->format('Y-m-d') ?? '-' }}</td>
               <td>
-                @if($assign->anakDidik)
-                <a class="btn btn-sm btn-outline-primary" href="{{ route('anak-didik.show', $assign->anak_didik) }}">Lihat</a>
+                @if(isset($assign->status) && $assign->status === 'aktif')
+                <span class="badge bg-success">Aktif</span>
+                @elseif(isset($assign->status) && $assign->status === 'non-aktif')
+                <span class="badge bg-danger">Non Aktif</span>
+                @else
+                <span class="badge bg-secondary">{{ $assign->status ?? '-' }}</span>
+                @endif
+              </td>
+              <td>
+                @if(isset($user) && in_array($user->role, ['admin','terapis']))
+                <a class="btn btn-icon btn-sm btn-outline-warning" href="{{ route('terapis.pasien.edit', $assign->id) }}" title="Edit">
+                  <i class="ri-edit-line"></i>
+                </a>
+                <form action="{{ route('terapis.pasien.destroy', $assign->id) }}" method="POST" style="display:inline-block; margin-left:6px;">
+                  @csrf
+                  @method('DELETE')
+                  <button type="submit" class="btn btn-icon btn-sm btn-outline-danger" title="Hapus" onclick="return confirm('Hapus penugasan ini?')">
+                    <i class="ri-delete-bin-line"></i>
+                  </button>
+                </form>
                 @endif
               </td>
             </tr>
             @empty
             <tr>
-              <td colspan="7">
+              <td colspan="6">
                 <div class="alert alert-warning mb-0" role="alert">
                   <i class="ri-alert-line me-2"></i>Tidak ada pasien.
                 </div>

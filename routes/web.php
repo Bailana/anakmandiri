@@ -230,6 +230,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('terapis/pasien', [App\Http\Controllers\TerapisPatientController::class, 'index'])->name('terapis.pasien.index');
     Route::get('terapis/pasien/create', [App\Http\Controllers\TerapisPatientController::class, 'create'])->name('terapis.pasien.create');
     Route::post('terapis/pasien', [App\Http\Controllers\TerapisPatientController::class, 'store'])->name('terapis.pasien.store');
+    Route::get('terapis/pasien/{id}/edit', [App\Http\Controllers\TerapisPatientController::class, 'edit'])->name('terapis.pasien.edit');
+    Route::match(['put', 'patch'], 'terapis/pasien/{id}', [App\Http\Controllers\TerapisPatientController::class, 'update'])->name('terapis.pasien.update');
+    Route::delete('terapis/pasien/{id}', [App\Http\Controllers\TerapisPatientController::class, 'destroy'])->name('terapis.pasien.destroy');
   });
 });
 

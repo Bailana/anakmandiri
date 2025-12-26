@@ -64,7 +64,7 @@
   <div class="col-12">
     <div class="card">
       <div class="table-responsive">
-        <table class="table table-hover" id="programTable" style="font-size: 1rem;">
+        <table class="table table-hover" id="programTable">
           <thead>
             <tr class="table-light">
               <th>No</th>
@@ -97,10 +97,7 @@
               <td>{{ $program->anakDidik->no_telepon_orang_tua ?? '-' }}</td>
               <td>
                 @if($program->anakDidik && $program->anakDidik->guruFokus)
-                <span class="badge bg-label-primary"
-                  style="background-color: #ede9fe; color: #7c3aed; font-weight: 500; font-size: 0.95rem; padding: 0.18em 0.7em; border-radius: 0.4em;">
-                  {{ $program->anakDidik->guruFokus->nama }}
-                </span>
+                <span class="badge bg-label-primary">{{ $program->anakDidik->guruFokus->nama }}</span>
                 @else
                 -
                 @endif
