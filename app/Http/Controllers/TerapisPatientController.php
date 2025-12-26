@@ -21,6 +21,7 @@ class TerapisPatientController extends Controller
   {
     $user = Auth::user();
     $selectedTherapisId = $request->query('user_id');
+    $selectedStatus = $request->query('status');
     $search = $request->query('search');
     $therapists = collect();
 
@@ -35,9 +36,13 @@ class TerapisPatientController extends Controller
         });
       }
 
+      if ($request->filled('status')) {
+        $query->where('status', $request->query('status'));
+      }
+
       $assignments = $query->orderBy('id', 'desc')->paginate(10)->appends($request->query());
 
-      return view('content.terapis.patients', compact('assignments', 'therapists', 'user', 'selectedTherapisId'));
+      return view('content.terapis.patients', compact('assignments', 'therapists', 'user', 'selectedTherapisId', 'selectedStatus'));
     }
 
     // admin view: list therapists and optionally filter by therapist id
@@ -56,9 +61,13 @@ class TerapisPatientController extends Controller
       });
     }
 
+    if ($request->filled('status')) {
+      $query->where('status', $request->query('status'));
+    }
+
     $assignments = $query->orderBy('id', 'desc')->paginate(10)->appends($request->query());
 
-    return view('content.terapis.patients', compact('assignments', 'therapists', 'user', 'selectedTherapisId'));
+    return view('content.terapis.patients', compact('assignments', 'therapists', 'user', 'selectedTherapisId', 'selectedStatus'));
   }
 
   /**
@@ -272,5 +281,39 @@ class TerapisPatientController extends Controller
     }
     $assignment->delete();
     return redirect()->route('terapis.pasien.index')->with('success', 'Penugasan berhasil dihapus.');
+  }
+
+  /**
+   * Return JSON of therapy schedules for a given anak_didik across assignments
+   */
+  public function jadwalAnak($anakId)
+  {
+    $user = Auth::user();
+    // only roles allowed by routes can access this; still, protect somewhat
+    if (!in_array($user->role, ['admin', 'terapis'])) {
+      return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+    }
+
+    $assignments = GuruAnakDidik::with('schedules')
+      ->where('anak_didik_id', $anakId)
+      ->orderBy('jenis_terapi')
+      ->get();
+
+    $data = $assignments->map(function ($a) {
+      return [
+        'id' => $a->id,
+        'jenis_terapi' => $a->jenis_terapi,
+        'terapis_nama' => $a->terapis_nama,
+        'status' => $a->status,
+        'schedules' => $a->schedules->map(function ($s) {
+          return [
+            'tanggal_mulai' => $s->tanggal_mulai ? $s->tanggal_mulai->format('Y-m-d') : null,
+            'jam_mulai' => $s->jam_mulai ? preg_replace('/^(\d{1,2}:\d{2}).*/', '$1', $s->jam_mulai) : null,
+          ];
+        })->values(),
+      ];
+    })->values();
+
+    return response()->json(['success' => true, 'data' => $data]);
   }
 }

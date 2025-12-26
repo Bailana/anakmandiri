@@ -46,6 +46,11 @@
           <div class="flex-grow-1" style="min-width:200px;">
             <input type="text" name="search" class="form-control" placeholder="Cari nama anak atau NIS..." value="{{ request('search') }}">
           </div>
+          <select name="status" class="form-select" style="max-width:150px;">
+            <option value="">Semua Status</option>
+            <option value="aktif" {{ (isset($selectedStatus) && $selectedStatus === 'aktif') ? 'selected' : '' }}>Aktif</option>
+            <option value="non-aktif" {{ (isset($selectedStatus) && $selectedStatus === 'non-aktif') ? 'selected' : '' }}>Non Aktif</option>
+          </select>
           @if(isset($user) && $user->role === 'admin')
           <select name="user_id" class="form-select" style="max-width:200px;">
             <option value="">-- Semua Terapis --</option>
@@ -100,6 +105,9 @@
               </td>
               <td>
                 @if(isset($user) && in_array($user->role, ['admin','terapis']))
+                <button type="button" class="btn btn-icon btn-sm btn-outline-info me-1" title="Lihat Jadwal" onclick="showTherapySchedules(this)" data-anak-id="{{ $assign->anak_didik_id }}">
+                  <i class="ri-eye-line"></i>
+                </button>
                 <a class="btn btn-icon btn-sm btn-outline-warning" href="{{ route('terapis.pasien.edit', $assign->id) }}" title="Edit">
                   <i class="ri-edit-line"></i>
                 </a>
@@ -125,6 +133,25 @@
           </tbody>
         </table>
       </div>
+      <!-- Modal: Jadwal Terapi -->
+      <div class="modal fade" id="therapyScheduleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Jadwal Terapi</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div id="therapyScheduleBody">
+                <div class="text-center text-muted">Memuat jadwal...</div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="card-footer d-flex justify-content-between align-items-center">
         <div class="text-body-secondary">
           Menampilkan {{ method_exists($assignments, 'firstItem') ? ($assignments->firstItem() ?? 0) : $assignments->count() }} hingga {{ method_exists($assignments, 'lastItem') ? ($assignments->lastItem() ?? 0) : $assignments->count() }} dari {{ method_exists($assignments, 'total') ? $assignments->total() : $assignments->count() }} data
@@ -139,4 +166,48 @@
   </div>
 </div>
 
+@endsection
+
+@section('page-script')
+<script>
+  async function showTherapySchedules(btn) {
+    const anakId = btn.getAttribute('data-anak-id');
+    if (!anakId) return;
+    const modalEl = document.getElementById('therapyScheduleModal');
+    const body = document.getElementById('therapyScheduleBody');
+    body.innerHTML = '<div class="text-center text-muted">Memuat jadwal...</div>';
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+    try {
+      const res = await fetch(`/terapis/pasien/${anakId}/jadwal`);
+      const json = await res.json();
+      if (!json.success) {
+        body.innerHTML = '<div class="text-danger">Gagal memuat jadwal.</div>';
+        return;
+      }
+      const data = json.data;
+      if (!data || data.length === 0) {
+        body.innerHTML = '<div class="text-muted">Belum ada jadwal untuk anak ini.</div>';
+        return;
+      }
+      let html = '';
+      data.forEach(a => {
+        html += `<div class="mb-3"><h6 class="mb-1">${a.jenis_terapi || '-'} <small class="text-muted">(${a.terapis_nama || '-'})</small></h6>`;
+        if (!a.schedules || a.schedules.length === 0) {
+          html += '<div class="text-muted">Tidak ada jadwal.</div>';
+        } else {
+          html += '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Tanggal</th><th>Jam</th></tr></thead><tbody>';
+          a.schedules.forEach(s => {
+            html += `<tr><td>${s.tanggal_mulai || '-'}</td><td>${s.jam_mulai || '-'}</td></tr>`;
+          });
+          html += '</tbody></table></div>';
+        }
+        html += '</div>';
+      });
+      body.innerHTML = html;
+    } catch (e) {
+      body.innerHTML = '<div class="text-danger">Terjadi kesalahan saat memuat jadwal.</div>';
+    }
+  }
+</script>
 @endsection
