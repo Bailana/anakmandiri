@@ -157,6 +157,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('activity-logs/export', [App\Http\Controllers\ActivityLogController::class, 'export'])->name('activity.logs.export');
     Route::resource('anak-didik', 'App\Http\Controllers\AnakDidikController')->except(['index', 'show', 'show']);
   });
+  Route::patch('anak-didik/{anak_didik}/status', [App\Http\Controllers\AnakDidikController::class, 'updateStatus'])->name('anak-didik.update-status');
   Route::get('anak-didik/{anak_didik}', [App\Http\Controllers\AnakDidikController::class, 'show'])
     ->where('anak_didik', '[0-9]+')
     ->name('anak-didik.show');

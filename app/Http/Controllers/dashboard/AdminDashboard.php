@@ -19,10 +19,8 @@ class AdminDashboard extends Controller
     $totalKonsultan = User::where('role', 'konsultan')->count();
     $totalTerapis = User::where('role', 'terapis')->count();
 
-    // Total active anak didik (those with an active therapy program)
-    $totalActiveAnakDidik = AnakDidik::whereHas('therapyPrograms', function ($q) {
-      $q->where('is_active', true);
-    })->count();
+    // Total active anak didik (status = 'aktif')
+    $totalActiveAnakDidik = AnakDidik::where('status', 'aktif')->count();
 
     // Get today's activities with pagination (10 per page)
     $activities = Activity::with('user')
@@ -37,6 +35,38 @@ class AdminDashboard extends Controller
       'total_terapis' => $totalTerapis,
       'total_anak_didik_active' => $totalActiveAnakDidik,
       'activities' => $activities,
+      'stats' => [
+        [
+          'label' => 'Anak Didik Aktif',
+          'value' => $totalActiveAnakDidik,
+          'color' => 'success',
+          'icon' => 'ri-group-line'
+        ],
+        [
+          'label' => 'Total Users',
+          'value' => $totalUsers,
+          'color' => 'primary',
+          'icon' => 'ri-user-line'
+        ],
+        [
+          'label' => 'Guru',
+          'value' => $totalGuru,
+          'color' => 'success',
+          'icon' => 'ri-book-line'
+        ],
+        [
+          'label' => 'Konsultan',
+          'value' => $totalKonsultan,
+          'color' => 'warning',
+          'icon' => 'ri-lightbulb-line'
+        ],
+        [
+          'label' => 'Terapis',
+          'value' => $totalTerapis,
+          'color' => 'info',
+          'icon' => 'ri-heart-line'
+        ],
+      ],
     ];
 
     return view('content.dashboard.admin-dashboard', compact('dashboardData', 'user'));

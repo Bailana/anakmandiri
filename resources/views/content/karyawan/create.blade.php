@@ -155,7 +155,7 @@
                 <option value="">Pilih Status</option>
                 <option value="Tetap" {{ old('status_kepegawaian') == 'Tetap' ? 'selected' : '' }}>Tetap</option>
                 <option value="Training" {{ old('status_kepegawaian') == 'Training' ? 'selected' : '' }}>Training</option>
-                <!-- Removed Honorer option -->
+                <option value="Non Aktif" {{ old('status_kepegawaian') == 'Non Aktif' ? 'selected' : '' }}>Non Aktif</option>
               </select>
               @error('status_kepegawaian')
               <div class="invalid-feedback">{{ $message }}</div>

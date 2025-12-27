@@ -8,6 +8,20 @@ use Illuminate\Http\Request;
 
 class AnakDidikController extends Controller
 {
+  /**
+   * Update status anak didik via AJAX
+   */
+  public function updateStatus(Request $request, $id)
+  {
+    $request->validate([
+      'status' => 'required|in:aktif,nonaktif,keluar',
+    ]);
+    $anakDidik = AnakDidik::findOrFail($id);
+    $anakDidik->status = $request->status;
+    $anakDidik->save();
+    ActivityService::logUpdate('AnakDidik', $anakDidik->id, 'Update status menjadi: ' . $anakDidik->status);
+    return response()->json(['success' => true, 'status' => $anakDidik->status]);
+  }
   public function __construct()
   {
     $this->middleware('role:admin')->only(['create', 'store', 'edit', 'update', 'destroy']);
@@ -117,6 +131,7 @@ class AnakDidikController extends Controller
       'surat_pernyataan' => 'nullable|boolean',
     ]);
 
+    $validated['status'] = 'aktif';
     $anakDidik = AnakDidik::create($validated);
 
     // Log activity
@@ -224,6 +239,7 @@ class AnakDidikController extends Controller
       'tes_iq' => 'nullable|boolean',
       'pemeriksaan_dokter_lab' => 'nullable|boolean',
       'surat_pernyataan' => 'nullable|boolean',
+      'status' => 'required|in:aktif,nonaktif,keluar',
     ]);
 
     $anakDidik->update($validated);

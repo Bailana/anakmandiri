@@ -42,6 +42,7 @@ class AnakDidik extends Model
         'tes_iq',
         'pemeriksaan_dokter_lab',
         'surat_pernyataan',
+        'status',
     ];
 
 

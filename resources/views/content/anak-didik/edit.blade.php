@@ -12,9 +12,19 @@
     <div class="card mb-4">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Edit Anak Didik</h5>
-        <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary btn-sm">
-          <i class="ri-arrow-left-line me-2"></i>Kembali
-        </a>
+        <div class="d-flex align-items-center gap-2">
+          <form id="toggleStatusForm" onsubmit="return false;" class="me-2">
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="statusToggle" name="status" value="aktif" {{ old('status', $anakDidik->status) === 'aktif' ? 'checked' : '' }}>
+              <label class="form-check-label" for="statusToggle" style="user-select:none;cursor:pointer;">
+                <span id="statusLabel">{{ old('status', $anakDidik->status) === 'aktif' ? 'Aktif' : 'Non Aktif' }}</span>
+              </label>
+            </div>
+          </form>
+          <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary btn-sm">
+            <i class="ri-arrow-left-line me-2"></i>Kembali
+          </a>
+        </div>
       </div>
       <div class="card-body">
         <!-- Nav Tabs -->
@@ -62,6 +72,8 @@
         <form id="anakDidikEditForm" action="{{ route('anak-didik.update', $anakDidik->id) }}" method="POST" enctype="multipart/form-data">
           @csrf
           @method('PUT')
+
+          <input type="hidden" name="status" id="statusInput" value="{{ old('status', $anakDidik->status) }}">
 
           <!-- Tab Content -->
           <div class="tab-content">
@@ -504,6 +516,66 @@
 </div>
 
 <script>
+  // Toggle status switch logic + AJAX update
+  document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.getElementById('statusToggle');
+    var label = document.getElementById('statusLabel');
+    var statusInput = document.getElementById('statusInput');
+    var anakId = {
+      {
+        $anakDidik - > id
+      }
+    };
+    if (toggle && label && statusInput) {
+      toggle.addEventListener('change', function() {
+        var newStatus = toggle.checked ? 'aktif' : 'nonaktif';
+        label.textContent = toggle.checked ? 'Aktif' : 'Non Aktif';
+        statusInput.value = newStatus;
+        // AJAX PATCH
+        fetch('/anak-didik/' + anakId + '/status', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              status: newStatus
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showStatusToast('Status berhasil diubah ke ' + (data.status === 'aktif' ? 'Aktif' : 'Non Aktif'), true);
+            } else {
+              showStatusToast('Gagal mengubah status', false);
+            }
+          })
+          .catch(() => {
+            showStatusToast('Gagal mengubah status', false);
+          });
+      });
+    }
+
+    // Toast feedback
+    window.showStatusToast = function(message, success) {
+      var toast = document.createElement('div');
+      toast.className = 'toast align-items-center text-white ' + (success ? 'bg-success' : 'bg-danger') + ' border-0 position-fixed top-0 end-0 m-3';
+      toast.style.zIndex = 9999;
+      toast.role = 'alert';
+      toast.ariaLive = 'assertive';
+      toast.ariaAtomic = 'true';
+      toast.innerHTML = '<div class="d-flex"><div class="toast-body">' + message + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+      document.body.appendChild(toast);
+      var bsToast = new bootstrap.Toast(toast, {
+        delay: 2000
+      });
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', function() {
+        toast.remove();
+      });
+    }
+  });
   (function() {
     function bindDigits(id, max) {
       var el = document.getElementById(id);

@@ -144,7 +144,7 @@ class KaryawanController extends Controller
       'email' => 'nullable|email|unique:karyawans,email,' . $karyawan->id,
       'posisi' => 'nullable|string',
       'departemen' => 'nullable|string',
-      'status_kepegawaian' => 'nullable|in:tetap,kontrak,honorer',
+      'status_kepegawaian' => 'nullable|in:tetap,training,nonaktif',
       'tanggal_bergabung' => 'nullable|date',
       'pendidikan_terakhir' => 'nullable|string',
       'institusi_pendidikan' => 'nullable|string',

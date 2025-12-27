@@ -83,7 +83,7 @@
               {{-- <th>NIS</th> --}}
               <th>Jenis Kelamin</th>
               <th>Guru Fokus</th>
-              <th>Tanggal Lahir</th>
+              <th>Status</th>
               <th>No Telepon Orang Tua</th>
               <th>Aksi</th>
             </tr>
@@ -115,7 +115,15 @@
                 <span class="text-muted">-</span>
                 @endif
               </td>
-              <td>{{ $anak->tanggal_lahir ? \Carbon\Carbon::parse($anak->tanggal_lahir)->format('d M Y') : '-' }}</td>
+              <td>
+                @if(isset($anak->status))
+                <span class="badge bg-label-{{ $anak->status === 'aktif' ? 'success' : ($anak->status === 'nonaktif' ? 'secondary' : 'warning') }}">
+                  {{ ucfirst($anak->status) }}
+                </span>
+                @else
+                <span class="text-muted">-</span>
+                @endif
+              </td>
               <td>{{ $anak->no_telepon_orang_tua ?? '-' }}</td>
               <td>
                 <div class="d-flex gap-2 align-items-center">

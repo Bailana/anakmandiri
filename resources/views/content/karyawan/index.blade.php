@@ -57,6 +57,7 @@
         <option value="">Status</option>
         <option value="tetap" {{ request('status_kepegawaian') === 'tetap' ? 'selected' : '' }}>Tetap</option>
         <option value="training" {{ request('status_kepegawaian') === 'training' ? 'selected' : '' }}>Training</option>
+        <option value="nonaktif" {{ request('status_kepegawaian') === 'nonaktif' ? 'selected' : '' }}>Non Aktif</option>
       </select>
 
       <!-- Action Buttons -->
@@ -107,9 +108,13 @@
               {{-- <td>{{ $karyawan->departemen ?? '-' }}</td> --}}
               <td>{{ $karyawan->email ?? '-' }}</td>
               <td>
+                @if($karyawan->status_kepegawaian === 'nonaktif')
+                <span class="badge bg-label-danger">Non Aktif</span>
+                @else
                 <span class="badge bg-label-{{ $karyawan->status_kepegawaian === 'tetap' ? 'success' : ($karyawan->status_kepegawaian === 'training' ? 'warning' : 'info') }}">
                   {{ ucfirst($karyawan->status_kepegawaian ?? '-') }}
                 </span>
+                @endif
               </td>
               <td>
                 <div class="d-flex gap-2 align-items-center">

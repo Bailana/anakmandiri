@@ -17,26 +17,28 @@
           @csrf
           @method('PUT')
 
-          <ul class="nav nav-tabs mb-3" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="data-pribadi-tab" data-bs-toggle="tab" data-bs-target="#data-pribadi"
-                type="button" role="tab" aria-controls="data-pribadi" aria-selected="true">
-                <i class="ri-user-line me-2"></i>Data Pribadi
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="data-profesional-tab" data-bs-toggle="tab" data-bs-target="#data-profesional"
-                type="button" role="tab" aria-controls="data-profesional" aria-selected="false">
-                <i class="ri-briefcase-line me-2"></i>Data Profesional
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
-                type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
-                <i class="ri-graduation-cap-line me-2"></i>Data Pendidikan
-              </button>
-            </li>
-          </ul>
+          <div style="overflow-x: auto; white-space: nowrap;">
+            <ul class="nav nav-tabs mb-3 flex-nowrap" role="tablist" style="min-width: 400px;">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="data-pribadi-tab" data-bs-toggle="tab" data-bs-target="#data-pribadi"
+                  type="button" role="tab" aria-controls="data-pribadi" aria-selected="true">
+                  <i class="ri-user-line me-2"></i>Data Pribadi
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="data-profesional-tab" data-bs-toggle="tab" data-bs-target="#data-profesional"
+                  type="button" role="tab" aria-controls="data-profesional" aria-selected="false">
+                  <i class="ri-briefcase-line me-2"></i>Data Profesional
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
+                  type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
+                  <i class="ri-graduation-cap-line me-2"></i>Data Pendidikan
+                </button>
+              </li>
+            </ul>
+          </div>
 
           <div class="tab-content">
             <!-- Data Pribadi Tab -->
@@ -231,7 +233,7 @@
 @if ($errors->any())
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    @foreach($errors-> keys() as $field)
+    @foreach($errors - > keys() as $field)
     @if(in_array($field, ['nama', 'nik', 'email', 'no_telepon', 'jenis_kelamin', 'tanggal_lahir', 'tempat_lahir', 'alamat']))
     document.getElementById('data-pribadi-tab').click();
     @break

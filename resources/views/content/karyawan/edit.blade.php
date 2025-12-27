@@ -182,11 +182,11 @@
                     <option value="tetap" {{ old('status_kepegawaian', $karyawan->status_kepegawaian) === 'tetap' ? 'selected' : '' }}>
                       Tetap
                     </option>
-                    <option value="kontrak" {{ old('status_kepegawaian', $karyawan->status_kepegawaian) === 'kontrak' ? 'selected' : '' }}>
-                      Kontrak
+                    <option value="training" {{ old('status_kepegawaian', $karyawan->status_kepegawaian) === 'training' ? 'selected' : '' }}>
+                      Training
                     </option>
-                    <option value="honorer" {{ old('status_kepegawaian', $karyawan->status_kepegawaian) === 'honorer' ? 'selected' : '' }}>
-                      Honorer
+                    <option value="nonaktif" {{ old('status_kepegawaian', $karyawan->status_kepegawaian) === 'nonaktif' ? 'selected' : '' }}>
+                      Non Aktif
                     </option>
                   </select>
                   @error('status_kepegawaian')
@@ -260,7 +260,7 @@
                     <i class="ri-close-line me-2"></i>Batal
                   </a>
                   <button type="submit" class="btn btn-primary">
-                    <i class="ri-save-line me-2"></i>Simpan Perubahan
+                    <i class="ri-save-line me-2"></i>Perbarui
                   </button>
                 </div>
               </div>
@@ -276,7 +276,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Find which tab has errors and activate it
-    @foreach($errors - > keys() as $field)
+    @foreach($errors->keys() as $field)
     @if(in_array($field, ['nama', 'nik', 'nip', 'email', 'jenis_kelamin', 'no_telepon', 'tempat_lahir', 'tanggal_lahir', 'alamat']))
     document.getElementById('data-pribadi-tab').click();
     @break

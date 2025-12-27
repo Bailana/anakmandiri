@@ -62,8 +62,6 @@
   </div>
   @endif
 
-  <!-- Users Distribution Chart -->
-  <!-- Total Active Anak Didik (placed left of Users Distribution Chart) -->
   @if(isset($dashboardData['total_anak_didik_active']))
   <div class="col-lg-6">
     <div class="card h-100">
