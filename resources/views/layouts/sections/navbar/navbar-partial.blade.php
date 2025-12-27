@@ -137,12 +137,7 @@ use Illuminate\Support\Facades\Route;
                 <li>
                     <a class="dropdown-item" href="{{ route('profile.show') }}">
                         <i class="icon-base ri ri-user-3-line icon-md me-3"></i>
-                        <span>My Profile</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="javascript:void(0);">
-                        <i class="icon-base ri ri-settings-4-line icon-md me-4"></i><span>Settings</span>
+                        <span>Akun Saya</span>
                     </a>
                 </li>
                 <!-- Reset Password menu removed per request -->

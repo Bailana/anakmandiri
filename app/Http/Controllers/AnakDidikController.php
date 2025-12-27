@@ -193,7 +193,7 @@ class AnakDidikController extends Controller
     }
 
     $validated = $request->validate([
-      'guru_fokus_id' => 'required|exists:karyawans,id',
+      'guru_fokus_id' => 'nullable|exists:karyawans,id',
       'nama' => 'required|string|max:255',
       'nis' => 'nullable|digits_between:1,20|unique:anak_didiks,nis,' . $id,
       'jenis_kelamin' => 'required|in:laki-laki,perempuan',

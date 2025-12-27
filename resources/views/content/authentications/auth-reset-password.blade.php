@@ -1,6 +1,6 @@
 @extends('layouts/blankLayout')
 
-@section('title', 'Reset Password - Pages')
+@section('title', 'Reset Password')
 
 @section('page-style')
 @vite(['resources/assets/vendor/scss/pages/page-auth.scss'])
@@ -15,14 +15,20 @@
         <!-- Reset Password -->
         <div class="app-brand justify-content-center mt-5">
           <a href="{{ url('/') }}" class="app-brand-link gap-3">
-            <span class="app-brand-logo demo">@include('_partials.macros')</span>
-            <span class="app-brand-text demo text-heading fw-semibold">{{ config('variables.templateName') }}</span>
+            <span class="app-brand-logo demo"><img src="{{ asset('assets/img/am.png') }}" alt="Logo" style="height:70px;"></span>
           </a>
         </div>
         <!-- /Logo -->
         <div class="card-body mt-1">
           <h4 class="mb-1">Reset Password 🔐</h4>
-          <p class="mb-5">Please enter your new password</p>
+          <p class="mb-5">Masukkan Password Baru Anda.</p>
+
+
+          @if (session('status'))
+          <div class="alert alert-success" role="alert">
+            {{ session('status') }}
+          </div>
+          @endif
 
           @if ($errors->any())
           <div class="alert alert-danger" role="alert">
@@ -44,7 +50,7 @@
 
             <div class="form-floating form-floating-outline mb-5">
               <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="Enter new password" autofocus required />
-              <label>New Password</label>
+              <label>Password Baru</label>
               @error('password')
               <div class="invalid-feedback">{{ $message }}</div>
               @enderror
@@ -52,24 +58,21 @@
 
             <div class="form-floating form-floating-outline mb-5">
               <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" placeholder="Confirm new password" required />
-              <label>Confirm Password</label>
+              <label>Konfirmasi Password</label>
             </div>
 
-            <button type="submit" class="btn btn-primary d-grid w-100 mb-5">Reset Password</button>
+            <button type="submit" class="btn btn-primary d-grid w-100 mb-5">Ubah Password</button>
           </form>
 
           <div class="text-center">
             <a href="{{ route('login') }}" class="d-flex align-items-center justify-content-center">
               <i class="icon-base ri ri-arrow-left-s-line scaleX-n1-rtl icon-20px me-1_5"></i>
-              Back to login
+              Kembali ke Halaman Login
             </a>
           </div>
         </div>
       </div>
       <!-- /Reset Password -->
-      <img src="{{ asset('assets/img/illustrations/tree-3.png') }}" alt="auth-tree" class="authentication-image-object-left d-none d-lg-block" />
-      <img src="{{ asset('assets/img/illustrations/auth-basic-mask-light.png') }}" class="authentication-image d-none d-lg-block scaleX-n1-rtl" height="172" alt="triangle-bg" />
-      <img src="{{ asset('assets/img/illustrations/tree.png') }}" alt="auth-tree" class="authentication-image-object-right d-none d-lg-block" />
     </div>
   </div>
 </div>

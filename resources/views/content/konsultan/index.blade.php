@@ -101,8 +101,8 @@
               <td>{{ ($konsultans->currentPage() - 1) * 15 + $index + 1 }}</td>
               <td>
                 <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-3">
-                    <img src="{{ asset('assets/img/avatars/' . (($konsultan->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" />
+                  <div class="avatar avatar-sm me-3" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                    <img src="{{ asset('assets/img/avatars/' . (($konsultan->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;aspect-ratio:1/1;" />
                   </div>
                   <div>
                     <p class="text-heading mb-0 fw-medium">{{ $konsultan->nama }}</p>

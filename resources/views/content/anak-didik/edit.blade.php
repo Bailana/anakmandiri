@@ -18,44 +18,46 @@
       </div>
       <div class="card-body">
         <!-- Nav Tabs -->
-        <ul class="nav nav-tabs mb-3" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="data-diri-tab" data-bs-toggle="tab" data-bs-target="#data-diri"
-              type="button" role="tab" aria-controls="data-diri" aria-selected="true">
-              <i class="ri-user-line me-2"></i>Data Diri
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-keluarga-tab" data-bs-toggle="tab" data-bs-target="#data-keluarga"
-              type="button" role="tab" aria-controls="data-keluarga" aria-selected="false">
-              <i class="ri-home-heart-line me-2"></i>Data Keluarga
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-kesehatan-tab" data-bs-toggle="tab" data-bs-target="#data-kesehatan"
-              type="button" role="tab" aria-controls="data-kesehatan" aria-selected="false">
-              <i class="ri-heart-pulse-line me-2"></i>Data Kesehatan
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
-              type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
-              <i class="ri-book-line me-2"></i>Data Pendidikan
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="dokumen-tab" data-bs-toggle="tab" data-bs-target="#dokumen"
-              type="button" role="tab" aria-controls="dokumen" aria-selected="false">
-              <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="terapi-tab" data-bs-toggle="tab" data-bs-target="#terapi"
-              type="button" role="tab" aria-controls="terapi" aria-selected="false">
-              <i class="ri-hospital-line me-2"></i>Program Terapi
-            </button>
-          </li>
-        </ul>
+        <div style="overflow-x:auto; white-space:nowrap;">
+          <ul class="nav nav-tabs mb-3 flex-nowrap" role="tablist" style="min-width:600px;">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="data-diri-tab" data-bs-toggle="tab" data-bs-target="#data-diri"
+                type="button" role="tab" aria-controls="data-diri" aria-selected="true">
+                <i class="ri-user-line me-2"></i>Data Diri
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="data-keluarga-tab" data-bs-toggle="tab" data-bs-target="#data-keluarga"
+                type="button" role="tab" aria-controls="data-keluarga" aria-selected="false">
+                <i class="ri-home-heart-line me-2"></i>Data Keluarga
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="data-kesehatan-tab" data-bs-toggle="tab" data-bs-target="#data-kesehatan"
+                type="button" role="tab" aria-controls="data-kesehatan" aria-selected="false">
+                <i class="ri-heart-pulse-line me-2"></i>Data Kesehatan
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
+                type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
+                <i class="ri-book-line me-2"></i>Data Pendidikan
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="dokumen-tab" data-bs-toggle="tab" data-bs-target="#dokumen"
+                type="button" role="tab" aria-controls="dokumen" aria-selected="false">
+                <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="terapi-tab" data-bs-toggle="tab" data-bs-target="#terapi"
+                type="button" role="tab" aria-controls="terapi" aria-selected="false">
+                <i class="ri-hospital-line me-2"></i>Program Terapi
+              </button>
+            </li>
+          </ul>
+        </div>
 
         <form id="anakDidikEditForm" action="{{ route('anak-didik.update', $anakDidik->id) }}" method="POST" enctype="multipart/form-data">
           @csrf
@@ -87,8 +89,8 @@
 
               <div class="row mb-3">
                 <div class="col-md-6">
-                  <label class="form-label">Guru Fokus <span class="text-danger">*</span></label>
-                  <select name="guru_fokus_id" class="form-select @error('guru_fokus_id') is-invalid @enderror" required>
+                  <label class="form-label">Guru Fokus</label>
+                  <select name="guru_fokus_id" class="form-select @error('guru_fokus_id') is-invalid @enderror">
                     <option value="">Pilih Guru Fokus</option>
                     @foreach($guruFokusList as $id => $nama)
                     <option value="{{ $id }}" {{ old('guru_fokus_id', $anakDidik->guru_fokus_id) == $id ? 'selected' : '' }}>{{ $nama }}</option>

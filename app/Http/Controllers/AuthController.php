@@ -32,7 +32,7 @@ class AuthController extends Controller
       // Log login activity
       ActivityService::logLogin();
 
-      return redirect()->intended('/dashboard');
+      return redirect('/dashboard');
     }
 
     return back()->withErrors([
@@ -70,8 +70,8 @@ class AuthController extends Controller
     );
 
     return $status === Password::RESET_LINK_SENT
-      ? back()->with(['status' => __($status)])
-      : back()->withErrors(['email' => __($status)]);
+      ? back()->with(['status' => 'Kami telah mengirimkan link reset password ke email Anda.'])
+      : back()->withErrors(['email' => 'Email tidak ditemukan atau terjadi kesalahan.']);
   }
 
   // Show reset password form
@@ -87,9 +87,16 @@ class AuthController extends Controller
   public function resetPassword(Request $request)
   {
     $request->validate([
-      'token' => 'required',
-      'email' => 'required|email',
-      'password' => 'required|min:8|confirmed',
+      'token' => ['required'],
+      'email' => ['required', 'email'],
+      'password' => ['required', 'min:8', 'confirmed'],
+    ], [
+      'token.required' => 'Token reset password tidak ditemukan.',
+      'email.required' => 'Email wajib diisi.',
+      'email.email' => 'Format email tidak valid.',
+      'password.required' => 'Password wajib diisi.',
+      'password.min' => 'Password minimal 8 karakter.',
+      'password.confirmed' => 'Konfirmasi password tidak cocok.',
     ]);
 
     $status = Password::reset(
@@ -106,7 +113,7 @@ class AuthController extends Controller
     );
 
     return $status === Password::PASSWORD_RESET
-      ? redirect()->route('login')->with('status', __($status))
-      : back()->withErrors(['email' => [__($status)]]);
+      ? redirect()->route('login')->with('status', 'Password berhasil diubah, silakan login dengan password baru Anda.')
+      : back()->withErrors(['email' => ['Terjadi kesalahan saat reset password. Silakan coba lagi.']]);
   }
 }

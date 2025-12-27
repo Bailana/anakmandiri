@@ -18,26 +18,28 @@
       </div>
       <div class="card-body">
         <!-- Nav Tabs -->
-        <ul class="nav nav-tabs mb-3" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="data-pribadi-tab" data-bs-toggle="tab" data-bs-target="#data-pribadi"
-              type="button" role="tab" aria-controls="data-pribadi" aria-selected="true">
-              <i class="ri-user-line me-2"></i>Data Pribadi
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-pekerjaan-tab" data-bs-toggle="tab" data-bs-target="#data-pekerjaan"
-              type="button" role="tab" aria-controls="data-pekerjaan" aria-selected="false">
-              <i class="ri-briefcase-line me-2"></i>Data Pekerjaan
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
-              type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
-              <i class="ri-graduation-cap-line me-2"></i>Data Pendidikan
-            </button>
-          </li>
-        </ul>
+        <div style="overflow-x:auto; white-space:nowrap;">
+          <ul class="nav nav-tabs mb-3 flex-nowrap" role="tablist" style="min-width:600px;">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="data-pribadi-tab" data-bs-toggle="tab" data-bs-target="#data-pribadi"
+                type="button" role="tab" aria-controls="data-pribadi" aria-selected="true">
+                <i class="ri-user-line me-2"></i>Data Pribadi
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="data-pekerjaan-tab" data-bs-toggle="tab" data-bs-target="#data-pekerjaan"
+                type="button" role="tab" aria-controls="data-pekerjaan" aria-selected="false">
+                <i class="ri-briefcase-line me-2"></i>Data Pekerjaan
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
+                type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
+                <i class="ri-graduation-cap-line me-2"></i>Data Pendidikan
+              </button>
+            </li>
+          </ul>
+        </div>
 
         <form action="{{ route('karyawan.update', $karyawan->id) }}" method="POST" enctype="multipart/form-data">
           @csrf
@@ -274,7 +276,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Find which tab has errors and activate it
-    @foreach($errors->keys() as $field)
+    @foreach($errors - > keys() as $field)
     @if(in_array($field, ['nama', 'nik', 'nip', 'email', 'jenis_kelamin', 'no_telepon', 'tempat_lahir', 'tanggal_lahir', 'alamat']))
     document.getElementById('data-pribadi-tab').click();
     @break

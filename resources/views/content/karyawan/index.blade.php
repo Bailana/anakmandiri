@@ -50,13 +50,7 @@
         @endforeach
       </select>
 
-      <!-- Filter Departemen -->
-      <select name="departemen" class="form-select" style="max-width: 150px;">
-        <option value="">Departemen</option>
-        @foreach($departemenOptions as $departemen)
-        <option value="{{ $departemen }}" {{ request('departemen') === $departemen ? 'selected' : '' }}>{{ $departemen }}</option>
-        @endforeach
-      </select>
+      {{-- Filter Departemen dihapus --}}
 
       <!-- Filter Status Kepegawaian -->
       <select name="status_kepegawaian" class="form-select" style="max-width: 150px;">
@@ -88,7 +82,7 @@
               <th>Nama</th>
               <th>NIP</th>
               <th>Posisi</th>
-              <th>Departemen</th>
+              {{-- <th>Departemen</th> --}}
               <th>Email</th>
               <th>Status</th>
               <th>Aksi</th>
@@ -100,8 +94,8 @@
               <td>{{ ($karyawans->currentPage() - 1) * 15 + $index + 1 }}</td>
               <td>
                 <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-3">
-                    <img src="{{ asset('assets/img/avatars/' . (($karyawan->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" />
+                  <div class="avatar avatar-sm me-3" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                    <img src="{{ asset('assets/img/avatars/' . (($karyawan->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;aspect-ratio:1/1;" />
                   </div>
                   <div>
                     <p class="text-heading mb-0 fw-medium">{{ $karyawan->nama }}</p>
@@ -110,7 +104,7 @@
               </td>
               <td>{{ $karyawan->nip ?? '-' }}</td>
               <td>{{ $karyawan->posisi ?? '-' }}</td>
-              <td>{{ $karyawan->departemen ?? '-' }}</td>
+              {{-- <td>{{ $karyawan->departemen ?? '-' }}</td> --}}
               <td>{{ $karyawan->email ?? '-' }}</td>
               <td>
                 <span class="badge bg-label-{{ $karyawan->status_kepegawaian === 'tetap' ? 'success' : ($karyawan->status_kepegawaian === 'training' ? 'warning' : 'info') }}">
@@ -232,8 +226,8 @@
             <p class="fw-medium" id="detailPosisi">-</p>
           </div>
           <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">Departemen</p>
-            <p class="fw-medium" id="detailDepartemen">-</p>
+            {{-- <p class="text-body-secondary text-sm mb-1">Departemen</p>
+            <p class="fw-medium" id="detailDepartemen">-</p> --}}
           </div>
         </div>
         <div class="row mb-3">
@@ -329,7 +323,7 @@
 
         // Work Info
         document.getElementById('detailPosisi').textContent = karyawan.posisi || '-';
-        document.getElementById('detailDepartemen').textContent = karyawan.departemen || '-';
+        // document.getElementById('detailDepartemen').textContent = karyawan.departemen || '-';
         document.getElementById('detailTgBergabung').textContent = formatDate(karyawan.tanggal_bergabung);
         document.getElementById('detailKeahlian').textContent = karyawan.keahlian || '-';
 

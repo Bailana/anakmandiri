@@ -80,7 +80,7 @@
             <tr class="table-light">
               <th>No</th>
               <th>Nama</th>
-              <th>NIS</th>
+              {{-- <th>NIS</th> --}}
               <th>Jenis Kelamin</th>
               <th>Guru Fokus</th>
               <th>Tanggal Lahir</th>
@@ -94,15 +94,15 @@
               <td>{{ ($anakDidiks->currentPage() - 1) * $anakDidiks->perPage() + $index + 1 }}</td>
               <td>
                 <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-3">
-                    <img src="{{ asset('assets/img/avatars/' . (($anak->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" />
+                  <div class="avatar avatar-sm me-3" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                    <img src="{{ asset('assets/img/avatars/' . (($anak->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;aspect-ratio:1/1;" />
                   </div>
                   <div>
                     <p class="text-heading mb-0 fw-medium">{{ $anak->nama }}</p>
                   </div>
                 </div>
               </td>
-              <td>{{ $anak->nis ?: '-' }}</td>
+              {{-- <td>{{ $anak->nis ?: '-' }}</td> --}}
               <td>
                 <span class="badge bg-label-{{ $anak->jenis_kelamin === 'laki-laki' ? 'info' : 'warning' }}">
                   {{ ucfirst($anak->jenis_kelamin) }}
@@ -110,7 +110,7 @@
               </td>
               <td>
                 @if($anak->guruFokus)
-                <span class="badge bg-label-primary">{{ $anak->guruFokus->nama }}</span>
+                <span class="badge bg-label-primary" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;">{{ $anak->guruFokus->nama }}</span>
                 @else
                 <span class="text-muted">-</span>
                 @endif
@@ -203,8 +203,8 @@
             <p class="fw-medium" id="detailNama"></p>
           </div>
           <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">NIS</p>
-            <p class="fw-medium" id="detailNis"></p>
+            {{-- <p class="text-body-secondary text-sm mb-1">NIS</p>
+            <p class="fw-medium" id="detailNis"></p> --}}
           </div>
         </div>
         <div class="row mb-3">
@@ -273,7 +273,7 @@
       .then(data => {
         const anak = data.data;
         document.getElementById('detailNama').textContent = anak.nama || '-';
-        document.getElementById('detailNis').textContent = anak.nis || '-';
+        // document.getElementById('detailNis').textContent = anak.nis || '-';
         document.getElementById('detailTl').textContent = window.formatDate(anak.tanggal_lahir);
         document.getElementById('detailTempatLahir').textContent = anak.tempat_lahir || '-';
         document.getElementById('detailAlamat').textContent = anak.alamat || '-';

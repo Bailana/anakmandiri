@@ -7,6 +7,38 @@
 @endsection
 
 @section('content')
+@if (session('status'))
+<script>
+    // Toast helper jika belum ada
+    if (typeof window.showToast !== 'function') {
+        window.showToast = function(message, type = 'success') {
+            let toast = document.getElementById('customToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'customToast';
+                toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-4';
+                toast.style.zIndex = 9999;
+                toast.innerHTML = '<div class="d-flex"><div class="toast-body"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+                document.body.appendChild(toast);
+            } else {
+                toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-4';
+            }
+            toast.querySelector('.toast-body').textContent = message;
+            var bsToast = window.bootstrap && typeof window.bootstrap.Toast === 'function' ? window.bootstrap.Toast.getOrCreateInstance(toast, {
+                delay: 2000
+            }) : null;
+            if (bsToast) bsToast.show();
+            else {
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            }
+        }
+    }
+    window.addEventListener('DOMContentLoaded', function() {
+        window.showToast(@json(session('status')), 'success');
+    });
+</script>
+@endif
 <div class="position-relative">
     <div class="authentication-wrapper authentication-basic container-p-y">
         <div class="authentication-inner py-6 mx-4">
@@ -25,6 +57,15 @@
                 <div class="card-body mt-1">
                     <h4 class="mb-1 text-center">Klinik Terapis & Sekolah Khusus Anak Mandiri</h4>
                     <p class="mb-5">Silakan masuk ke akun Anda untuk melanjutkan</p>
+
+
+                    @if (session('status'))
+                    <script>
+                        window.addEventListener('DOMContentLoaded', function() {
+                            window.showToast && window.showToast(@json(session('status')), 'success');
+                        });
+                    </script>
+                    @endif
 
                     @if ($errors->any())
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">

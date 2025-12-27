@@ -1,6 +1,6 @@
 @extends('layouts/blankLayout')
 
-@section('title', 'Forgot Password Basic - Pages')
+@section('title', 'Lupa Password')
 
 @section('page-style')
 @vite(['resources/assets/vendor/scss/pages/page-auth.scss'])
@@ -15,14 +15,13 @@
                 <!-- Forgot Password -->
                 <div class="app-brand justify-content-center mt-5">
                     <a href="{{ url('/') }}" class="app-brand-link gap-3">
-                        <span class="app-brand-logo demo">@include('_partials.macros')</span>
-                        <span class="app-brand-text demo text-heading fw-semibold">{{ config('variables.templateName') }}</span>
+                        <span class="app-brand-logo demo"><img src="{{ asset('assets/img/am.png') }}" alt="Logo" style="height:70px;"></span>
                     </a>
                 </div>
                 <!-- /Logo -->
                 <div class="card-body mt-1">
-                    <h4 class="mb-1">Forgot Password? 🔒</h4>
-                    <p class="mb-5">Enter your email and we'll send you instructions to reset your password</p>
+                    <h4 class="mb-1">Lupa Password? 🔒</h4>
+                    <p class="mb-5">Masukkan email Anda yang Terdaftar.</p>
 
                     @if (session('status'))
                     <div class="alert alert-success" role="alert">
@@ -39,20 +38,18 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <button type="submit" class="btn btn-primary d-grid w-100 mb-5">Send Reset Link</button>
+                        <button type="submit" class="btn btn-primary d-grid w-100 mb-5">Kirim Reset Link</button>
                     </form>
                     <div class="text-center">
                         <a href="{{ route('login') }}" class="d-flex align-items-center justify-content-center">
                             <i class="icon-base ri ri-arrow-left-s-line scaleX-n1-rtl icon-20px me-1_5"></i>
-                            Back to login
+                            Kembali ke Halaman Login
                         </a>
                     </div>
                 </div>
             </div>
             <!-- /Forgot Password -->
-            <img src="{{ asset('assets/img/illustrations/tree-3.png') }}" alt="auth-tree" class="authentication-image-object-left d-none d-lg-block" />
-            <img src="{{ asset('assets/img/illustrations/auth-basic-mask-light.png') }}" class="authentication-image d-none d-lg-block scaleX-n1-rtl" height="172" alt="triangle-bg" />
-            <img src="{{ asset('assets/img/illustrations/tree.png') }}" alt="auth-tree" class="authentication-image-object-right d-none d-lg-block" />
+            {{-- Gambar auth-tree dan triangle-bg dihapus sesuai permintaan --}}
         </div>
     </div>
 </div>
