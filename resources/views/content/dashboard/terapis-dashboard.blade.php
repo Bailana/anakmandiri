@@ -86,26 +86,20 @@
       </div>
       <div class="card-body">
         <div class="list-group list-group-flush">
+          @forelse(($dashboardData['jadwal_hari_ini'] ?? []) as $jadwal)
           <div class="list-group-item">
             <div class="d-flex justify-content-between align-items-start">
               <div>
-                <h6 class="mb-1">Pasien: Ibu Ani</h6>
-                <p class="text-muted small mb-1">Jam: 10:00 - 11:00</p>
-                <p class="text-muted small mb-0">Tipe: Konseling Keluarga</p>
+                <h6 class="mb-1">Pasien: {{ $jadwal->assignment->anakDidik->nama ?? '-' }}</h6>
+                <p class="text-muted small mb-1">Jam: {{ $jadwal->jam_mulai ?? '-' }}</p>
+                <p class="text-muted small mb-0">Tipe: {{ $jadwal->jenis_terapi ?? '-' }}</p>
               </div>
               <span class="badge bg-success">Akan Dimulai</span>
             </div>
           </div>
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <h6 class="mb-1">Pasien: Pak Budi</h6>
-                <p class="text-muted small mb-1">Jam: 14:00 - 15:00</p>
-                <p class="text-muted small mb-0">Tipe: Terapi Individu</p>
-              </div>
-              <span class="badge bg-primary">Akan Dimulai</span>
-            </div>
-          </div>
+          @empty
+          <div class="list-group-item text-center text-muted">Tidak ada sesi terapi hari ini.</div>
+          @endforelse
         </div>
       </div>
     </div>

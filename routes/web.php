@@ -234,6 +234,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('terapis/pasien/{id}/edit', [App\Http\Controllers\TerapisPatientController::class, 'edit'])->name('terapis.pasien.edit');
     Route::match(['put', 'patch'], 'terapis/pasien/{id}', [App\Http\Controllers\TerapisPatientController::class, 'update'])->name('terapis.pasien.update');
     Route::delete('terapis/pasien/{id}', [App\Http\Controllers\TerapisPatientController::class, 'destroy'])->name('terapis.pasien.destroy');
+    Route::delete('terapis/jadwal/{id}', [App\Http\Controllers\TerapisPatientController::class, 'hapusJadwal'])->name('terapis.jadwal.destroy');
+    Route::match(['put', 'patch'], 'terapis/jadwal/{id}', [App\Http\Controllers\TerapisPatientController::class, 'updateJadwal'])->name('terapis.jadwal.update');
   });
 });
 

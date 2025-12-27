@@ -13,6 +13,8 @@ class GuruAnakDidikSchedule extends Model
     'hari',
     'tanggal_mulai',
     'jam_mulai',
+    'jenis_terapi',
+    'terapis_nama',
   ];
 
   protected $casts = [

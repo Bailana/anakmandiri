@@ -48,7 +48,7 @@
                 <select name="anak_didik_id" class="form-select" required>
                   <option value="">-- Pilih Anak Didik --</option>
                   @foreach($anakDidiks as $a)
-                  <option value="{{ $a->id }}" @if(old('anak_didik_id', isset($assignment) ? $assignment->anak_didik_id : '') == $a->id) selected @endif>{{ $a->nama }} ({{ $a->tanggal_lahir?->format('Y-m-d') ?? '-' }})</option>
+                  <option value="{{ $a->id }}" @if(old('anak_didik_id', isset($assignment) ? $assignment->anak_didik_id : '') == $a->id) selected @endif>{{ $a->nama }}</option>
                   @endforeach
                 </select>
               </div>
@@ -87,7 +87,9 @@
 
               <div class="col-12 mt-3">
                 <div id="schedules-wrapper">
-                  @php $initialSchedules = old('schedules') ?? (isset($assignment) ? $assignment->schedules->map(function($s){ return ['tanggal_mulai' => $s->tanggal_mulai?->format('Y-m-d'), 'jam_mulai' => $s->jam_mulai]; })->toArray() : [['tanggal_mulai' => null, 'jam_mulai' => null]]); @endphp
+                  @php
+                  $initialSchedules = old('schedules') ?? (isset($assignment) ? $assignment->schedules->map(function($s){ return ['tanggal_mulai' => $s->tanggal_mulai?->format('Y-m-d'), 'jam_mulai' => $s->jam_mulai, 'jenis_terapi' => $s->jenis_terapi]; })->toArray() : [['tanggal_mulai' => null, 'jam_mulai' => null, 'jenis_terapi' => null]]);
+                  @endphp
                   @foreach($initialSchedules as $i => $sch)
                   <div class="row g-2 align-items-end schedule-row">
                     <div class="col-md-6">
@@ -203,7 +205,7 @@
           <input type="date" name="schedules[${count}][tanggal_mulai]" class="form-control">
         </div>
         <div class="col-md-6 d-flex align-items-end">
-            <div style="flex:11; display:flex; flex-direction:column;">
+          <div style="flex:11; display:flex; flex-direction:column;">
             <label class="form-label small">Jam Mulai</label>
             <input type="time" name="schedules[${count}][jam_mulai]" class="form-control">
           </div>
@@ -214,6 +216,7 @@
       `;
       wrapper.appendChild(div);
       updateRemoveButtons();
+      normalizeNames();
     });
 
     updateRemoveButtons();
