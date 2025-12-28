@@ -22,6 +22,20 @@ class AnakDidikController extends Controller
     ActivityService::logUpdate('AnakDidik', $anakDidik->id, 'Update status menjadi: ' . $anakDidik->status);
     return response()->json(['success' => true, 'status' => $anakDidik->status]);
   }
+  /**
+   * Toggle status anak didik via AJAX
+   */
+  public function toggleStatus(Request $request, $id)
+  {
+    $request->validate([
+      'status' => 'required|in:aktif,nonaktif,keluar',
+    ]);
+    $anakDidik = AnakDidik::findOrFail($id);
+    $anakDidik->status = $request->status;
+    $anakDidik->save();
+    ActivityService::logUpdate('AnakDidik', $anakDidik->id, 'Update status menjadi: ' . $anakDidik->status);
+    return response()->json(['success' => true, 'status' => $anakDidik->status]);
+  }
   public function __construct()
   {
     $this->middleware('role:admin')->only(['create', 'store', 'edit', 'update', 'destroy']);

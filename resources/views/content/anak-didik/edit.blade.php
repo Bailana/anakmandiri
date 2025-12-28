@@ -515,92 +515,38 @@
   </div>
 </div>
 
+@push('scripts')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script>
-  // Toggle status switch logic + AJAX update
   document.addEventListener('DOMContentLoaded', function() {
-    var toggle = document.getElementById('statusToggle');
-    var label = document.getElementById('statusLabel');
-    var statusInput = document.getElementById('statusInput');
-    var anakId = {
-      {
-        $anakDidik - > id
-      }
-    };
-    if (toggle && label && statusInput) {
-      toggle.addEventListener('change', function() {
-        var newStatus = toggle.checked ? 'aktif' : 'nonaktif';
-        label.textContent = toggle.checked ? 'Aktif' : 'Non Aktif';
-        statusInput.value = newStatus;
-        // AJAX PATCH
-        fetch('/anak-didik/' + anakId + '/status', {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-              status: newStatus
-            })
+    const statusToggle = document.getElementById('statusToggle');
+    const statusLabel = document.getElementById('statusLabel');
+    statusToggle.addEventListener('change', function() {
+      const status = statusToggle.checked ? 'aktif' : 'nonaktif';
+      statusLabel.textContent = statusToggle.checked ? 'Aktif' : 'Non Aktif';
+      fetch("{{ route('anak-didik.toggle-status', $anakDidik->id) }}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({
+            status
           })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              showStatusToast('Status berhasil diubah ke ' + (data.status === 'aktif' ? 'Aktif' : 'Non Aktif'), true);
-            } else {
-              showStatusToast('Gagal mengubah status', false);
-            }
-          })
-          .catch(() => {
-            showStatusToast('Gagal mengubah status', false);
-          });
-      });
-    }
-
-    // Toast feedback
-    window.showStatusToast = function(message, success) {
-      var toast = document.createElement('div');
-      toast.className = 'toast align-items-center text-white ' + (success ? 'bg-success' : 'bg-danger') + ' border-0 position-fixed top-0 end-0 m-3';
-      toast.style.zIndex = 9999;
-      toast.role = 'alert';
-      toast.ariaLive = 'assertive';
-      toast.ariaAtomic = 'true';
-      toast.innerHTML = '<div class="d-flex"><div class="toast-body">' + message + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
-      document.body.appendChild(toast);
-      var bsToast = new bootstrap.Toast(toast, {
-        delay: 2000
-      });
-      bsToast.show();
-      toast.addEventListener('hidden.bs.toast', function() {
-        toast.remove();
-      });
-    }
-  });
-  (function() {
-    function bindDigits(id, max) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('input', function() {
-        var val = this.value.replace(/\D/g, '').slice(0, max);
-        if (this.value !== val) this.value = val;
-      });
-      el.addEventListener('paste', function(e) {
-        e.preventDefault();
-        var text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, max);
-        if (document.queryCommandSupported('insertText')) {
-          document.execCommand('insertText', false, text);
-        } else {
-          this.value = (this.value + text).replace(/\D/g, '').slice(0, max);
-        }
-      });
-    }
-    ['nis', 'nik', 'no_kk', 'no_telepon', 'no_telepon_orang_tua'].forEach(function(id) {
-      var max = id === 'nis' ? 20 : (id === 'nik' || id === 'no_kk' ? 16 : 13);
-      bindDigits(id, max);
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            toastr.success('Status anak didik berhasil diperbarui!');
+          } else {
+            toastr.error('Gagal memperbarui status!');
+          }
+        })
+        .catch(() => toastr.error('Gagal memperbarui status!'));
     });
-  })();
+  });
 </script>
-
 <script>
   // Ensure edit form submits even if a hidden invalid control would block native submit
   (function() {
@@ -617,5 +563,5 @@
     }
   })();
 </script>
-
+@endpush
 @endsection

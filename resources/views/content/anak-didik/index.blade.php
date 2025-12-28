@@ -117,7 +117,7 @@
               </td>
               <td>
                 @if(isset($anak->status))
-                <span class="badge bg-label-{{ $anak->status === 'aktif' ? 'success' : ($anak->status === 'nonaktif' ? 'secondary' : 'warning') }}">
+                <span class="badge bg-label-{{ $anak->status === 'aktif' ? 'success' : ($anak->status === 'nonaktif' ? 'danger' : 'warning') }}">
                   {{ ucfirst($anak->status) }}
                 </span>
                 @else
@@ -268,7 +268,7 @@
   window.showDetail = function(button) {
     const anakId = button.getAttribute('data-anak-id');
     let url = `/anak-didik/${anakId}`;
-    @if(auth()->user() && auth()->user()->role === 'guru')
+    @if(auth() - > user() && auth() - > user() - > role === 'guru')
     url = `{{ url('anak-didik') }}/${anakId}`;
     @endif
     fetch(url, {

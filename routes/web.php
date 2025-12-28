@@ -53,9 +53,9 @@ use App\Http\Controllers\AuthController;
 
 // Redirect home to dashboard or login
 Route::get('/', function () {
-  if (Auth::check()) {
-    return redirect()->route('dashboard-analytics');
-  }
+  // if (Auth::check()) {
+  //   return redirect()->route('dashboard-analytics');
+  // }
   return redirect()->route('login');
 });
 
@@ -85,10 +85,20 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/auth/register-basic', [RegisterBasic::class, 'index'])->name('auth-register-basic');
 Route::get('/auth/forgot-password-basic', [AuthController::class, 'showForgotPassword'])->name('auth-reset-password-basic');
 
+Route::middleware(['auth', 'role:terapis'])->get('/dashboard-terapis', [App\Http\Controllers\dashboard\TerapisDashboard::class, 'index'])->name('dashboard-terapis');
+
+Route::middleware(['auth', 'role:konsultan'])->get('/dashboard-konsultan', [App\Http\Controllers\dashboard\KonsultanDashboard::class, 'index'])->name('dashboard-konsultan');
+
+// Dashboard khusus admin
+Route::middleware(['auth', 'role:admin'])->get('/dashboard', [App\Http\Controllers\dashboard\AdminDashboard::class, 'index'])->name('dashboard-admin');
+
+// Dashboard khusus guru
+Route::middleware(['auth', 'role:guru'])->get('/dashboard-guru', [App\Http\Controllers\dashboard\GuruDashboard::class, 'index'])->name('dashboard-guru');
+
 // Protected Routes
 Route::middleware(['auth'])->group(function () {
   // Dashboard Routes - menggunakan satu route yang handle semua role
-  Route::get('/dashboard', [Analytics::class, 'index'])->name('dashboard-analytics');
+  // Route::get('/dashboard', [Analytics::class, 'index'])->name('dashboard-analytics');
 
   // layout
   Route::get('/layouts/without-menu', [WithoutMenu::class, 'index'])->name('layouts-without-menu');
@@ -238,6 +248,11 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('terapis/jadwal/{id}', [App\Http\Controllers\TerapisPatientController::class, 'hapusJadwal'])->name('terapis.jadwal.destroy');
     Route::match(['put', 'patch'], 'terapis/jadwal/{id}', [App\Http\Controllers\TerapisPatientController::class, 'updateJadwal'])->name('terapis.jadwal.update');
   });
+
+  Route::post('/anak-didik/{id}/toggle-status', [
+    App\Http\Controllers\AnakDidikController::class,
+    'toggleStatus'
+  ])->name('anak-didik.toggle-status');
 });
 
 // Tambahan route untuk API riwayat observasi/evaluasi anak didik di halaman program

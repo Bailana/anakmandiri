@@ -32,7 +32,20 @@ class AuthController extends Controller
       // Log login activity
       ActivityService::logLogin();
 
-      return redirect('/dashboard');
+      $user = Auth::user();
+      switch ($user->role) {
+        case 'admin':
+          return redirect()->route('dashboard-admin');
+        case 'guru':
+          return redirect()->route('dashboard-guru');
+        case 'terapis':
+          return redirect()->route('dashboard-terapis');
+        case 'konsultan':
+          return redirect()->route('dashboard-konsultan');
+        default:
+          Auth::logout();
+          return back()->withErrors(['email' => 'Role tidak dikenali.'])->onlyInput('email');
+      }
     }
 
     return back()->withErrors([

@@ -4,7 +4,37 @@
       "url": "/dashboard",
       "name": "Dashboard",
       "icon": "menu-icon icon-base ri ri-home-smile-line",
-      "slug": "dashboard-analytics"
+      "slug": "dashboard-analytics",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "url": "/dashboard-guru",
+      "name": "Dashboard",
+      "icon": "menu-icon icon-base ri ri-home-smile-line",
+      "slug": "dashboard-analytics",
+      "roles": [
+        "guru"
+      ]
+    },
+    {
+      "url": "/dashboard-terapis",
+      "name": "Dashboard",
+      "icon": "menu-icon icon-base ri ri-home-smile-line",
+      "slug": "dashboard-analytics",
+      "roles": [
+        "terapis"
+      ]
+    },
+    {
+      "url": "/dashboard-konsultan",
+      "name": "Dashboard",
+      "icon": "menu-icon icon-base ri ri-home-smile-line",
+      "slug": "dashboard-analytics",
+      "roles": [
+        "konsultan"
+      ]
     },
     {
       "url": "anak-didik",

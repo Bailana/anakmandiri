@@ -62,26 +62,6 @@
   </div>
   @endif
 
-  @if(isset($dashboardData['total_anak_didik_active']))
-  <div class="col-lg-6">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">Anak Didik Aktif</h5>
-        <p class="small text-muted mb-0">Total anak didik yang sedang aktif</p>
-      </div>
-      <div class="card-body d-flex align-items-center justify-content-between">
-        <div>
-          <h2 class="mb-0">{{ $dashboardData['total_anak_didik_active'] }}</h2>
-        </div>
-        <div class="avatar">
-          <div class="avatar-initial bg-success rounded">
-            <i class="icon-base ri ri-group-line icon-24px"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  @endif
   @if(isset($dashboardData['chartData']))
   <div class="col-lg-6">
     <div class="card h-100">
@@ -98,7 +78,7 @@
 
   <!-- Anak Didik Line Chart -->
   @if(isset($dashboardData['lineChartData']))
-  <div class="col-lg-6">
+  <div class="col-lg-12">
     <div class="card h-100">
       <div class="card-header">
         <h5 class="card-title m-0">{{ $dashboardData['lineChartData']['title'] }}</h5>
@@ -177,7 +157,7 @@
   </div>
 </div>
 
-@if(isset($dashboardData['chartData']))
+<!-- @if(isset($dashboardData['chartData']))
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const chartElement = document.getElementById('adminRoleChart');
@@ -232,7 +212,7 @@
     }
   });
 </script>
-@endif
+@endif -->
 
 @if(isset($dashboardData['lineChartData']))
 <script>
@@ -250,6 +230,9 @@
           zoom: {
             enabled: true
           }
+        },
+        legend: {
+          show: false
         },
         colors: ['#28c76f'],
         stroke: {

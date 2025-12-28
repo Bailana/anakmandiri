@@ -188,11 +188,15 @@ class PPIController extends Controller
     foreach ($items as $it) {
       $nama = $it['nama_program'] ?? null;
       if (!$nama) continue;
+      $programKonsultanId = $it['program_konsultan_id'] ?? null;
+      if ($programKonsultanId && !\App\Models\ProgramKonsultan::find($programKonsultanId)) {
+        $programKonsultanId = null;
+      }
       PpiItem::create([
         'ppi_id' => $ppi->id,
         'nama_program' => $nama,
         'kategori' => $it['kategori'] ?? null,
-        'program_konsultan_id' => $it['program_konsultan_id'] ?? null,
+        'program_konsultan_id' => $programKonsultanId,
       ]);
     }
 

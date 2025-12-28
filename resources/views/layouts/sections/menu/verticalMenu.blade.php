@@ -109,8 +109,22 @@ use Illuminate\Support\Facades\Route;
         $currentUrl = request()->path();
         // Cek slug menu utama
         $mainSlugs = ['karyawan', 'anak-didik', 'konsultan', 'program', 'assessment'];
-        if (in_array($menu->slug, $mainSlugs)) {
-        if (request()->is($menu->slug) || request()->is($menu->slug.'/*')) {
+        // Aktifkan menu dashboard untuk semua role jika url sesuai
+        if (isset($menu->name) && strtolower($menu->name) === 'dashboard') {
+        if (
+        request()->is('dashboard') ||
+        request()->is('dashboard-guru') ||
+        request()->is('dashboard-terapis') ||
+        request()->is('dashboard-konsultan')
+        ) {
+        $activeClass = 'active';
+        }
+        } else if (in_array($menu->slug, $mainSlugs)) {
+        // Khusus Anak Didik: pastikan tetap active/open jika di /anak-didik atau sub-url-nya
+        if (
+        ($menu->slug === 'anak-didik.index' && (preg_match('#^anak-didik($|/.*)#', request()->path())))
+        || (request()->is($menu->slug) || request()->is($menu->slug.'/*'))
+        ) {
         $activeClass = 'active open';
         }
         } else if ($currentRouteName === $menu->slug) {
