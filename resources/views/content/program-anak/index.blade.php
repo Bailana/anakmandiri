@@ -15,13 +15,19 @@
         <div class="d-flex align-items-center">
           @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
           @if(!(auth()->user()->role === 'konsultan' && isset($currentKonsultanSpesRaw) && preg_match('/psikologi/i', $currentKonsultanSpesRaw)))
-          <a href="{{ route('program-anak.daftar-program') }}" class="btn btn-outline-secondary me-2">
+          <a href="{{ route('program-anak.daftar-program') }}" class="btn btn-outline-secondary me-2 d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-list-unordered" style="font-size:1.5em;"></i>
+          </a>
+          <a href="{{ route('program-anak.daftar-program') }}" class="btn btn-outline-secondary me-2 d-none d-sm-inline-flex align-items-center">
             <i class="ri-list-unordered me-2"></i>Daftar Program
           </a>
           @endif
           @endif
           @if(auth()->user()->role === 'konsultan')
-          <a href="{{ route('program-anak.create') }}" class="btn btn-primary">
+          <a href="{{ route('program-anak.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-add-line" style="font-size:1.7em;"></i>
+          </a>
+          <a href="{{ route('program-anak.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
             <i class="ri-add-line me-2"></i>Tambah Program Anak
           </a>
           @endif
