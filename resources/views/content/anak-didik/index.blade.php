@@ -17,7 +17,10 @@
             <p class="text-body-secondary mb-0">Kelola data anak didik</p>
           </div>
           @if(auth()->user() && auth()->user()->role === 'admin')
-          <a href="{{ route('anak-didik.create') }}" class="btn btn-primary">
+          <a href="{{ route('anak-didik.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-add-line" style="font-size:1.7em;"></i>
+          </a>
+          <a href="{{ route('anak-didik.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
             <i class="ri-add-line me-2"></i>Tambah Anak Didik
           </a>
           @endif
@@ -38,34 +41,54 @@
 <!-- Search & Filter -->
 <div class="row mb-4">
   <div class="col-12">
-    <form method="GET" action="{{ route('anak-didik.index') }}" class="d-flex gap-2 align-items-end">
+    <form method="GET" action="{{ route('anak-didik.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <!-- Search Field -->
       <div class="flex-grow-1">
         <input type="text" name="search" class="form-control" placeholder="Cari nama atau NIS..." value="{{ request('search') }}">
       </div>
-
       <!-- Filter Jenis Kelamin -->
-      <select name="jenis_kelamin" class="form-select" style="max-width: 150px;">
+      <select name="jenis_kelamin" class="form-select d-none d-sm-block" style="max-width: 150px;">
         <option value="">Jenis Kelamin</option>
         <option value="laki-laki" {{ request('jenis_kelamin') === 'laki-laki' ? 'selected' : '' }}>Laki-laki</option>
         <option value="perempuan" {{ request('jenis_kelamin') === 'perempuan' ? 'selected' : '' }}>Perempuan</option>
       </select>
-
       <!-- Filter Guru Fokus -->
-      <select name="guru_fokus" class="form-select" style="max-width: 200px;">
+      <select name="guru_fokus" class="form-select d-none d-sm-block" style="max-width: 200px;">
         <option value="">Guru Fokus</option>
         @foreach($guruOptions as $id => $name)
         <option value="{{ $id }}" {{ request('guru_fokus') == $id ? 'selected' : '' }}>{{ $name }}</option>
         @endforeach
       </select>
-
+      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none mt-2">
+        <select name="jenis_kelamin" class="form-select" style="min-width:120px;">
+          <option value="">Jenis Kelamin</option>
+          <option value="laki-laki" {{ request('jenis_kelamin') === 'laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+          <option value="perempuan" {{ request('jenis_kelamin') === 'perempuan' ? 'selected' : '' }}>Perempuan</option>
+        </select>
+        <select name="guru_fokus" class="form-select" style="min-width:120px;">
+          <option value="">Guru Fokus</option>
+          @foreach($guruOptions as $id => $name)
+          <option value="{{ $id }}" {{ request('guru_fokus') == $id ? 'selected' : '' }}>{{ $name }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none mt-2">
+        <button type="submit" class="btn btn-outline-primary w-50 d-inline-flex align-items-center justify-content-center p-0" style="height:44px;border-radius:12px;min-height:44px;">
+          <i class="ri-search-line" style="font-size:1.3em;"></i>
+        </button>
+        <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary w-50 d-inline-flex align-items-center justify-content-center p-0" style="height:44px;border-radius:12px;min-height:44px;">
+          <i class="ri-refresh-line" style="font-size:1.3em;"></i>
+        </a>
+      </div>
       <!-- Action Buttons -->
-      <button type="submit" class="btn btn-outline-primary" title="Cari">
+      <button type="submit" class="btn btn-outline-primary d-none d-sm-inline-flex" title="Cari">
         <i class="ri-search-line"></i>
       </button>
-      <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary" title="Reset">
+      <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary d-none d-sm-inline-flex" title="Reset">
         <i class="ri-refresh-line"></i>
       </a>
+      <!-- Responsive (mobile) row -->
+
     </form>
   </div>
 </div>

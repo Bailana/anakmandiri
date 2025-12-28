@@ -16,9 +16,12 @@
             <h4 class="mb-0">Daftar Karyawan</h4>
             <p class="text-body-secondary mb-0">Kelola data karyawan</p>
           </div>
-          <a href="{{ route('karyawan.create') }}" class="btn btn-primary">
-            <i class="ri-add-line me-2"></i>Tambah Karyawan
-          </a>
+          <a href="{{ route('karyawan.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+              <i class="ri-add-line" style="font-size:1.7em;"></i>
+            </a>
+            <a href="{{ route('karyawan.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
+              <i class="ri-add-line me-2"></i>Tambah Karyawan
+            </a>
         </div>
       </div>
     </div>

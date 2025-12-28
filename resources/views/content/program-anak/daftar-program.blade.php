@@ -394,14 +394,20 @@
             } catch (e) {}
           });
         </script>
-        <div>
+        <div class="d-flex gap-2 flex-row">
           @if(auth()->user()->role === 'konsultan')
-          <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAddProgramMaster">
+          <button type="button" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" data-bs-toggle="modal" data-bs-target="#modalAddProgramMaster" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-add-line" style="font-size:1.7em;"></i>
+          </button>
+          <button type="button" class="btn btn-primary d-none d-sm-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalAddProgramMaster" style="border-radius:12px;">
             <i class="ri-add-line me-2"></i>Tambah Daftar Program
           </button>
           @endif
           @if(auth()->user()->role === 'admin' || auth()->user()->role === 'konsultan')
-          <a href="{{ route('program-anak.index') }}" class="btn btn-secondary btn-sm ms-2">
+          <a href="{{ route('program-anak.index') }}" class="btn p-0 border-0 bg-transparent d-inline-flex d-sm-none align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-arrow-left-circle-fill" style="font-size:2em;font-weight:bold;"></i>
+          </a>
+          <a href="{{ route('program-anak.index') }}" class="btn btn-secondary btn-sm d-none d-sm-inline-flex align-items-center" style="border-radius:12px;">
             <i class="ri-arrow-left-line me-2"></i>Kembali
           </a>
           @endif
@@ -470,44 +476,56 @@
               @if(auth()->check() && auth()->user()->role !== 'admin')
               <td>
                 <div class="d-flex gap-2 align-items-center">
-                  <button type="button" class="btn btn-sm btn-icon btn-outline-info btn-view-program"
-                    data-id="{{ $p->id }}"
-                    data-kode="{{ $p->kode_program }}"
-                    data-nama="{{ htmlentities($p->nama_program) }}"
-                    data-tujuan="{{ htmlentities($p->tujuan) }}"
-                    data-aktivitas="{{ htmlentities($p->aktivitas) }}"
-                    data-keterangan="{{ htmlentities($p->keterangan) }}"
-                    data-konsultan="{{ optional($p->konsultan)->nama ?? optional($p->konsultan)->spesialisasi ?? '-' }}"
-                    data-kategori="{{ $p->kategori ?? ($p->kategori_program ?? '-') }}"
-                    data-bs-toggle="modal" data-bs-target="#modalViewProgram"
-                    title="Lihat Detail">
-                    <i class="ri-eye-line"></i>
-                  </button>
-
-                  @if(auth()->check() && auth()->user()->role === 'konsultan')
-                  <button type="button" class="btn btn-sm btn-icon btn-outline-warning btn-edit-program"
-                    data-id="{{ $p->id }}"
-                    data-kode="{{ $p->kode_program }}"
-                    data-nama="{{ htmlentities($p->nama_program) }}"
-                    data-tujuan="{{ htmlentities($p->tujuan) }}"
-                    data-aktivitas="{{ htmlentities($p->aktivitas) }}"
-                    data-keterangan="{{ htmlentities($p->keterangan) }}"
-                    data-bs-toggle="modal" data-bs-target="#modalEditProgram"
-                    title="Edit">
-                    <i class="ri-edit-line"></i>
-                  </button>
-
-                  <form action="{{ route('program-anak.program-konsultan.destroy', $p->id) }}" method="POST" class="d-inline-flex align-items-center" onsubmit="return confirm('Yakin ingin menghapus?')" style="margin:0;padding:0;">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus">
-                      <i class="ri-delete-bin-line"></i>
+                  <div class="d-none d-sm-flex gap-2 align-items-center">
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-info btn-view-program"
+                      data-id="{{ $p->id }}"
+                      data-kode="{{ $p->kode_program }}"
+                      data-nama="{{ htmlentities($p->nama_program) }}"
+                      data-tujuan="{{ htmlentities($p->tujuan) }}"
+                      data-aktivitas="{{ htmlentities($p->aktivitas) }}"
+                      data-keterangan="{{ htmlentities($p->keterangan) }}"
+                      data-konsultan="{{ optional($p->konsultan)->nama ?? optional($p->konsultan)->spesialisasi ?? '-' }}"
+                      data-kategori="{{ $p->kategori ?? ($p->kategori_program ?? '-') }}"
+                      data-bs-toggle="modal" data-bs-target="#modalViewProgram"
+                      title="Lihat Detail">
+                      <i class="ri-eye-line"></i>
                     </button>
-                  </form>
-                  @endif
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-warning btn-edit-program"
+                      data-id="{{ $p->id }}"
+                      data-kode="{{ $p->kode_program }}"
+                      data-nama="{{ htmlentities($p->nama_program) }}"
+                      data-tujuan="{{ htmlentities($p->tujuan) }}"
+                      data-aktivitas="{{ htmlentities($p->aktivitas) }}"
+                      data-keterangan="{{ htmlentities($p->keterangan) }}"
+                      title="Edit Program">
+                      <i class="ri-edit-line"></i>
+                    </button>
+                    <form method="POST" action="{{ route('program-anak.program-konsultan.destroy', $p->id) }}" class="d-inline m-0 p-0 align-self-center">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus Program" onclick="return confirm('Yakin ingin menghapus program ini?')">
+                        <i class="ri-delete-bin-line"></i>
+                      </button>
+                    </form>
+                  </div>
+                  <div class="d-inline-block d-sm-none dropdown">
+                    <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                      <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><a class="dropdown-item" href="#" data-id="{{ $p->id }}" data-bs-toggle="modal" data-bs-target="#modalViewProgram" onclick="document.querySelector('[data-id={{ $p->id }}].btn-view-program').click();return false;"><i class='ri-eye-line me-1'></i> Lihat</a></li>
+                      <li><a class="dropdown-item" href="#" data-id="{{ $p->id }}" onclick="document.querySelector('[data-id={{ $p->id }}].btn-edit-program').click();return false;"><i class='ri-edit-line me-1'></i> Edit</a></li>
+                      <li>
+                        <form method="POST" action="{{ route('program-anak.program-konsultan.destroy', $p->id) }}" class="d-inline">
+                          @csrf
+                          @method('DELETE')
+                          <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Yakin ingin menghapus program ini?')"><i class='ri-delete-bin-line me-1'></i> Hapus</button>
+                        </form>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-              </td>
-              @endif
+                @endif
             </tr>
             @empty
             <tr>

@@ -13,17 +13,23 @@
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Detail Anak Didik</h5>
         <div class="d-flex gap-2">
-          <a href="{{ route('anak-didik.export-pdf', $anakDidik->id) }}" class="btn btn-danger btn-sm" target="_blank">
+          <a href="{{ route('anak-didik.export-pdf', $anakDidik->id) }}" class="d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:50%;min-width:44px;min-height:44px;background:transparent;">
+            <i class="ri-file-pdf-line" style="font-size:1.7em;color:#F44336;"></i>
+          </a>
+          <a href="{{ route('anak-didik.export-pdf', $anakDidik->id) }}" class="btn btn-danger btn-sm d-none d-sm-inline-flex align-items-center" target="_blank">
             <i class="ri-file-pdf-line me-1"></i> Export PDF
           </a>
-          <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary btn-sm">
+          <a href="{{ route('anak-didik.index') }}" class="btn p-0 border-0 bg-transparent d-inline-flex d-sm-none align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-arrow-left-circle-fill" style="font-size:2em;font-weight:bold;"></i>
+          </a>
+          <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary btn-sm d-none d-sm-inline-flex align-items-center">
             <i class="ri-arrow-left-line me-2"></i>Kembali
           </a>
         </div>
       </div>
       <div class="card-body">
         <!-- Nav Tabs -->
-        <ul class="nav nav-tabs mb-3" role="tablist">
+        <ul class="nav nav-tabs mb-3 flex-nowrap overflow-auto" role="tablist" style="scrollbar-width:thin;">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="data-diri-tab" data-bs-toggle="tab" data-bs-target="#data-diri"
               type="button" role="tab" aria-controls="data-diri" aria-selected="true">
