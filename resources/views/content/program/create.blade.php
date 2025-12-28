@@ -51,7 +51,7 @@
                 <option value="">Pilih Anak Didik</option>
                 @foreach($anakDidiks as $anak)
                 <option value="{{ $anak->id }}" {{ old('anak_didik_id') == $anak->id ? 'selected' : '' }}>
-                  {{ $anak->nama }} ({{ $anak->nis }})
+                  {{ $anak->nama }}
                 </option>
                 @endforeach
               </select>
@@ -114,7 +114,56 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <!-- Satu baris kemampuan kosong default -->
+                    @php
+                    $kemampuanWicara = [
+                    'Kontak mata','Atensi','Simbolik play','Pralinguistik 1','Pralingustik 2','Paham instruksi','Kata Benda','Kata kerja','Kata Sifat','Konsep waktu','Paham frasa','Paham kalimat','Paham kata tanya','Menamai tingkat kata','Menamai tingkat frasa','Menamai tingkat kalimat','Bercerita','Menjawab pertanyaan sederhana','Menyebutkan','Auditory','Visual','Taktil','Motorik kasar','Motorik halus','Motorik oral','Menggigit, mengunyah dan menelan','Komunikasi sosial','Pernafasan','Suara','Artikulasi','Kelancaran'
+                    ];
+                    $kemampuanSI = [
+                    'Activity Level','Social Interaction','Frustration Tolerance','Attention','Postural Control','Muscle Tone & Joint Stability','Gravitational Security','Bilateral Motor Coordination','Oculomotor Control','Sensori Modulasi & Registrasi (Umum)','Sensori Modulasi & Registrasi Visual','Sensori Modulasi & Registrasi Auditory','Sensori Modulasi & Registrasi Tactile','Sensori Modulasi & Registrasi Proprioseptif','Sensori Modulasi & Registrasi Vestibular','Sensori Modulasi & Registrasi Body Awareness','Praxis (Umum)','Praxis Space Visualization','Praxis Design Copying','Praxis Postural Praxis','Praxis Sequencing Praxis','Praxis Oral Praxis','Auditory Praxis','Praxis Finger Identification','Praxis Localization of Tactile Stimuli'
+                    ];
+                    $isWicara = false;
+                    $isSI = false;
+                    if (old('konsultan_id')) {
+                    $konsultan = $konsultans->firstWhere('id', old('konsultan_id'));
+                    $isWicara = $konsultan && strtolower($konsultan->spesialisasi) === 'wicara';
+                    $isSI = $konsultan && strtolower($konsultan->spesialisasi) === 'sensori integrasi';
+                    } elseif (!empty($userKonsultanId)) {
+                    $konsultan = $konsultans->firstWhere('id', $userKonsultanId);
+                    $isWicara = $konsultan && strtolower($konsultan->spesialisasi) === 'wicara';
+                    $isSI = $konsultan && strtolower($konsultan->spesialisasi) === 'sensori integrasi';
+                    }
+                    @endphp
+                    @if($isWicara)
+                    @foreach($kemampuanWicara as $i => $judul)
+                    <tr id="row-kemampuan-{{ $i }}">
+                      <td>
+                        <div class="input-group">
+                          <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" required value="{{ $judul }}">
+                          <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                      </td>
+                      @for($skala=1;$skala<=5;$skala++)
+                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
+                        @endfor
+                    </tr>
+                    @endforeach
+                    @php $kemampuanIndex = count($kemampuanWicara); @endphp
+                    @elseif($isSI)
+                    @foreach($kemampuanSI as $i => $judul)
+                    <tr id="row-kemampuan-{{ $i }}">
+                      <td>
+                        <div class="input-group">
+                          <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" required value="{{ $judul }}">
+                          <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                      </td>
+                      @for($skala=1;$skala<=5;$skala++)
+                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
+                        @endfor
+                    </tr>
+                    @endforeach
+                    @php $kemampuanIndex = count($kemampuanSI); @endphp
+                    @else
                     <tr id="row-kemampuan-0">
                       <td>
                         <div class="input-group">
@@ -122,12 +171,12 @@
                           <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </td>
-                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="1" required></td>
-                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="2" required></td>
-                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="3" required></td>
-                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="4" required></td>
-                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="5" required></td>
+                      @for($skala=1;$skala<=5;$skala++)
+                        <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}" required></td>
+                        @endfor
                     </tr>
+                    @php $kemampuanIndex = 1; @endphp
+                    @endif
                     <!-- Baris kemampuan tambahan dinamis -->
                     <tr id="row-tambah-kemampuan"></tr>
                     <tr>
@@ -141,7 +190,20 @@
                 </table>
               </div>
             </div>
+
+            <div class="row mt-3" id="row-keterangan">
+              @if($isSI)
+              <div class="col-md-12" id="wrapper-keterangan">
+                <label class="form-label">Keterangan</label>
+                <textarea name="wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Keterangan tambahan...">{{ old('wawancara') }}</textarea>
+                @error('wawancara')
+                <span class="invalid-feedback">{{ $message }}</span>
+                @enderror
+              </div>
+              @endif
+            </div>
             <div class="row mb-3" id="row-wawancara">
+              @if(!$isSI)
               <div class="col-md-12" id="wrapper-wawancara">
                 <label class="form-label" id="label-wawancara">Wawancara</label>
                 <textarea name="wawancara" id="input-wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara') }}</textarea>
@@ -149,8 +211,10 @@
                 <span class="invalid-feedback">{{ $message }}</span>
                 @enderror
               </div>
+              @endif
             </div>
             <div class="row mb-3" id="row-kemampuan-saat-ini">
+              @if(!$isSI)
               <div class="col-md-12" id="wrapper-kemampuan-saat-ini">
                 <label class="form-label">Kemampuan Saat Ini</label>
                 <textarea name="kemampuan_saat_ini" class="form-control @error('kemampuan_saat_ini') is-invalid @enderror" rows="3" placeholder="Deskripsikan kemampuan anak saat ini">{{ old('kemampuan_saat_ini') }}</textarea>
@@ -158,8 +222,10 @@
                 <span class="invalid-feedback">{{ $message }}</span>
                 @enderror
               </div>
+              @endif
             </div>
             <div class="row mb-3" id="row-saran-rekomendasi">
+              @if(!$isSI)
               <div class="col-md-12" id="wrapper-saran-rekomendasi">
                 <label class="form-label">Saran / Rekomendasi</label>
                 <textarea name="saran_rekomendasi" class="form-control @error('saran_rekomendasi') is-invalid @enderror" rows="3" placeholder="Saran atau rekomendasi untuk program berikutnya">{{ old('saran_rekomendasi') }}</textarea>
@@ -167,7 +233,9 @@
                 <span class="invalid-feedback">{{ $message }}</span>
                 @enderror
               </div>
+              @endif
             </div>
+
 
             <div class="row">
               <div class="col-12">

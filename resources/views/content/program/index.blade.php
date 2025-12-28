@@ -17,7 +17,10 @@
             <p class="text-body-secondary mb-0">Kelola observasi/evaluasi anak didik</p>
           </div>
           @if(auth()->check() && auth()->user()->role === 'konsultan')
-          <a href="{{ route('program.create') }}" class="btn btn-primary">
+          <a href="{{ route('program.create') }}" class="btn btn-primary d-flex align-items-center justify-content-center p-0 d-inline-flex d-sm-none" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-add-line" style="font-size:1.7em;"></i>
+          </a>
+          <a href="{{ route('program.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
             <i class="ri-add-line me-2"></i>Tambah Observasi/Evaluasi
           </a>
           @endif
@@ -97,7 +100,7 @@
               <td>{{ $program->anakDidik->no_telepon_orang_tua ?? '-' }}</td>
               <td>
                 @if($program->anakDidik && $program->anakDidik->guruFokus)
-                <span class="badge bg-label-primary">{{ $program->anakDidik->guruFokus->nama }}</span>
+                <span class="badge bg-label-primary" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;" title="{{ $program->anakDidik->guruFokus->nama }}">{{ $program->anakDidik->guruFokus->nama }}</span>
                 @else
                 -
                 @endif
@@ -171,7 +174,7 @@
             </div>
             <div class="col-md-4">
               <p class="text-body-secondary text-sm mb-1">Guru Fokus</p>
-              <span id="detailGuruFokus"></span>
+              <span id="detailGuruFokus" style="max-width: 180px; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom;" title=""></span>
             </div>
             <div class="col-md-4">
               <p class="text-body-secondary text-sm mb-1">Konsultan</p>
@@ -260,6 +263,8 @@
   </div>
 
   <script>
+    // Inject current user id from backend (must be outside function for valid JS)
+    var currentUserId = {{json_encode(Auth::id())}};
     // Fungsi untuk menampilkan detail observasi secara aman
     window.showDetailObservasi = function(sumber, id) {
       // Pastikan modal detail ada di DOM
@@ -288,6 +293,7 @@
                 guruFokusHtml = program.guru_fokus_nama;
               }
               el.textContent = guruFokusHtml;
+              el.title = guruFokusHtml;
             }
             el = document.getElementById('detailKonsultan');
             if (el && program && document.body.contains(el)) el.textContent = program.konsultan_nama || '-';
@@ -365,6 +371,38 @@
               var saranBlockGen = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
               if (saranBlockGen) saranBlockGen.style.display = '';
             }
+            // --- SENSORY INTEGRASI ONLY: Hide wawancara & diagnosa, show keterangan ---
+            if (program.sumber === 'si' || (program.konsultan_spesialisasi && program.konsultan_spesialisasi.toLowerCase() === 'sensori integrasi')) {
+              // Hide wawancara
+              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById('detailWawancara').parentElement : null;
+              if (wawancaraBlock) wawancaraBlock.style.display = 'none';
+              // Hide diagnosa
+              var diagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById('detailDiagnosa').parentElement : null;
+              if (diagnosaBlock) diagnosaBlock.style.display = 'none';
+              // Show only keterangan (inject if needed)
+              let keteranganBlock = document.getElementById('detailKeterangan');
+              if (!keteranganBlock) {
+                // Insert after kemampuan table
+                var kemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById('detailKemampuan').parentElement : null;
+                if (kemampuanBlock) {
+                  var row = document.createElement('div');
+                  row.className = 'row mb-3';
+                  row.innerHTML = `<div class=\"col-12\"><p class=\"text-body-secondary text-sm mb-1\">Keterangan</p><p class=\"fw-medium\" id=\"detailKeterangan\"></p></div>`;
+                  kemampuanBlock.parentNode.insertBefore(row, kemampuanBlock.nextSibling);
+                  keteranganBlock = document.getElementById('detailKeterangan');
+                }
+              }
+              if (keteranganBlock) keteranganBlock.textContent = program.wawancara || '-';
+            } else {
+              // Restore wawancara & diagnosa
+              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById('detailWawancara').parentElement : null;
+              if (wawancaraBlock) wawancaraBlock.style.display = '';
+              var diagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById('detailDiagnosa').parentElement : null;
+              if (diagnosaBlock) diagnosaBlock.style.display = '';
+              // Remove keterangan block if present
+              let keteranganBlock = document.getElementById('detailKeterangan');
+              if (keteranganBlock && keteranganBlock.parentElement) keteranganBlock.parentElement.parentElement.removeChild(keteranganBlock.parentElement);
+            }
             // Untuk SI dan Psikologi, sembunyikan Kemampuan Saat Ini & Saran Rekomendasi
             el = document.getElementById('detailKemampuanSaatIni');
             if (el && program && document.body.contains(el)) {
@@ -434,8 +472,6 @@
       listDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
       // Ambil id anak didik dari atribut data-anak-didik-id jika ada, fallback ke programId
       var anakDidikId = btn.getAttribute('data-anak-didik-id') || programId;
-      // Inject current user id from backend
-      var currentUserId = @json(Auth::id());
       fetch('/program/riwayat-observasi-program/' + anakDidikId)
         .then(response => response.json())
         .then(res => {
@@ -463,12 +499,24 @@
             group.items.forEach(item => {
               html += `<li class="list-group-item d-flex justify-content-between align-items-center">
                 <span><b>${item.hari}</b>, ${item.tanggal}</span>
-                <span>
+                <span class="d-none d-sm-flex">
                   <button class="btn btn-sm btn-outline-info me-1" onclick="showDetailObservasi('${item.sumber}', ${item.id})" title="Lihat"><i class='ri-eye-line'></i></button>
                   ${item.user_id == currentUserId ? `
                     <button class="btn btn-sm btn-outline-warning me-1" onclick="editObservasi(${item.id})" title="Edit"><i class='ri-edit-line'></i></button>
                     <button class="btn btn-sm btn-outline-danger" onclick="hapusObservasi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>
                   ` : ''}
+                </span>
+                <span class="d-inline-block d-sm-none dropdown">
+                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                    <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="showDetailObservasi('${item.sumber}', ${item.id});return false;"><i class='ri-eye-line me-1'></i> Lihat</a></li>
+                    ${item.user_id == currentUserId ? `
+                      <li><a class="dropdown-item" href="#" onclick="editObservasi(${item.id});return false;"><i class='ri-edit-line me-1'></i> Edit</a></li>
+                      <li><a class="dropdown-item text-danger" href="#" onclick="hapusObservasi(${item.id});return false;"><i class='ri-delete-bin-line me-1'></i> Hapus</a></li>
+                    ` : ''}
+                  </ul>
                 </span>
               </li>`;
             });

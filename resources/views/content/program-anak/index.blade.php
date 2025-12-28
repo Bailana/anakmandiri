@@ -639,17 +639,7 @@
                   onclick="loadRiwayatObservasi(this)" title="Riwayat Program">
                   <i class="ri-history-line"></i>
                 </button>
-                @if(auth()->check() && auth()->user()->role === 'konsultan')
-                <a href="{{ route('program-anak.edit', $program->id) }}" class="btn btn-sm btn-outline-warning"
-                  title="Edit"><i class="ri-edit-line"></i></a>
-                <form action="{{ route('program-anak.destroy', $program->id) }}" method="POST" class="d-inline"
-                  onsubmit="return confirm('Yakin ingin menghapus?')">
-                  @csrf
-                  @method('DELETE')
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus"><i
-                      class="ri-delete-bin-line"></i></button>
-                </form>
-                @endif
+                {{-- Tombol edit dan hapus dihilangkan, hanya tombol riwayat yang tampil --}}
               </td>
             </tr>
             @empty

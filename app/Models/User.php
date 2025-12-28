@@ -66,4 +66,9 @@ class User extends Authenticatable
     {
         $this->notify(new ResetPasswordNotification($token));
     }
+
+    public function konsultan()
+    {
+        return $this->hasOne(\App\Models\Konsultan::class, 'user_id');
+    }
 }

@@ -440,7 +440,7 @@
   </div>
 </div>
 
-<div class="row">
+<div class="row mt-4">
   <div class="col-12">
     <div class="card">
       <div class="table-responsive">
@@ -462,7 +462,7 @@
             @forelse($programs as $i => $p)
             <tr data-id="{{ $p->id }}">
               <td>{{ ($programs->currentPage() - 1) * 15 + $i + 1 }}</td>
-              <td>{{ $p->kode_program ?? '-' }}</td>
+              <td class="text-heading mb-0 fw-medium">{{ $p->kode_program ?? '-' }}</td>
               <td>{{ $p->nama_program }}</td>
               <td>{{ Str::limit($p->tujuan, 100) }}</td>
               <td>{{ Str::limit($p->aktivitas, 100) }}</td>

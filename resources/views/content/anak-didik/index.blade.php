@@ -268,7 +268,7 @@
   window.showDetail = function(button) {
     const anakId = button.getAttribute('data-anak-id');
     let url = `/anak-didik/${anakId}`;
-    @if(auth() - > user() && auth() - > user() - > role === 'guru')
+    @if(auth()->user() && auth()->user()->role === 'guru')
     url = `{{ url('anak-didik') }}/${anakId}`;
     @endif
     fetch(url, {

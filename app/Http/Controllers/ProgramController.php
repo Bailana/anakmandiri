@@ -260,7 +260,7 @@ class ProgramController extends Controller
    */
   public function create()
   {
-    $anakDidiks = AnakDidik::all();
+    $anakDidiks = AnakDidik::orderBy('nama', 'asc')->get();
     $konsultans = Konsultan::all();
 
     $user = Auth::user();
@@ -416,6 +416,10 @@ class ProgramController extends Controller
       // Simpan diagnosa jika ada
       if ($request->filled('diagnosa')) {
         $data['diagnosa'] = $request->input('diagnosa');
+      }
+      // Simpan keterangan jika ada
+      if ($request->filled('keterangan')) {
+        $data['keterangan'] = $request->input('keterangan');
       }
       ProgramWicara::create($data);
       ActivityService::logCreate('ProgramWicara', null, 'Membuat program wicara baru');

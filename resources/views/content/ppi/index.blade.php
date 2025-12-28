@@ -77,7 +77,7 @@
               <tr>
                 <td>{{ ($anakList->currentPage() - 1) * $anakList->perPage() + $index + 1 }}</td>
                 <td>
-                  <strong>{{ $anak->nama }}</strong>
+                  <p class="text-heading mb-0 fw-medium">{{ $anak->nama }}</p>
                 </td>
                 <td>{{ $anak->guruFokus ? $anak->guruFokus->nama : '-' }}</td>
 
