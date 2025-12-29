@@ -17,7 +17,9 @@
             <p class="text-body-secondary mb-0">Kelola data konsultan</p>
           </div>
           <!-- Tombol tambah konsultan responsif -->
-          <a href="{{ route('konsultan.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+          <a href="{{ route('konsultan.create') }}"
+            class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0"
+            style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
             <i class="ri-add-line" style="font-size:1.7em;"></i>
           </a>
           <a href="{{ route('konsultan.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
@@ -44,39 +46,79 @@
   <div class="col-12">
     <form method="GET" action="{{ route('konsultan.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <!-- Search Field -->
-      <div class="flex-grow-1" style="min-width: 250px;">
-        <input type="text" name="search" class="form-control" placeholder="Cari nama, NIK, atau email..." value="{{ request('search') }}">
+      <div class="flex-grow-1">
+        <input type="text" name="search" class="form-control" placeholder="Cari nama, NIK, atau email..."
+          value="{{ request('search') }}">
       </div>
-
-      <!-- Filter Jenis Kelamin -->
-      <select name="jenis_kelamin" class="form-select" style="max-width: 150px;">
+      <!-- Filter Jenis Kelamin (desktop) -->
+      <select name="jenis_kelamin" class="form-select d-none d-sm-block" style="max-width: 150px;">
         <option value="">Jenis Kelamin</option>
         <option value="laki-laki" {{ request('jenis_kelamin') === 'laki-laki' ? 'selected' : '' }}>Laki-laki</option>
         <option value="perempuan" {{ request('jenis_kelamin') === 'perempuan' ? 'selected' : '' }}>Perempuan</option>
       </select>
-
-      <!-- Filter Spesialisasi -->
-      <select name="spesialisasi" class="form-select" style="max-width: 150px;">
+      <!-- Filter Spesialisasi (desktop) -->
+      <select name="spesialisasi" class="form-select d-none d-sm-block" style="max-width: 150px;">
         <option value="">Spesialisasi</option>
         @foreach($spesialisasiOptions as $spesialisasi)
-        <option value="{{ $spesialisasi }}" {{ request('spesialisasi') === $spesialisasi ? 'selected' : '' }}>{{ $spesialisasi }}</option>
+        <option value="{{ $spesialisasi }}" {{ request('spesialisasi') === $spesialisasi ? 'selected' : '' }}>
+          {{ $spesialisasi }}</option>
         @endforeach
       </select>
-
-      <!-- Filter Status Hubungan -->
-      <select name="status_hubungan" class="form-select" style="max-width: 150px;">
+      <!-- Filter Status Hubungan (desktop) -->
+      <select name="status_hubungan" class="form-select d-none d-sm-block" style="max-width: 150px;">
         <option value="">Status</option>
         <option value="aktif" {{ request('status_hubungan') === 'aktif' ? 'selected' : '' }}>Aktif</option>
         <option value="non-aktif" {{ request('status_hubungan') === 'non-aktif' ? 'selected' : '' }}>Non-Aktif</option>
       </select>
-
-      <!-- Action Buttons -->
-      <button type="submit" class="btn btn-outline-primary" title="Cari">
+      <button type="submit" class="btn btn-outline-primary d-none d-sm-inline-flex" title="Cari">
         <i class="ri-search-line"></i>
       </button>
-      <a href="{{ route('konsultan.index') }}" class="btn btn-outline-secondary" title="Reset">
+      <a href="{{ route('konsultan.index') }}" class="btn btn-outline-secondary d-none d-sm-inline-flex" title="Reset">
         <i class="ri-refresh-line"></i>
       </a>
+      <!-- Mobile: filter side by side -->
+      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none">
+        <select name="jenis_kelamin" class="form-select filter-mobile-equal" style="min-width:0;">
+          <option value="">Jenis Kelamin</option>
+          <option value="laki-laki" {{ request('jenis_kelamin') === 'laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+          <option value="perempuan" {{ request('jenis_kelamin') === 'perempuan' ? 'selected' : '' }}>Perempuan</option>
+        </select>
+        <select name="spesialisasi" class="form-select filter-mobile-equal" style="min-width:0;">
+          <option value="">Spesialisasi</option>
+          @foreach($spesialisasiOptions as $spesialisasi)
+          <option value="{{ $spesialisasi }}" {{ request('spesialisasi') === $spesialisasi ? 'selected' : '' }}>
+            {{ $spesialisasi }}</option>
+          @endforeach
+        </select>
+        <select name="status_hubungan" class="form-select filter-mobile-equal" style="min-width:0;">
+          <option value="">Status</option>
+          <option value="aktif" {{ request('status_hubungan') === 'aktif' ? 'selected' : '' }}>Aktif</option>
+          <option value="non-aktif" {{ request('status_hubungan') === 'non-aktif' ? 'selected' : '' }}>Non-Aktif
+          </option>
+        </select>
+      </div>
+      <style>
+        @media (max-width: 767.98px) {
+          .filter-mobile-equal {
+            flex: 1 1 0%;
+            min-width: 0;
+            max-width: 100%;
+          }
+        }
+      </style>
+      <!-- Mobile: tombol search & reset side by side -->
+      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none">
+        <button type="submit"
+          class="btn btn-outline-primary w-50 d-inline-flex align-items-center justify-content-center p-0"
+          style="height:44px;border-radius:12px;min-height:44px;">
+          <i class="ri-search-line" style="font-size:1.3em;"></i>
+        </button>
+        <a href="{{ route('konsultan.index') }}"
+          class="btn btn-outline-secondary w-50 d-inline-flex align-items-center justify-content-center p-0"
+          style="height:44px;border-radius:12px;min-height:44px;">
+          <i class="ri-refresh-line" style="font-size:1.3em;"></i>
+        </a>
+      </div>
     </form>
   </div>
 </div>
@@ -105,8 +147,10 @@
               <td>{{ ($konsultans->currentPage() - 1) * 15 + $index + 1 }}</td>
               <td>
                 <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-3" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
-                    <img src="{{ asset('assets/img/avatars/' . (($konsultan->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;aspect-ratio:1/1;" />
+                  <div class="avatar avatar-sm me-3"
+                    style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                    <img src="{{ asset('assets/img/avatars/' . (($konsultan->id % 4) + 1) . '.svg') }}" alt="Avatar"
+                      class="rounded-circle" style="width:36px;height:36px;object-fit:cover;aspect-ratio:1/1;" />
                   </div>
                   <div>
                     <p class="text-heading mb-0 fw-medium">{{ $konsultan->nama }}</p>
@@ -125,39 +169,35 @@
               <td>
                 <!-- Tombol aksi untuk desktop -->
                 <div class="d-none d-md-flex gap-2 align-items-center">
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-icon btn-outline-primary btn-detail"
-                    data-bs-toggle="modal"
-                    data-bs-target="#detailModal"
-                    data-konsultan-id="{{ $konsultan->id }}"
-                    data-bs-title="Detail Konsultan"
-                    title="Lihat Detail">
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-detail"
+                    data-bs-toggle="modal" data-bs-target="#detailModal" data-konsultan-id="{{ $konsultan->id }}"
+                    data-bs-title="Detail Konsultan" title="Lihat Detail">
                     <i class="ri-eye-line"></i>
                   </button>
-                  <a
-                    href="{{ route('konsultan.edit', $konsultan->id) }}"
-                    class="btn btn-sm btn-icon btn-outline-warning"
-                    title="Edit Data">
+                  <a href="{{ route('konsultan.edit', $konsultan->id) }}"
+                    class="btn btn-sm btn-icon btn-outline-warning" title="Edit Data">
                     <i class="ri-edit-line"></i>
                   </a>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-icon btn-outline-danger btn-delete"
-                    data-konsultan-id="{{ $konsultan->id }}"
-                    title="Hapus Data">
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete"
+                    data-konsultan-id="{{ $konsultan->id }}" title="Hapus Data">
                     <i class="ri-delete-bin-line"></i>
                   </button>
                 </div>
                 <!-- Tombol titik tiga untuk mobile -->
                 <div class="dropdown d-md-none">
-                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false" style="box-shadow:none;">
                     <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#" onclick="showDetailDropdown({{ $konsultan->id }});return false;"><i class="ri-eye-line me-1"></i> Lihat</a></li>
-                    <li><a class="dropdown-item" href="{{ route('konsultan.edit', $konsultan->id) }}"><i class="ri-edit-line me-1"></i> Edit</a></li>
-                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteDataDropdown(this, {{ $konsultan->id }});return false;"><i class="ri-delete-bin-line me-1"></i> Hapus</a></li>
+                    <li><a class="dropdown-item" href="#"
+                        onclick="showDetailDropdown({{ $konsultan->id }});return false;"><i
+                          class="ri-eye-line me-1"></i> Lihat</a></li>
+                    <li><a class="dropdown-item" href="{{ route('konsultan.edit', $konsultan->id) }}"><i
+                          class="ri-edit-line me-1"></i> Edit</a></li>
+                    <li><a class="dropdown-item text-danger" href="#"
+                        onclick="deleteDataDropdown(this, {{ $konsultan->id }});return false;"><i
+                          class="ri-delete-bin-line me-1"></i> Hapus</a></li>
                   </ul>
                 </div>
               </td>
@@ -194,6 +234,7 @@
               display: none !important;
             }
           }
+
         </style>
         <script>
           // Agar tombol hapus di dropdown mobile tetap bisa pakai fungsi hapus yang sama
@@ -212,6 +253,7 @@
             dummyBtn.className = 'btn-detail';
             window.showDetail(dummyBtn);
           }
+
         </script>
       </div>
 
@@ -251,9 +293,11 @@
               flex-wrap: nowrap !important;
             }
           }
+
         </style>
         <div class="text-body-secondary">
-          Menampilkan {{ $konsultans->firstItem() ?? 0 }} hingga {{ $konsultans->lastItem() ?? 0 }} dari {{ $konsultans->total() }} data
+          Menampilkan {{ $konsultans->firstItem() ?? 0 }} hingga {{ $konsultans->lastItem() ?? 0 }} dari
+          {{ $konsultans->total() }} data
         </div>
         <nav>
           {{ $konsultans->links('pagination::bootstrap-4') }}
@@ -262,6 +306,7 @@
     </div>
   </div>
 </div>
+
 
 <!-- Modal Detail -->
 <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
@@ -384,7 +429,7 @@
   window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   // Format Date
-  window.formatDate = function(dateString) {
+  window.formatDate = function (dateString) {
     if (!dateString) return '-';
     const options = {
       year: 'numeric',
@@ -395,7 +440,7 @@
   }
 
   // Show Detail
-  window.showDetail = function(button) {
+  window.showDetail = function (button) {
     const konsultanId = button.getAttribute('data-konsultan-id');
 
     fetch(`/konsultan/${konsultanId}`, {
@@ -429,22 +474,29 @@
 
         // Jenis Kelamin Badge
         const jkBadge = document.getElementById('detailJk');
-        const jkText = (konsultan && konsultan.jenis_kelamin) ? (konsultan.jenis_kelamin.charAt(0).toUpperCase() + konsultan.jenis_kelamin.slice(1)) : '-';
+        const jkText = (konsultan && konsultan.jenis_kelamin) ? (konsultan.jenis_kelamin.charAt(0).toUpperCase() +
+          konsultan.jenis_kelamin.slice(1)) : '-';
         jkBadge.textContent = jkText;
-        jkBadge.className = (konsultan && konsultan.jenis_kelamin === 'laki-laki') ? 'badge bg-label-info' : ((konsultan && konsultan.jenis_kelamin === 'perempuan') ? 'badge bg-label-warning' : 'badge bg-secondary');
+        jkBadge.className = (konsultan && konsultan.jenis_kelamin === 'laki-laki') ? 'badge bg-label-info' : ((
+            konsultan && konsultan.jenis_kelamin === 'perempuan') ? 'badge bg-label-warning' :
+          'badge bg-secondary');
 
         // Professional Info
         document.getElementById('detailSpesialisasi').textContent = konsultan.spesialisasi || '-';
-        document.getElementById('detailPengalaman').textContent = konsultan.pengalaman_tahun ? konsultan.pengalaman_tahun + ' tahun' : '-';
+        document.getElementById('detailPengalaman').textContent = konsultan.pengalaman_tahun ? konsultan
+          .pengalaman_tahun + ' tahun' : '-';
         document.getElementById('detailKeahlian').textContent = konsultan.bidang_keahlian || '-';
         document.getElementById('detailSertifikasi').textContent = konsultan.sertifikasi || '-';
         document.getElementById('detailTgRegistrasi').textContent = formatDate(konsultan.tanggal_registrasi);
 
         // Status Badge
         const statusBadge = document.getElementById('detailStatus');
-        const statusText = (konsultan && konsultan.status_hubungan) ? (konsultan.status_hubungan.charAt(0).toUpperCase() + konsultan.status_hubungan.slice(1)) : '-';
+        const statusText = (konsultan && konsultan.status_hubungan) ? (konsultan.status_hubungan.charAt(0)
+          .toUpperCase() + konsultan.status_hubungan.slice(1)) : '-';
         statusBadge.textContent = statusText;
-        statusBadge.className = (konsultan && konsultan.status_hubungan === 'aktif') ? 'badge bg-label-success' : ((konsultan && konsultan.status_hubungan === 'non-aktif') ? 'badge bg-label-danger' : 'badge bg-secondary');
+        statusBadge.className = (konsultan && konsultan.status_hubungan === 'aktif') ? 'badge bg-label-success' : ((
+            konsultan && konsultan.status_hubungan === 'non-aktif') ? 'badge bg-label-danger' :
+          'badge bg-secondary');
 
         // Education
         document.getElementById('detailPendidikan').textContent = konsultan.pendidikan_terakhir || '-';
@@ -452,7 +504,8 @@
 
         // Set Avatar
         const avatarNum = (konsultanId % 4) + 1;
-        const avatarPath = (konsultan && konsultan.avatar_path) ? konsultan.avatar_path : '/assets/img/avatars/' + avatarNum + '.svg';
+        const avatarPath = (konsultan && konsultan.avatar_path) ? konsultan.avatar_path : '/assets/img/avatars/' +
+          avatarNum + '.svg';
         document.getElementById('detailAvatar').src = avatarPath;
         console.debug('Avatar path:', avatarPath); // Debug
       })
@@ -463,7 +516,7 @@
   }
 
   // Delete Data
-  window.deleteData = function(button) {
+  window.deleteData = function (button) {
     const konsultanId = button.getAttribute('data-konsultan-id');
 
     if (confirm('Apakah Anda yakin ingin menghapus konsultan ini?')) {
@@ -507,7 +560,7 @@
     detailButtons.forEach(btn => {
       // avoid double-binding
       if (!btn.__detailBound) {
-        btn.addEventListener('click', function(ev) {
+        btn.addEventListener('click', function (ev) {
           try {
             if (typeof window.showDetail === 'function') {
               window.showDetail(btn);
@@ -525,7 +578,7 @@
     const deleteButtons = document.querySelectorAll('.btn-delete');
     deleteButtons.forEach(btn => {
       if (!btn.__deleteBound) {
-        btn.addEventListener('click', function(ev) {
+        btn.addEventListener('click', function (ev) {
           try {
             if (typeof window.deleteData === 'function') {
               window.deleteData(btn);
@@ -548,27 +601,30 @@
   }
 
   // Generic toast helper (matches other pages)
-  window.showToast = function(message, type = 'success') {
+  window.showToast = function (message, type = 'success') {
     let toast = document.getElementById('customToast');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'customToast';
       toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-4';
       toast.style.zIndex = 9999;
-      toast.innerHTML = '<div class="d-flex"><div class="toast-body"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+      toast.innerHTML =
+        '<div class="d-flex"><div class="toast-body"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
       document.body.appendChild(toast);
     } else {
       toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-4';
     }
     toast.querySelector('.toast-body').textContent = message;
-    var bsToast = window.bootstrap && typeof window.bootstrap.Toast === 'function' ? window.bootstrap.Toast.getOrCreateInstance(toast, {
-      delay: 2000
-    }) : null;
+    var bsToast = window.bootstrap && typeof window.bootstrap.Toast === 'function' ? window.bootstrap.Toast
+      .getOrCreateInstance(toast, {
+        delay: 2000
+      }) : null;
     if (bsToast) bsToast.show();
     else {
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2000);
     }
   }
+
 </script>
 @endpush

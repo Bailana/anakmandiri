@@ -558,15 +558,36 @@
         <input type="text" name="search" class="form-control" placeholder="Cari nama anak atau program..."
           value="{{ request('search') }}">
       </div>
-      <div>
-        <button type="submit" class="btn btn-outline-primary" title="Cari">
+      <!-- Tombol Cari & Reset: satu baris di mobile, terpisah di desktop -->
+      <div class="d-flex flex-row gap-2 w-100 w-sm-auto mt-sm-0" style="max-width:100%;">
+        <button type="submit" class="btn btn-outline-primary flex-fill flex-sm-unset" title="Cari">
           <i class="ri-search-line"></i>
         </button>
+        <a href="{{ route('program-anak.index') }}" class="btn btn-outline-secondary flex-fill flex-sm-unset" title="Reset">
+          <i class="ri-refresh-line"></i>
+        </a>
       </div>
-      <div>
-        <a href="{{ route('program-anak.index') }}" class="btn btn-outline-secondary" title="Reset"><i
-            class="ri-refresh-line"></i></a>
-      </div>
+      <style>
+        @media (max-width: 576px) {
+          .w-sm-auto {
+            width: 100% !important;
+          }
+
+          .flex-sm-unset {
+            flex: 1 1 0 !important;
+          }
+        }
+
+        @media (min-width: 577px) {
+          .w-sm-auto {
+            width: auto !important;
+          }
+
+          .flex-sm-unset {
+            flex: unset !important;
+          }
+        }
+      </style>
     </form>
   </div>
 </div>

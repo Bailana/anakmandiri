@@ -41,33 +41,52 @@
   <div class="col-12">
     <form method="GET" action="{{ route('karyawan.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <!-- Search Field -->
-      <div class="flex-grow-1" style="min-width: 250px;">
+      <div class="flex-grow-1">
         <input type="text" name="search" class="form-control" placeholder="Cari nama, NIP, atau email..." value="{{ request('search') }}">
       </div>
-
-      <!-- Filter Jenis Kelamin -->
-      <select name="posisi" class="form-select" style="max-width: 150px;">
+      <!-- Filter Posisi (desktop) -->
+      <select name="posisi" class="form-select d-none d-sm-block" style="max-width: 150px;">
         <option value="">Posisi</option>
         @foreach($posisiOptions as $posisi)
         <option value="{{ $posisi }}" {{ request('posisi') === $posisi ? 'selected' : '' }}>{{ $posisi }}</option>
         @endforeach
       </select>
-
-      {{-- Filter Departemen dihapus --}}
-
-      <!-- Filter Status Kepegawaian -->
-      <select name="status_kepegawaian" class="form-select" style="max-width: 150px;">
+      <!-- Filter Status (desktop) -->
+      <select name="status_kepegawaian" class="form-select d-none d-sm-block" style="max-width: 150px;">
         <option value="">Status</option>
         <option value="tetap" {{ request('status_kepegawaian') === 'tetap' ? 'selected' : '' }}>Tetap</option>
         <option value="training" {{ request('status_kepegawaian') === 'training' ? 'selected' : '' }}>Training</option>
         <option value="nonaktif" {{ request('status_kepegawaian') === 'nonaktif' ? 'selected' : '' }}>Non Aktif</option>
       </select>
-
-      <!-- Action Buttons -->
-      <button type="submit" class="btn btn-outline-primary" title="Cari">
+      <!-- Mobile: filter posisi & status side by side -->
+      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none">
+        <select name="posisi" class="form-select" style="min-width:120px;">
+          <option value="">Posisi</option>
+          @foreach($posisiOptions as $posisi)
+          <option value="{{ $posisi }}" {{ request('posisi') === $posisi ? 'selected' : '' }}>{{ $posisi }}</option>
+          @endforeach
+        </select>
+        <select name="status_kepegawaian" class="form-select" style="min-width:120px;">
+          <option value="">Status</option>
+          <option value="tetap" {{ request('status_kepegawaian') === 'tetap' ? 'selected' : '' }}>Tetap</option>
+          <option value="training" {{ request('status_kepegawaian') === 'training' ? 'selected' : '' }}>Training</option>
+          <option value="nonaktif" {{ request('status_kepegawaian') === 'nonaktif' ? 'selected' : '' }}>Non Aktif</option>
+        </select>
+      </div>
+      <!-- Mobile: tombol search & reset side by side -->
+      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none">
+        <button type="submit" class="btn btn-outline-primary w-50 d-inline-flex align-items-center justify-content-center p-0" style="height:44px;border-radius:12px;min-height:44px;">
+          <i class="ri-search-line" style="font-size:1.3em;"></i>
+        </button>
+        <a href="{{ route('karyawan.index') }}" class="btn btn-outline-secondary w-50 d-inline-flex align-items-center justify-content-center p-0" style="height:44px;border-radius:12px;min-height:44px;">
+          <i class="ri-refresh-line" style="font-size:1.3em;"></i>
+        </a>
+      </div>
+      <!-- Desktop: tombol search & reset -->
+      <button type="submit" class="btn btn-outline-primary d-none d-sm-inline-flex" title="Cari">
         <i class="ri-search-line"></i>
       </button>
-      <a href="{{ route('karyawan.index') }}" class="btn btn-outline-secondary" title="Reset">
+      <a href="{{ route('karyawan.index') }}" class="btn btn-outline-secondary d-none d-sm-inline-flex" title="Reset">
         <i class="ri-refresh-line"></i>
       </a>
     </form>

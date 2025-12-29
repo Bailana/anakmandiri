@@ -120,8 +120,12 @@
               </div>
 
               <div class="col-12">
-                <button class="btn btn-primary">{{ isset($assignment) ? 'Perbarui' : 'Simpan' }}</button>
-                <a href="{{ route('terapis.pasien.index') }}" class="btn btn-outline-secondary">Batal</a>
+                <button class="btn btn-primary">
+                  <i class="ri-save-line me-1"></i>{{ isset($assignment) ? 'Perbarui' : 'Simpan' }}
+                </button>
+                <a href="{{ route('terapis.pasien.index') }}" class="btn btn-outline-secondary">
+                  <i class="ri-close-line me-1"></i>Batal
+                </a>
               </div>
             </div>
           </form>

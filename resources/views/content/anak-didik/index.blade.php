@@ -59,7 +59,7 @@
         <option value="{{ $id }}" {{ request('guru_fokus') == $id ? 'selected' : '' }}>{{ $name }}</option>
         @endforeach
       </select>
-      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none mt-2">
+      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none">
         <select name="jenis_kelamin" class="form-select" style="min-width:120px;">
           <option value="">Jenis Kelamin</option>
           <option value="laki-laki" {{ request('jenis_kelamin') === 'laki-laki' ? 'selected' : '' }}>Laki-laki</option>
@@ -72,7 +72,7 @@
           @endforeach
         </select>
       </div>
-      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none mt-2">
+      <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none">
         <button type="submit" class="btn btn-outline-primary w-50 d-inline-flex align-items-center justify-content-center p-0" style="height:44px;border-radius:12px;min-height:44px;">
           <i class="ri-search-line" style="font-size:1.3em;"></i>
         </button>
@@ -87,8 +87,6 @@
       <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary d-none d-sm-inline-flex" title="Reset">
         <i class="ri-refresh-line"></i>
       </a>
-      <!-- Responsive (mobile) row -->
-
     </form>
   </div>
 </div>
@@ -107,7 +105,7 @@
               <th>Jenis Kelamin</th>
               <th>Guru Fokus</th>
               <th>Status</th>
-              <th>No Telepon Orang Tua</th>
+              <th>Usia</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -147,7 +145,13 @@
                 <span class="text-muted">-</span>
                 @endif
               </td>
-              <td>{{ $anak->no_telepon_orang_tua ?? '-' }}</td>
+              <td>
+                @if($anak->tanggal_lahir)
+                <span style="white-space: nowrap;">{{ \Carbon\Carbon::parse($anak->tanggal_lahir)->age }} Tahun</span>
+                @else
+                -
+                @endif
+              </td>
               <td>
                 <!-- Tombol aksi untuk desktop -->
                 <div class="d-none d-md-flex gap-2 align-items-center">
@@ -233,7 +237,6 @@
           }
         </script>
       </div>
-
       <!-- Pagination -->
       <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
         <style>
@@ -365,7 +368,7 @@
   window.showDetail = function(button) {
     const anakId = button.getAttribute('data-anak-id');
     let url = `/anak-didik/${anakId}`;
-    @if(auth() - > user() && auth() - > user() - > role === 'guru')
+    @if(auth()->user() && auth()->user()->role === 'guru')
     url = `{{ url('anak-didik') }}/${anakId}`;
     @endif
     fetch(url, {

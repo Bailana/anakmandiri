@@ -36,26 +36,42 @@
 <div class="row mb-4">
   <div class="col-12">
     <form method="GET" action="{{ route('pengguna.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
-      <!-- Search Field -->
-      <div class="flex-grow-1" style="min-width: 250px;">
-        <input type="text" name="search" class="form-control" placeholder="Cari nama, email, atau role..." value="{{ request('search') }}">
+      <!-- Desktop layout -->
+      <div class="d-none d-sm-flex flex-row gap-2 w-100">
+        <div class="flex-grow-1" style="min-width: 250px;">
+          <input type="text" name="search" class="form-control" placeholder="Cari nama, email, atau role..." value="{{ request('search') }}">
+        </div>
+        <select name="role" class="form-select" style="max-width: 150px;">
+          <option value="">Role</option>
+          @foreach($roleOptions as $role)
+          <option value="{{ $role }}" {{ request('role') === $role ? 'selected' : '' }}>{{ ucfirst($role) }}</option>
+          @endforeach
+        </select>
+        <button type="submit" class="btn btn-outline-primary" title="Cari">
+          <i class="ri-search-line"></i>
+        </button>
+        <a href="{{ route('pengguna.index') }}" class="btn btn-outline-secondary" title="Reset">
+          <i class="ri-refresh-line"></i>
+        </a>
       </div>
-
-      <!-- Filter Role -->
-      <select name="role" class="form-select" style="max-width: 150px;">
-        <option value="">Role</option>
-        @foreach($roleOptions as $role)
-        <option value="{{ $role }}" {{ request('role') === $role ? 'selected' : '' }}>{{ ucfirst($role) }}</option>
-        @endforeach
-      </select>
-
-      <!-- Action Buttons -->
-      <button type="submit" class="btn btn-outline-primary" title="Cari">
-        <i class="ri-search-line"></i>
-      </button>
-      <a href="{{ route('pengguna.index') }}" class="btn btn-outline-secondary" title="Reset">
-        <i class="ri-refresh-line"></i>
-      </a>
+      <!-- Mobile layout -->
+      <div class="d-flex d-sm-none flex-column gap-2 w-100">
+        <input type="text" name="search" class="form-control mb-2" placeholder="Cari nama, email, atau role..." value="{{ request('search') }}">
+        <div class="d-flex flex-row gap-2 w-100">
+          <select name="role" class="form-select" style="min-width:120px;">
+            <option value="">Role</option>
+            @foreach($roleOptions as $role)
+            <option value="{{ $role }}" {{ request('role') === $role ? 'selected' : '' }}>{{ ucfirst($role) }}</option>
+            @endforeach
+          </select>
+          <button type="submit" class="btn btn-outline-primary flex-fill" title="Cari">
+            <i class="ri-search-line"></i>
+          </button>
+          <a href="{{ route('pengguna.index') }}" class="btn btn-outline-secondary flex-fill" title="Reset">
+            <i class="ri-refresh-line"></i>
+          </a>
+        </div>
+      </div>
     </form>
   </div>
 </div>

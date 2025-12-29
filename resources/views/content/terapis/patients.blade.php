@@ -117,25 +117,50 @@ $isKepalaTerapis = true;
           <div class="flex-grow-1" style="min-width:200px;">
             <input type="text" name="search" class="form-control" placeholder="Cari nama anak atau NIS..." value="{{ request('search') }}">
           </div>
-          <select name="status" class="form-select" style="max-width:150px;">
-            <option value="">Semua Status</option>
-            <option value="aktif" {{ (isset($selectedStatus) && $selectedStatus === 'aktif') ? 'selected' : '' }}>Aktif</option>
-            <option value="non-aktif" {{ (isset($selectedStatus) && $selectedStatus === 'non-aktif') ? 'selected' : '' }}>Non Aktif</option>
-          </select>
-          @if(isset($user) && $user->role === 'admin')
-          <select name="user_id" class="form-select" style="max-width:200px;">
-            <option value="">-- Semua Terapis --</option>
-            @foreach($therapists as $t)
-            <option value="{{ $t->id }}" {{ request('user_id') == $t->id ? 'selected' : '' }}>{{ $t->name }}</option>
-            @endforeach
-          </select>
-          @endif
-          <button type="submit" class="btn btn-outline-primary" title="Filter">
-            <i class="ri-search-line"></i>
-          </button>
-          <a href="{{ route('terapis.pasien.index') }}" class="btn btn-outline-secondary" title="Reset">
-            <i class="ri-refresh-line"></i>
-          </a>
+          <div class="d-flex flex-row gap-2 w-100 w-sm-auto mt-sm-0" style="max-width:100%;">
+            <select name="status" class="form-select flex-fill flex-sm-unset" style="min-width:120px;max-width:150px;">
+              <option value="">Status</option>
+              <option value="aktif" {{ (isset($selectedStatus) && $selectedStatus === 'aktif') ? 'selected' : '' }}>Aktif</option>
+              <option value="non-aktif" {{ (isset($selectedStatus) && $selectedStatus === 'non-aktif') ? 'selected' : '' }}>Non Aktif</option>
+            </select>
+            @if(isset($user) && $user->role === 'admin')
+            <select name="user_id" class="form-select flex-fill flex-sm-unset" style="min-width:120px;max-width:200px;">
+              <option value="">Terapis</option>
+              @foreach($therapists as $t)
+              <option value="{{ $t->id }}" {{ request('user_id') == $t->id ? 'selected' : '' }}>{{ $t->name }}</option>
+              @endforeach
+            </select>
+            @endif
+          </div>
+          <div class="d-flex flex-row gap-2 w-100 w-sm-auto mt-sm-0">
+            <button type="submit" class="btn btn-outline-primary flex-fill flex-sm-unset" style="min-width:0;" title="Cari">
+              <i class="ri-search-line"></i>
+            </button>
+            <a href="{{ route('terapis.pasien.index') }}" class="btn btn-outline-secondary flex-fill flex-sm-unset" style="min-width:0;" title="Reset">
+              <i class="ri-refresh-line"></i>
+            </a>
+          </div>
+          <style>
+            @media (max-width: 576px) {
+              .w-sm-auto {
+                width: 100% !important;
+              }
+
+              .flex-sm-unset {
+                flex: 1 1 0 !important;
+              }
+            }
+
+            @media (min-width: 577px) {
+              .w-sm-auto {
+                width: auto !important;
+              }
+
+              .flex-sm-unset {
+                flex: unset !important;
+              }
+            }
+          </style>
         </form>
       </div>
     </div>
