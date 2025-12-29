@@ -12,7 +12,11 @@
           <p class="text-body-secondary mb-0">Daftar aktivitas pengguna</p>
         </div>
         <div>
-          <a href="{{ route('activity.logs.export') }}{{ request()->getQueryString() ? '?'.request()->getQueryString() : '' }}" class="btn btn-danger">
+          <!-- Tombol export CSV responsif -->
+          <a href="{{ route('activity.logs.export') }}{{ request()->getQueryString() ? '?'.request()->getQueryString() : '' }}" class="btn btn-danger d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;" title="Export CSV">
+            <i class="ri-file-download-line" style="font-size:1.7em;"></i>
+          </a>
+          <a href="{{ route('activity.logs.export') }}{{ request()->getQueryString() ? '?'.request()->getQueryString() : '' }}" class="btn btn-danger d-none d-sm-inline-flex align-items-center">
             <i class="ri-file-download-line me-2"></i>Export CSV
           </a>
         </div>
@@ -20,6 +24,24 @@
     </div>
   </div>
 </div>
+<!-- <style>
+  @media (max-width: 767.98px) {
+    .pagination {
+      flex-wrap: nowrap !important;
+      font-size: 0.95em;
+      /* overflow-x dan white-space dihilangkan agar tidak scroll */
+    }
+
+    .pagination .page-link {
+      padding: 0.25rem 0.5rem;
+      min-width: 32px;
+    }
+
+    .pagination .page-item {
+      min-width: 32px;
+    }
+  }
+</style> -->
 
 <!-- Alert Messages -->
 @if ($message = Session::get('success'))
@@ -118,16 +140,36 @@
 
       <!-- Pagination -->
       <div class="card-footer d-flex justify-content-between align-items-center">
-        <div class="text-body-secondary">
+        <div class="text-body-secondary mb-2 mb-md-0">
           Menampilkan {{ $activities->firstItem() ?? 0 }} hingga {{ $activities->lastItem() ?? 0 }} dari {{ $activities->total() }} data
         </div>
-        <nav>
-          {!! $activities->links('pagination::bootstrap-4') !!}
-        </nav>
+        <div class="pagination-responsive flex-grow-1" style="min-width:0;">
+          <nav>
+            {!! $activities->links('pagination::bootstrap-4') !!}
+          </nav>
+        </div>
       </div>
     </div>
   </div>
 </div>
+<!-- <style>
+  @media (max-width: 767.98px) {
+    .pagination-responsive nav .pagination {
+      flex-wrap: nowrap !important;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .pagination-responsive nav {
+      width: 100%;
+    }
+
+    .pagination-responsive .overflow-auto {
+      width: 100%;
+      padding-bottom: 2px;
+    }
+  }
+</style> -->
 
 @push('scripts')
 <script>

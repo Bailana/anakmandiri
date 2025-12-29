@@ -48,7 +48,7 @@
                 <div class="app-brand justify-content-center mt-5">
                     <a href="{{url('/')}}" class="app-brand-link">
                         <span class="app-brand-logo demo me-1">
-                            <img src="{{ asset('assets/img/am.png') }}" alt="Logo" style="height:40px;">
+                            <img src="{{ asset('assets/img/am.png') }}" alt="Logo" style="height:60px;">
                         </span>
                     </a>
                 </div>
@@ -113,12 +113,12 @@
                             <button class="btn btn-primary d-grid w-100" type="submit">Masuk</button>
                         </div>
                     </form>
-                    <p class="text-center mb-5">
+                    <!-- <p class="text-center mb-5">
                         <span>New on our platform?</span>
                         <a href="{{ url('auth/register-basic') }}">
                             <span>Create an account</span>
                         </a>
-                    </p>
+                    </p> -->
                 </div>
             </div>
         </div>

@@ -8,11 +8,15 @@
         <div class="d-flex justify-content-between align-items-center">
           <div>
             <h4 class="mb-0">Program Pembelajaran Individual (PPI)</h4>
-            <p class="text-body-secondary mb-0">Tampilkan daftar anak didik. Klik untuk melihat program jika Anda memiliki akses.</p>
+            <p class="text-body-secondary mb-0">Kelola PPI anak didik anda.</p>
           </div>
           @if(!(isset($isKonsultanPendidikan) && $isKonsultanPendidikan))
           <div>
-            <a href="{{ route('ppi.create') }}" class="btn btn-primary">
+            <!-- Tombol tambah PPI responsif -->
+            <a href="{{ route('ppi.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+              <i class="ri-add-line" style="font-size:1.7em;"></i>
+            </a>
+            <a href="{{ route('ppi.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
               <i class="ri-add-line me-2"></i>Tambah PPI
             </a>
           </div>
@@ -112,7 +116,42 @@
         </div>
 
         <!-- Pagination -->
-        <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
+          <style>
+            .pagination-footer-fix {
+              flex-wrap: nowrap !important;
+              gap: 0.5rem;
+            }
+
+            .pagination-footer-fix>div,
+            .pagination-footer-fix>nav {
+              min-width: 0;
+              max-width: 100%;
+            }
+
+            .pagination-footer-fix nav {
+              flex-shrink: 1;
+              flex-grow: 0;
+            }
+
+            @media (max-width: 767.98px) {
+              .pagination-footer-fix {
+                flex-direction: row !important;
+                align-items: center !important;
+                flex-wrap: nowrap !important;
+              }
+
+              .pagination-footer-fix>div,
+              .pagination-footer-fix>nav {
+                width: auto !important;
+                max-width: 100%;
+              }
+
+              .pagination-footer-fix nav ul.pagination {
+                flex-wrap: nowrap !important;
+              }
+            }
+          </style>
           <div class="text-body-secondary">
             Menampilkan {{ $anakList->firstItem() ?? 0 }} hingga {{ $anakList->lastItem() ?? 0 }} dari {{ $anakList->total() }} data
           </div>
@@ -261,7 +300,7 @@
         var anakId = btn.getAttribute('data-anak-didik-id');
         var isFokus = (btn.getAttribute('data-is-fokus') === '1');
         var currentUserId = @json(Auth::id());
-        var currentUserRole = @json(optional(Auth::user())->role);
+        var currentUserRole = @json(optional(Auth::user()) - > role);
         var canApprove = @json($canApprovePPI ?? false);
         fetch('/ppi/riwayat/' + anakId)
           .then(r => r.json())

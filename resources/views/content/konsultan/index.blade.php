@@ -16,7 +16,11 @@
             <h4 class="mb-0">Daftar Konsultan</h4>
             <p class="text-body-secondary mb-0">Kelola data konsultan</p>
           </div>
-          <a href="{{ route('konsultan.create') }}" class="btn btn-primary">
+          <!-- Tombol tambah konsultan responsif -->
+          <a href="{{ route('konsultan.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-add-line" style="font-size:1.7em;"></i>
+          </a>
+          <a href="{{ route('konsultan.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
             <i class="ri-add-line me-2"></i>Tambah Konsultan
           </a>
         </div>
@@ -119,7 +123,8 @@
                 </span>
               </td>
               <td>
-                <div class="d-flex gap-2 align-items-center">
+                <!-- Tombol aksi untuk desktop -->
+                <div class="d-none d-md-flex gap-2 align-items-center">
                   <button
                     type="button"
                     class="btn btn-sm btn-icon btn-outline-primary btn-detail"
@@ -144,6 +149,17 @@
                     <i class="ri-delete-bin-line"></i>
                   </button>
                 </div>
+                <!-- Tombol titik tiga untuk mobile -->
+                <div class="dropdown d-md-none">
+                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                    <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="showDetailDropdown({{ $konsultan->id }});return false;"><i class="ri-eye-line me-1"></i> Lihat</a></li>
+                    <li><a class="dropdown-item" href="{{ route('konsultan.edit', $konsultan->id) }}"><i class="ri-edit-line me-1"></i> Edit</a></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteDataDropdown(this, {{ $konsultan->id }});return false;"><i class="ri-delete-bin-line me-1"></i> Hapus</a></li>
+                  </ul>
+                </div>
               </td>
             </tr>
             @empty
@@ -158,10 +174,84 @@
             @endforelse
           </tbody>
         </table>
+        <style>
+          @media (max-width: 767.98px) {
+            .table .d-md-flex {
+              display: none !important;
+            }
+
+            .table .d-md-none {
+              display: block !important;
+            }
+          }
+
+          @media (min-width: 768px) {
+            .table .d-md-flex {
+              display: flex !important;
+            }
+
+            .table .d-md-none {
+              display: none !important;
+            }
+          }
+        </style>
+        <script>
+          // Agar tombol hapus di dropdown mobile tetap bisa pakai fungsi hapus yang sama
+          function deleteDataDropdown(el, konsultanId) {
+            if (!confirm('Apakah Anda yakin ingin menghapus konsultan ini?')) return;
+            // Buat dummy button agar deleteData tetap dapat parameter button
+            var dummyBtn = document.createElement('button');
+            dummyBtn.setAttribute('data-konsultan-id', konsultanId);
+            dummyBtn.className = 'btn-delete';
+            window.deleteData(dummyBtn);
+          }
+          // Agar tombol lihat di dropdown mobile tetap bisa pakai fungsi showDetail yang sama
+          function showDetailDropdown(konsultanId) {
+            var dummyBtn = document.createElement('button');
+            dummyBtn.setAttribute('data-konsultan-id', konsultanId);
+            dummyBtn.className = 'btn-detail';
+            window.showDetail(dummyBtn);
+          }
+        </script>
       </div>
 
       <!-- Pagination -->
-      <div class="card-footer d-flex justify-content-between align-items-center">
+      <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
+        <style>
+          .pagination-footer-fix {
+            flex-wrap: nowrap !important;
+            gap: 0.5rem;
+          }
+
+          .pagination-footer-fix>div,
+          .pagination-footer-fix>nav {
+            min-width: 0;
+            max-width: 100%;
+          }
+
+          .pagination-footer-fix nav {
+            flex-shrink: 1;
+            flex-grow: 0;
+          }
+
+          @media (max-width: 767.98px) {
+            .pagination-footer-fix {
+              flex-direction: row !important;
+              align-items: center !important;
+              flex-wrap: nowrap !important;
+            }
+
+            .pagination-footer-fix>div,
+            .pagination-footer-fix>nav {
+              width: auto !important;
+              max-width: 100%;
+            }
+
+            .pagination-footer-fix nav ul.pagination {
+              flex-wrap: nowrap !important;
+            }
+          }
+        </style>
         <div class="text-body-secondary">
           Menampilkan {{ $konsultans->firstItem() ?? 0 }} hingga {{ $konsultans->lastItem() ?? 0 }} dari {{ $konsultans->total() }} data
         </div>

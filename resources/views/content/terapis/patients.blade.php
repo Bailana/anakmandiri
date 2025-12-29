@@ -36,7 +36,10 @@ $isKepalaTerapis = true;
           </div>
           <div class="d-flex gap-2">
             @if($canManagePatients)
-            <a href="{{ route('terapis.pasien.create') }}" class="btn btn-primary">
+            <a href="{{ route('terapis.pasien.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+              <i class="ri-add-line" style="font-size:1.7em;"></i>
+            </a>
+            <a href="{{ route('terapis.pasien.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
               <i class="ri-add-line me-2"></i>Tambah Pasien Terapis
             </a>
             @endif
@@ -219,15 +222,29 @@ $isKepalaTerapis = true;
               </td>
               <td>
                 @if(isset($user) && in_array($user->role, ['admin','terapis']))
-                <button type="button" class="btn btn-icon btn-sm btn-outline-info me-1" title="Lihat Jadwal" onclick="showTherapySchedules(this)" data-anak-id="{{ $assign->anak_didik_id }}" data-anak-nama="{{ $assign->anakDidik->nama ?? '-' }}">
-                  <i class="ri-eye-line"></i>
-                </button>
-                <a href="{{ route('terapis.pasien.edit', $assign->id) }}" class="btn btn-icon btn-sm btn-outline-warning me-1" title="Edit Status">
-                  <i class="ri-edit-line"></i>
-                </a>
-                <button type="button" class="btn btn-icon btn-sm btn-outline-danger btn-delete-assign" title="Hapus Pasien" data-assign-id="{{ $assign->id }}">
-                  <i class="ri-delete-bin-line"></i>
-                </button>
+                <!-- Tombol aksi untuk desktop -->
+                <div class="d-none d-md-flex gap-1 align-items-center">
+                  <button type="button" class="btn btn-icon btn-sm btn-outline-info me-1" title="Lihat Jadwal" onclick="showTherapySchedules(this)" data-anak-id="{{ $assign->anak_didik_id }}" data-anak-nama="{{ $assign->anakDidik->nama ?? '-' }}">
+                    <i class="ri-eye-line"></i>
+                  </button>
+                  <a href="{{ route('terapis.pasien.edit', $assign->id) }}" class="btn btn-icon btn-sm btn-outline-warning me-1" title="Edit Status">
+                    <i class="ri-edit-line"></i>
+                  </a>
+                  <button type="button" class="btn btn-icon btn-sm btn-outline-danger btn-delete-assign" title="Hapus Pasien" data-assign-id="{{ $assign->id }}">
+                    <i class="ri-delete-bin-line"></i>
+                  </button>
+                </div>
+                <!-- Tombol titik tiga untuk mobile -->
+                <div class="dropdown d-md-none">
+                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                    <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="showTherapySchedulesDropdown({{ $assign->anak_didik_id }}, '{{ $assign->anakDidik->nama ?? '-' }}');return false;"><i class="ri-eye-line me-1"></i> Lihat Jadwal</a></li>
+                    <li><a class="dropdown-item" href="{{ route('terapis.pasien.edit', $assign->id) }}"><i class="ri-edit-line me-1"></i> Edit Status</a></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteAssignDropdown(this, {{ $assign->id }});return false;"><i class="ri-delete-bin-line me-1"></i> Hapus</a></li>
+                  </ul>
+                </div>
                 @endif
               </td>
             </tr>
@@ -242,6 +259,60 @@ $isKepalaTerapis = true;
             @endforelse
           </tbody>
         </table>
+        <style>
+          @media (max-width: 767.98px) {
+            .table .d-md-flex {
+              display: none !important;
+            }
+
+            .table .d-md-none {
+              display: block !important;
+            }
+          }
+
+          @media (min-width: 768px) {
+            .table .d-md-flex {
+              display: flex !important;
+            }
+
+            .table .d-md-none {
+              display: none !important;
+            }
+          }
+        </style>
+        <script>
+          // Agar tombol hapus di dropdown mobile tetap bisa pakai fungsi hapus yang sama
+          function deleteAssignDropdown(el, assignId) {
+            if (!confirm('Hapus data pasien terapis ini?')) return;
+            // Buat dummy button agar event tetap bisa diproses oleh event listener utama
+            var dummyBtn = document.createElement('button');
+            dummyBtn.setAttribute('data-assign-id', assignId);
+            dummyBtn.className = 'btn-delete-assign';
+            dummyBtn.type = 'button';
+            // Trigger event click pada dummyBtn
+            dummyBtn.click = function() {
+              // Cari event listener utama dan panggil
+              var event = new Event('click', {
+                bubbles: true
+              });
+              this.dispatchEvent(event);
+            };
+            // Jika ada event listener global, bisa dipanggil manual jika perlu
+            // Atau bisa langsung panggil fungsi utama jika tersedia
+            if (typeof window.deleteAssign === 'function') {
+              window.deleteAssign(dummyBtn);
+            }
+          }
+          // Agar tombol lihat jadwal di dropdown mobile tetap bisa pakai fungsi showTherapySchedules yang sama
+          function showTherapySchedulesDropdown(anakId, anakNama) {
+            var dummyBtn = document.createElement('button');
+            dummyBtn.setAttribute('data-anak-id', anakId);
+            dummyBtn.setAttribute('data-anak-nama', anakNama);
+            if (typeof window.showTherapySchedules === 'function') {
+              window.showTherapySchedules(dummyBtn);
+            }
+          }
+        </script>
       </div>
       <!-- Modal: Jadwal Terapi -->
       <div class="modal fade" id="therapyScheduleModal" tabindex="-1" aria-hidden="true">
@@ -270,7 +341,42 @@ $isKepalaTerapis = true;
           </div>
         </div>
       </div>
-      <div class="card-footer d-flex justify-content-between align-items-center">
+      <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
+        <style>
+          .pagination-footer-fix {
+            flex-wrap: nowrap !important;
+            gap: 0.5rem;
+          }
+
+          .pagination-footer-fix>div,
+          .pagination-footer-fix>nav {
+            min-width: 0;
+            max-width: 100%;
+          }
+
+          .pagination-footer-fix nav {
+            flex-shrink: 1;
+            flex-grow: 0;
+          }
+
+          @media (max-width: 767.98px) {
+            .pagination-footer-fix {
+              flex-direction: row !important;
+              align-items: center !important;
+              flex-wrap: nowrap !important;
+            }
+
+            .pagination-footer-fix>div,
+            .pagination-footer-fix>nav {
+              width: auto !important;
+              max-width: 100%;
+            }
+
+            .pagination-footer-fix nav ul.pagination {
+              flex-wrap: nowrap !important;
+            }
+          }
+        </style>
         <div class="text-body-secondary">
           Menampilkan {{ method_exists($assignments, 'firstItem') ? ($assignments->firstItem() ?? 0) : $assignments->count() }} hingga {{ method_exists($assignments, 'lastItem') ? ($assignments->lastItem() ?? 0) : $assignments->count() }} dari {{ method_exists($assignments, 'total') ? $assignments->total() : $assignments->count() }} data
         </div>

@@ -503,7 +503,7 @@
     window._groupSuggest = false;
     window.currentUser = {
       id: @json(Auth::id()),
-      role: @json(optional(Auth::user())->role),
+      role: @json(optional(Auth::user()) - > role),
       konsultanId: @json($currentKonsultanId ?? null)
     };
     window.currentKonsultanSpesRaw = @json($currentKonsultanSpesRaw ?? null);
@@ -658,7 +658,42 @@
       </div>
 
       <!-- Pagination -->
-      <div class="card-footer d-flex justify-content-between align-items-center">
+      <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
+        <style>
+          .pagination-footer-fix {
+            flex-wrap: nowrap !important;
+            gap: 0.5rem;
+          }
+
+          .pagination-footer-fix>div,
+          .pagination-footer-fix>nav {
+            min-width: 0;
+            max-width: 100%;
+          }
+
+          .pagination-footer-fix nav {
+            flex-shrink: 1;
+            flex-grow: 0;
+          }
+
+          @media (max-width: 767.98px) {
+            .pagination-footer-fix {
+              flex-direction: row !important;
+              align-items: center !important;
+              flex-wrap: nowrap !important;
+            }
+
+            .pagination-footer-fix>div,
+            .pagination-footer-fix>nav {
+              width: auto !important;
+              max-width: 100%;
+            }
+
+            .pagination-footer-fix nav ul.pagination {
+              flex-wrap: nowrap !important;
+            }
+          }
+        </style>
         <div class="text-body-secondary">
           Menampilkan {{ $programAnak->firstItem() ?? 0 }} hingga {{ $programAnak->lastItem() ?? 0 }} dari {{ $programAnak->total() ?? 0 }}
         </div>

@@ -335,7 +335,11 @@
             <h4 class="mb-0">Penilaian Anak</h4>
             <p class="text-body-secondary mb-0">Kelola penilaian perkembangan anak didik</p>
           </div>
-          <a href="{{ route('assessment.create') }}" class="btn btn-primary">
+          <!-- Tombol tambah penilaian responsif -->
+          <a href="{{ route('assessment.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-add-line" style="font-size:1.7em;"></i>
+          </a>
+          <a href="{{ route('assessment.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
             <i class="ri-add-line me-2"></i>Tambah Penilaian
           </a>
         </div>
@@ -448,7 +452,42 @@
       </div>
 
       <!-- Pagination -->
-      <div class="card-footer d-flex justify-content-between align-items-center">
+      <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
+        <style>
+          .pagination-footer-fix {
+            flex-wrap: nowrap !important;
+            gap: 0.5rem;
+          }
+
+          .pagination-footer-fix>div,
+          .pagination-footer-fix>nav {
+            min-width: 0;
+            max-width: 100%;
+          }
+
+          .pagination-footer-fix nav {
+            flex-shrink: 1;
+            flex-grow: 0;
+          }
+
+          @media (max-width: 767.98px) {
+            .pagination-footer-fix {
+              flex-direction: row !important;
+              align-items: center !important;
+              flex-wrap: nowrap !important;
+            }
+
+            .pagination-footer-fix>div,
+            .pagination-footer-fix>nav {
+              width: auto !important;
+              max-width: 100%;
+            }
+
+            .pagination-footer-fix nav ul.pagination {
+              flex-wrap: nowrap !important;
+            }
+          }
+        </style>
         <div class="text-body-secondary">
           Menampilkan {{ $assessments->firstItem() ?? 0 }} hingga {{ $assessments->lastItem() ?? 0 }} dari {{ $assessments->total() }} data
         </div>
