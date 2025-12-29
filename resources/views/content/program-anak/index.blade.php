@@ -503,7 +503,7 @@
     window._groupSuggest = false;
     window.currentUser = {
       id: @json(Auth::id()),
-      role: @json(optional(Auth::user()) - > role),
+      role: @json(optional(Auth::user())->role),
       konsultanId: @json($currentKonsultanId ?? null)
     };
     window.currentKonsultanSpesRaw = @json($currentKonsultanSpesRaw ?? null);

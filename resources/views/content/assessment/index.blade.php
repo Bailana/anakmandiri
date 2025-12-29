@@ -335,13 +335,15 @@
             <h4 class="mb-0">Penilaian Anak</h4>
             <p class="text-body-secondary mb-0">Kelola penilaian perkembangan anak didik</p>
           </div>
-          <!-- Tombol tambah penilaian responsif -->
+          <!-- Tombol tambah penilaian hanya untuk non-admin -->
+          @if(auth()->check() && auth()->user()->role !== 'admin')
           <a href="{{ route('assessment.create') }}" class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
             <i class="ri-add-line" style="font-size:1.7em;"></i>
           </a>
           <a href="{{ route('assessment.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
             <i class="ri-add-line me-2"></i>Tambah Penilaian
           </a>
+          @endif
         </div>
       </div>
     </div>
@@ -366,8 +368,8 @@
       </div>
 
       <!-- Filter Kategori -->
-      <select name="kategori" class="form-select" style="max-width: 150px;">
-        <option value="">Semua Kategori</option>
+      <select name="kategori" class="form-select" style="max-width: 200px;">
+        <option value="">Kategori</option>
         <option value="bina_diri" {{ request('kategori') === 'bina_diri' ? 'selected' : '' }}>Bina Diri</option>
         <option value="akademik" {{ request('kategori') === 'akademik' ? 'selected' : '' }}>Akademik</option>
         <option value="motorik" {{ request('kategori') === 'motorik' ? 'selected' : '' }}>Motorik</option>

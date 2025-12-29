@@ -17,7 +17,9 @@
             <p class="text-body-secondary mb-0">Kelola observasi/evaluasi anak didik</p>
           </div>
           @if(auth()->check() && auth()->user()->role === 'konsultan')
-          <a href="{{ route('program.create') }}" class="btn btn-primary d-flex align-items-center justify-content-center p-0 d-inline-flex d-sm-none" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+          <a href="{{ route('program.create') }}"
+            class="btn btn-primary d-flex align-items-center justify-content-center p-0 d-inline-flex d-sm-none"
+            style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
             <i class="ri-add-line" style="font-size:1.7em;"></i>
           </a>
           <a href="{{ route('program.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
@@ -100,7 +102,9 @@
               <td>{{ $program->anakDidik->no_telepon_orang_tua ?? '-' }}</td>
               <td>
                 @if($program->anakDidik && $program->anakDidik->guruFokus)
-                <span class="badge bg-label-primary" style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;" title="{{ $program->anakDidik->guruFokus->nama }}">{{ $program->anakDidik->guruFokus->nama }}</span>
+                <span class="badge bg-label-primary"
+                  style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;"
+                  title="{{ $program->anakDidik->guruFokus->nama }}">{{ $program->anakDidik->guruFokus->nama }}</span>
                 @else
                 -
                 @endif
@@ -108,25 +112,34 @@
               <td>
                 <!-- Tombol aksi untuk desktop -->
                 <div class="d-none d-md-flex gap-1">
-                  <button type="button" class="btn btn-sm btn-outline-info" title="Lihat" onclick="showDetailObservasi('{{ $program->sumber }}', {{ $program->id }})">
+                  <button type="button" class="btn btn-sm btn-outline-info" title="Lihat"
+                    onclick="showDetailObservasi('{{ $program->sumber }}', {{ $program->id }})">
                     <i class="ri-eye-line"></i>
                   </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning" title="Edit" onclick="editObservasi({{ $program->id }})">
+                  <button type="button" class="btn btn-sm btn-outline-warning" title="Edit"
+                    onclick="editObservasi({{ $program->id }})">
                     <i class="ri-edit-line"></i>
                   </button>
-                  <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus" onclick="hapusObservasi({{ $program->id }})">
+                  <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus"
+                    onclick="hapusObservasi({{ $program->id }})">
                     <i class="ri-delete-bin-line"></i>
                   </button>
                 </div>
                 <!-- Tombol titik tiga untuk mobile -->
                 <div class="dropdown d-md-none">
-                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false" style="box-shadow:none;">
                     <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#" onclick="showDetailObservasi('{{ $program->sumber }}', {{ $program->id }});return false;"><i class="ri-eye-line me-1"></i> Lihat</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="editObservasi({{ $program->id }});return false;"><i class="ri-edit-line me-1"></i> Edit</a></li>
-                    <li><a class="dropdown-item text-danger" href="#" onclick="hapusObservasi({{ $program->id }});return false;"><i class="ri-delete-bin-line me-1"></i> Hapus</a></li>
+                    <li><a class="dropdown-item" href="#"
+                        onclick="showDetailObservasi('{{ $program->sumber }}', {{ $program->id }});return false;"><i
+                          class="ri-eye-line me-1"></i> Lihat</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="editObservasi({{ $program->id }});return false;"><i
+                          class="ri-edit-line me-1"></i> Edit</a></li>
+                    <li><a class="dropdown-item text-danger" href="#"
+                        onclick="hapusObservasi({{ $program->id }});return false;"><i
+                          class="ri-delete-bin-line me-1"></i> Hapus</a></li>
                   </ul>
                 </div>
               </td>
@@ -163,6 +176,7 @@
               display: none !important;
             }
           }
+
         </style>
       </div>
       <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
@@ -200,6 +214,7 @@
               flex-wrap: nowrap !important;
             }
           }
+
         </style>
         <div class="text-body-secondary">
           Menampilkan {{ $programs->firstItem() ?? 0 }} hingga {{ $programs->lastItem() ?? 0 }} dari
@@ -248,7 +263,9 @@
             </div>
             <div class="col-md-4">
               <p class="text-body-secondary text-sm mb-1">Guru Fokus</p>
-              <span id="detailGuruFokus" style="max-width: 180px; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom;" title=""></span>
+              <span id="detailGuruFokus"
+                style="max-width: 180px; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom;"
+                title=""></span>
             </div>
             <div class="col-md-4">
               <p class="text-body-secondary text-sm mb-1">Konsultan</p>
@@ -344,7 +361,7 @@
       }
     };
     // Fungsi untuk menampilkan detail observasi secara aman
-    window.showDetailObservasi = function(sumber, id) {
+    window.showDetailObservasi = function (sumber, id) {
       // Pastikan modal detail ada di DOM
       var detailModalEl = document.getElementById('detailModal');
       if (!detailModalEl) return;
@@ -360,13 +377,16 @@
             var el;
             el = document.getElementById('detailAnakDidik');
             if (el && program && document.body.contains(el)) {
-              el.textContent = program.anak_didik && program.anak_didik.nama ? program.anak_didik.nama : (program.anak_didik_nama || '-');
+              el.textContent = program.anak_didik && program.anak_didik.nama ? program.anak_didik.nama : (program
+                .anak_didik_nama || '-');
             }
             el = document.getElementById('detailGuruFokus');
             if (el && program && document.body.contains(el)) {
               let guruFokusHtml = '-';
-              if (program.anak_didik && (program.anak_didik.guru_fokus_nama || (program.anak_didik.guruFokus && program.anak_didik.guruFokus.nama))) {
-                guruFokusHtml = program.anak_didik.guru_fokus_nama || (program.anak_didik.guruFokus ? program.anak_didik.guruFokus.nama : '-');
+              if (program.anak_didik && (program.anak_didik.guru_fokus_nama || (program.anak_didik.guruFokus &&
+                  program.anak_didik.guruFokus.nama))) {
+                guruFokusHtml = program.anak_didik.guru_fokus_nama || (program.anak_didik.guruFokus ? program
+                  .anak_didik.guruFokus.nama : '-');
               } else if (program.guru_fokus_nama) {
                 guruFokusHtml = program.guru_fokus_nama;
               }
@@ -379,12 +399,15 @@
             if (el && program && document.body.contains(el)) {
               let kemampuanHtml = '';
               if (Array.isArray(program.kemampuan) && program.kemampuan.length > 0) {
-                kemampuanHtml += '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:40%">KEMAMPUAN</th><th class="text-center">1</th><th class="text-center">2</th><th class="text-center">3</th><th class="text-center">4</th><th class="text-center">5</th></tr></thead><tbody>';
+                kemampuanHtml +=
+                  '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:40%">KEMAMPUAN</th><th class="text-center">1</th><th class="text-center">2</th><th class="text-center">3</th><th class="text-center">4</th><th class="text-center">5</th></tr></thead><tbody>';
                 program.kemampuan.forEach((item, idx) => {
-                  let skalaInt = (typeof item.skala === 'string' || typeof item.skala === 'number') ? parseInt(item.skala) : null;
+                  let skalaInt = (typeof item.skala === 'string' || typeof item.skala === 'number') ? parseInt(
+                    item.skala) : null;
                   kemampuanHtml += `<tr><td>${item.judul}</td>`;
                   for (let skala = 1; skala <= 5; skala++) {
-                    kemampuanHtml += `<td class="text-center">${skalaInt === skala ? '<i class=\"ri-check-line text-success\"></i>' : ''}</td>`;
+                    kemampuanHtml +=
+                      `<td class="text-center">${skalaInt === skala ? '<i class=\"ri-check-line text-success\"></i>' : ''}</td>`;
                   }
                   kemampuanHtml += '</tr>';
                 });
@@ -401,19 +424,25 @@
             if (sumber === 'psikologi') {
               if (psikologiBlock) psikologiBlock.style.display = '';
               // hide non-relevant blocks
-              var detailKemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById('detailKemampuan').parentElement : null;
+              var detailKemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById(
+                'detailKemampuan').parentElement : null;
               if (detailKemampuanBlock) detailKemampuanBlock.style.display = 'none';
-              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById('detailWawancara').parentElement : null;
+              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById(
+                'detailWawancara').parentElement : null;
               if (wawancaraBlock) wawancaraBlock.style.display = 'none';
-              var kemampuanSaatIniBlock = document.getElementById('detailKemampuanSaatIni') ? document.getElementById('detailKemampuanSaatIni').parentElement : null;
+              var kemampuanSaatIniBlock = document.getElementById('detailKemampuanSaatIni') ? document
+                .getElementById('detailKemampuanSaatIni').parentElement : null;
               if (kemampuanSaatIniBlock) kemampuanSaatIniBlock.style.display = 'none';
-              var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
+              var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById(
+                'detailSaranRekomendasi').parentElement : null;
               if (saranBlock) saranBlock.style.display = 'none';
               // hide general diagnosa block and use psikologi-specific diagnosa placed above Kesimpulan
-              var generalDiagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById('detailDiagnosa').parentElement : null;
+              var generalDiagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById(
+                'detailDiagnosa').parentElement : null;
               if (generalDiagnosaBlock) generalDiagnosaBlock.style.display = 'none';
               // also ensure the general rekomendasi block is hidden (if present)
-              var saranBlockGen = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
+              var saranBlockGen = document.getElementById('detailSaranRekomendasi') ? document.getElementById(
+                'detailSaranRekomendasi').parentElement : null;
               if (saranBlockGen) saranBlockGen.style.display = 'none';
               // populate psikologi fields
               var elLB = document.getElementById('detailLatarBelakang');
@@ -432,40 +461,51 @@
             } else {
               if (psikologiBlock) psikologiBlock.style.display = 'none';
               // restore other blocks
-              var detailKemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById('detailKemampuan').parentElement : null;
+              var detailKemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById(
+                'detailKemampuan').parentElement : null;
               if (detailKemampuanBlock) detailKemampuanBlock.style.display = '';
-              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById('detailWawancara').parentElement : null;
+              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById(
+                'detailWawancara').parentElement : null;
               if (wawancaraBlock) wawancaraBlock.style.display = '';
-              var kemampuanSaatIniBlock = document.getElementById('detailKemampuanSaatIni') ? document.getElementById('detailKemampuanSaatIni').parentElement : null;
+              var kemampuanSaatIniBlock = document.getElementById('detailKemampuanSaatIni') ? document
+                .getElementById('detailKemampuanSaatIni').parentElement : null;
               if (kemampuanSaatIniBlock) kemampuanSaatIniBlock.style.display = '';
-              var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
+              var saranBlock = document.getElementById('detailSaranRekomendasi') ? document.getElementById(
+                'detailSaranRekomendasi').parentElement : null;
               if (saranBlock) saranBlock.style.display = '';
               // restore general diagnosa block and clear psikologi-specific diagnosa
-              var generalDiagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById('detailDiagnosa').parentElement : null;
+              var generalDiagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById(
+                'detailDiagnosa').parentElement : null;
               if (generalDiagnosaBlock) generalDiagnosaBlock.style.display = '';
               var elDiagP = document.getElementById('detailDiagnosaPsiko');
               if (elDiagP) elDiagP.textContent = '';
               // restore general rekomendasi block if present
-              var saranBlockGen = document.getElementById('detailSaranRekomendasi') ? document.getElementById('detailSaranRekomendasi').parentElement : null;
+              var saranBlockGen = document.getElementById('detailSaranRekomendasi') ? document.getElementById(
+                'detailSaranRekomendasi').parentElement : null;
               if (saranBlockGen) saranBlockGen.style.display = '';
             }
             // --- SENSORY INTEGRASI ONLY: Hide wawancara & diagnosa, show keterangan ---
-            if (program.sumber === 'si' || (program.konsultan_spesialisasi && program.konsultan_spesialisasi.toLowerCase() === 'sensori integrasi')) {
+            if (program.sumber === 'si' || (program.konsultan_spesialisasi && program.konsultan_spesialisasi
+                .toLowerCase() === 'sensori integrasi')) {
               // Hide wawancara
-              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById('detailWawancara').parentElement : null;
+              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById(
+                'detailWawancara').parentElement : null;
               if (wawancaraBlock) wawancaraBlock.style.display = 'none';
               // Hide diagnosa
-              var diagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById('detailDiagnosa').parentElement : null;
+              var diagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById(
+                'detailDiagnosa').parentElement : null;
               if (diagnosaBlock) diagnosaBlock.style.display = 'none';
               // Show only keterangan (inject if needed)
               let keteranganBlock = document.getElementById('detailKeterangan');
               if (!keteranganBlock) {
                 // Insert after kemampuan table
-                var kemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById('detailKemampuan').parentElement : null;
+                var kemampuanBlock = document.getElementById('detailKemampuan') ? document.getElementById(
+                  'detailKemampuan').parentElement : null;
                 if (kemampuanBlock) {
                   var row = document.createElement('div');
                   row.className = 'row mb-3';
-                  row.innerHTML = `<div class=\"col-12\"><p class=\"text-body-secondary text-sm mb-1\">Keterangan</p><p class=\"fw-medium\" id=\"detailKeterangan\"></p></div>`;
+                  row.innerHTML =
+                    `<div class=\"col-12\"><p class=\"text-body-secondary text-sm mb-1\">Keterangan</p><p class=\"fw-medium\" id=\"detailKeterangan\"></p></div>`;
                   kemampuanBlock.parentNode.insertBefore(row, kemampuanBlock.nextSibling);
                   keteranganBlock = document.getElementById('detailKeterangan');
                 }
@@ -473,13 +513,16 @@
               if (keteranganBlock) keteranganBlock.textContent = program.wawancara || '-';
             } else {
               // Restore wawancara & diagnosa
-              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById('detailWawancara').parentElement : null;
+              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById(
+                'detailWawancara').parentElement : null;
               if (wawancaraBlock) wawancaraBlock.style.display = '';
-              var diagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById('detailDiagnosa').parentElement : null;
+              var diagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById(
+                'detailDiagnosa').parentElement : null;
               if (diagnosaBlock) diagnosaBlock.style.display = '';
               // Remove keterangan block if present
               let keteranganBlock = document.getElementById('detailKeterangan');
-              if (keteranganBlock && keteranganBlock.parentElement) keteranganBlock.parentElement.parentElement.removeChild(keteranganBlock.parentElement);
+              if (keteranganBlock && keteranganBlock.parentElement) keteranganBlock.parentElement.parentElement
+                .removeChild(keteranganBlock.parentElement);
             }
             // Untuk SI dan Psikologi, sembunyikan Kemampuan Saat Ini & Saran Rekomendasi
             el = document.getElementById('detailKemampuanSaatIni');
@@ -543,7 +586,7 @@
       }
     }
 
-    window.loadRiwayatObservasi = function(btn) {
+    window.loadRiwayatObservasi = function (btn) {
       resetDetailModal();
       var programId = btn.getAttribute('data-program-id');
       var listDiv = document.getElementById('riwayatObservasiList');
@@ -635,7 +678,9 @@
             if (modal) {
               var anakDidikId = null;
               // Cari tombol yang terakhir membuka modal
-              var lastBtn = document.querySelector('button[data-bs-target="#riwayatObservasiModal"].active, button[data-bs-target="#riwayatObservasiModal"]:focus');
+              var lastBtn = document.querySelector(
+                'button[data-bs-target="#riwayatObservasiModal"].active, button[data-bs-target="#riwayatObservasiModal"]:focus'
+                );
               if (!lastBtn) lastBtn = document.querySelector('button[data-bs-target="#riwayatObservasiModal"]');
               if (lastBtn) anakDidikId = lastBtn.getAttribute('data-anak-didik-id');
               if (anakDidikId) {
@@ -659,7 +704,8 @@
         toast.id = 'customToast';
         toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-4';
         toast.style.zIndex = 9999;
-        toast.innerHTML = '<div class="d-flex"><div class="toast-body"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+        toast.innerHTML =
+          '<div class="d-flex"><div class="toast-body"></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
         document.body.appendChild(toast);
       } else {
         toast.className = 'toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-4';
@@ -670,5 +716,7 @@
       });
       bsToast.show();
     }
+
   </script>
-  @endsection
+</div>
+@endsection

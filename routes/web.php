@@ -195,7 +195,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('assessment/ppi-programs', [App\Http\Controllers\AssessmentController::class, 'ppiPrograms'])->name('assessment.ppi-programs');
     // Program history per anak (used for small charts on index)
     Route::get('assessment/{anakId}/program-history', [App\Http\Controllers\AssessmentController::class, 'programHistory'])->name('assessment.program-history');
-    Route::resource('assessment', 'App\\Http\\Controllers\\AssessmentController');
+    // Blokir akses admin ke /assessment/create
+    Route::get('assessment/create', function () {
+      if (auth()->check() && auth()->user()->role === 'admin') {
+        abort(403, 'Halaman ini tidak dapat diakses oleh admin.');
+      }
+      return app(App\Http\Controllers\AssessmentController::class)->create();
+    })->name('assessment.create');
+    Route::resource('assessment', 'App\\Http\\Controllers\\AssessmentController')->except(['create']);
     Route::get('assessment/{id}/export-pdf', [App\Http\Controllers\AssessmentController::class, 'exportPdf'])->name('assessment.export-pdf');
   });
 
