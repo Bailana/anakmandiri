@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
+use App\Events\NotifikasiAksesPPI;
 use App\Notifications\AccessRequestNotification;
 
 class GuruAnakDidikController extends Controller
@@ -124,7 +125,7 @@ class GuruAnakDidikController extends Controller
     if ($pending) {
       return response()->json([
         'success' => false,
-        'message' => 'Anda sudah memiliki permintaan akses yang pending untuk anak ini',
+        'message' => 'Permintaan akses Anda sebelumnya untuk anak ini masih menunggu persetujuan admin. Silakan tunggu hingga permintaan tersebut diproses.',
       ], 422);
     }
 
@@ -162,13 +163,18 @@ class GuruAnakDidikController extends Controller
           Notification::send($admins, new AccessRequestNotification($user->id, $requesterName, $anakDidik->id, $anakName, $approval->id));
         }
       }
+      // Broadcast event realtime ke admin HANYA SEKALI
+      $admins = User::where('role', 'admin')->get();
+      if ($admins && $admins->count()) {
+        event(new NotifikasiAksesPPI($user->id, $requesterName, "Permintaan akses PPI dari $requesterName untuk anak $anakName", $approval->id));
+      }
     } catch (\Throwable $ex) {
       // don't block creation if notification fails; log if desired
     }
 
     return response()->json([
       'success' => true,
-      'message' => $approverUserId ? 'Permintaan akses telah dikirim ke guru fokus' : 'Permintaan akses telah disimpan; admin akan meninjau',
+      'message' => 'Permintaan akses telah dikirim, silahkan tunggu beberapa saat.',
     ]);
   }
 
@@ -227,6 +233,8 @@ class GuruAnakDidikController extends Controller
         // do not notify konsultan or terapis accounts
         if (!in_array($requester->role, ['konsultan', 'terapis'])) {
           $requester->notify(new \App\Notifications\AccessRequestNotification($user->id, $user->name ?? 'Admin', $anakId, $requester->name ?? '', $approval->id, 'approved'));
+          // Broadcast event realtime ke guru yang meminta akses
+          event(new \App\Events\NotifikasiAksesPPI($requester->id, $requesterName, $user->name . ' telah menyetujui permintaan akses Anda untuk ' . ($requesterName ?: 'anak ini'), $approval->id));
         }
       }
     } catch (\Throwable $ex) {
@@ -274,6 +282,8 @@ class GuruAnakDidikController extends Controller
         // do not notify konsultan or terapis accounts
         if (!in_array($requester->role, ['konsultan', 'terapis'])) {
           $requester->notify(new \App\Notifications\AccessRequestNotification($user->id, $user->name ?? 'Admin', $approval->anak_didik_id, $requester->name ?? '', $approval->id, 'rejected'));
+          // Broadcast event realtime ke guru yang meminta akses
+          event(new \App\Events\NotifikasiAksesPPI($requester->id, $requesterName, $user->name . ' menolak permintaan akses Anda untuk ' . ($requesterName ?: 'anak ini'), $approval->id));
         }
       }
     } catch (\Throwable $ex) {

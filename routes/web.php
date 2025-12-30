@@ -38,6 +38,11 @@ use App\Http\Controllers\user_interface\PaginationBreadcrumbs;
 use App\Http\Controllers\user_interface\Progress;
 use App\Http\Controllers\user_interface\Spinners;
 use App\Http\Controllers\user_interface\TabsPills;
+
+use App\Http\Controllers\BroadcastTestController;
+// Route untuk mengirim notifikasi broadcast (uji coba)
+Route::get('/broadcast-test', [BroadcastTestController::class, 'kirimNotifikasi']);
+
 use App\Http\Controllers\user_interface\Toasts;
 use App\Http\Controllers\user_interface\TooltipsPopovers;
 use App\Http\Controllers\user_interface\Typography;

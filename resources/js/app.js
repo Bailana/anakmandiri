@@ -1,4 +1,5 @@
 import './bootstrap';
+import './echo-pusher';
 /*
   Add custom scripts here
 */

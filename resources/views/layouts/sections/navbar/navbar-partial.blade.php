@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Route;
         <!-- Notifications -->
         @if(!(Auth::check() && in_array(Auth::user()->role ?? '', ['konsultan', 'terapis'])))
         <li class="nav-item dropdown-notifications dropdown me-3">
+
             <a class="nav-link" href="javascript:void(0)" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="ri-notification-3-line icon-base"></i>
                 @if(Auth::check())
@@ -165,7 +166,9 @@ use Illuminate\Support\Facades\Route;
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const list = document.getElementById('nav-notifications-list');
-        const CURRENT_USER_IS_ADMIN = @json(Auth::check() && Auth::user() && Auth::user()->role === 'admin');
+        window.CURRENT_USER_IS_ADMIN = @json(Auth::check() && Auth::user() && Auth::user() - > role === 'admin');
+        window.CURRENT_USER_IS_GURU = @json(Auth::check() && Auth::user() && Auth::user() - > role === 'guru');
+        window.CURRENT_USER_ID = @json(Auth::check() ? Auth::user() - > id : null);
         // mark single notification read when clicked
         if (list) {
             list.addEventListener('click', function(e) {
@@ -236,6 +239,18 @@ use Illuminate\Support\Facades\Route;
                 container.style.zIndex = 2000;
                 document.body.appendChild(container);
             }
+            // Filter: jangan tampilkan toast dengan pesan yang sama dalam 5 detik
+            if (!window._lastToastMessages) window._lastToastMessages = [];
+            const now = Date.now();
+            // Hapus pesan lama (>5 detik)
+            window._lastToastMessages = window._lastToastMessages.filter(t => now - t.time < 5000);
+            if (window._lastToastMessages.some(t => t.message === message)) {
+                return;
+            }
+            window._lastToastMessages.push({
+                message,
+                time: now
+            });
             const toast = document.createElement('div');
             toast.className = `toast align-items-center text-bg-${variant} border-0 mb-2`;
             toast.setAttribute('role', 'alert');
@@ -250,6 +265,35 @@ use Illuminate\Support\Facades\Route;
             toast.addEventListener('hidden.bs.toast', function() {
                 toast.remove();
             });
+        }
+
+        // Fungsi update notifikasi navbar secara real-time
+        window.updateNavbarNotification = function(e, role) {
+            // Cegah toastr double untuk notifikasi yang sama
+            if (window.lastNotifId === e.id) return;
+            window.lastNotifId = e.id;
+
+            // Update badge
+            const badge = document.getElementById('nav-notif-count');
+            if (badge) {
+                let v = parseInt(badge.textContent || '0', 10) + 1;
+                badge.textContent = v;
+            }
+            // Tambahkan notifikasi baru ke list
+            if (list) {
+                const notifDiv = document.createElement('div');
+                notifDiv.className = 'list-group-item d-flex justify-content-between align-items-start';
+                notifDiv.setAttribute('data-notif-id', e.id || '');
+                notifDiv.innerHTML = `<div class=\"me-2\"><p class=\"mb-0 small\">${e.message || 'Notifikasi baru'}</p><small class=\"text-muted\">Baru saja</small></div>`;
+                if (role === 'admin' && e.approval_id) {
+                    notifDiv.innerHTML += `<div class=\"btn-group btn-group-sm\"><button class=\"btn btn-icon btn-sm btn-success btn-accept-request\" data-approval-id=\"${e.approval_id}\" title=\"Terima\"><i class=\"ri-check-line\"></i></button><button class=\"btn btn-icon btn-sm btn-outline-danger btn-reject-notif ms-1\" data-approval-id=\"${e.approval_id}\" title=\"Tolak\"><i class=\"ri-close-line\"></i></button></div>`;
+                }
+                list.prepend(notifDiv);
+            }
+            // Tampilkan toastr hanya untuk guru, atau untuk admin hanya jika action = requested (permintaan akses baru)
+            if ((role === 'guru') || (role === 'admin' && (!e.action || e.action === 'requested'))) {
+                showGlobalToast(e.message || 'Notifikasi baru', 'info');
+            }
         }
 
         // attach accept handlers for approval requests
@@ -292,13 +336,7 @@ use Illuminate\Support\Facades\Route;
                             if (v < 0) v = 0;
                             badge.textContent = v;
                         }
-                        // show toastr-like success with requester name if available
-                        const requesterName = j.requester_name || (j.requester && j.requester.name) || null;
-                        if (requesterName) {
-                            showGlobalToast(`Akses PPI diberikan kepada ${requesterName}`, 'success', 5000);
-                        } else {
-                            showGlobalToast(j.message || 'Akses PPI diberikan', 'success', 5000);
-                        }
+                        // Tidak perlu showGlobalToast di admin
                     } else {
                         alert(j.message || 'Gagal memproses permintaan');
                         that.disabled = false;
@@ -354,9 +392,7 @@ use Illuminate\Support\Facades\Route;
                             if (v < 0) v = 0;
                             badge.textContent = v;
                         }
-                        const requesterName = j.requester_name || null;
-                        if (requesterName) showGlobalToast(`Permintaan akses ditolak untuk ${requesterName}`, 'danger', 5000);
-                        else showGlobalToast(j.message || 'Permintaan akses ditolak', 'danger', 5000);
+                        // Tidak perlu showGlobalToast di admin
                     } else {
                         alert(j.message || 'Gagal memproses penolakan');
                         that.disabled = false;
@@ -368,153 +404,66 @@ use Illuminate\Support\Facades\Route;
             });
         });
 
-        // Polling: fetch unread notifications periodically and inject new ones
-        function checkNewNotifications() {
-            fetch('/notifications/unread-json', {
-                    credentials: 'same-origin'
-                })
-                .then(r => r.json())
-                .then(j => {
-                    if (!j.success) return;
-                    const items = j.notifications || [];
-                    const badge = document.getElementById('nav-notif-count');
-                    if (badge) badge.textContent = items.length;
-                    if (!list) return;
-                    const existing = new Set(Array.from(list.querySelectorAll('[data-notif-id]')).map(e => e.getAttribute('data-notif-id')));
-                    // Add any new notifications to the top of the list
-                    items.forEach(function(n) {
-                        if (existing.has(n.id)) return;
-                        const container = document.createElement('div');
-                        container.className = 'list-group-item d-flex justify-content-between align-items-start';
-                        container.setAttribute('data-notif-id', n.id);
-                        const left = document.createElement('div');
-                        left.className = 'me-2';
-                        const msg = (n.data && n.data.message) ? n.data.message : 'Notifikasi baru';
-                        const time = n.created_at ? n.created_at : '';
-                        left.innerHTML = `<p class="mb-0 small">${msg}</p><small class="text-muted">${time}</small>`;
-                        const btnGroup = document.createElement('div');
-                        btnGroup.className = 'btn-group btn-group-sm';
-                        if (n.data && n.data.approval_id && CURRENT_USER_IS_ADMIN) {
-                            const accept = document.createElement('button');
-                            accept.className = 'btn btn-icon btn-sm btn-success btn-accept-request';
-                            accept.setAttribute('data-approval-id', n.data.approval_id);
-                            accept.title = 'Terima';
-                            accept.innerHTML = '<i class="ri-check-line"></i>';
-                            const reject = document.createElement('button');
-                            reject.className = 'btn btn-icon btn-sm btn-outline-danger btn-reject-notif ms-1';
-                            reject.setAttribute('data-approval-id', n.data.approval_id);
-                            reject.title = 'Tolak';
-                            reject.innerHTML = '<i class="ri-close-line"></i>';
-                            // attach handlers similar to existing ones
-                            accept.addEventListener('click', function() {
-                                const that = this;
-                                that.disabled = true;
-                                const notifEl = that.closest('[data-notif-id]');
-                                const notifId = notifEl ? notifEl.getAttribute('data-notif-id') : null;
-                                fetch('/guru-anak/approvals/' + that.getAttribute('data-approval-id') + '/approve', {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                        'Accept': 'application/json'
-                                    }
-                                }).then(r => r.json()).then(j => {
-                                    if (j.success) {
-                                        if (notifId) {
-                                            fetch('{{ route("notifications.mark-read") }}', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                                    'Content-Type': 'application/json',
-                                                    'Accept': 'application/json'
-                                                },
-                                                body: JSON.stringify({
-                                                    id: notifId
-                                                })
-                                            }).catch(() => {});
-                                        }
-                                        if (notifEl) notifEl.remove();
-                                        if (badge) {
-                                            let v = parseInt(badge.textContent || '0', 10) - 1;
-                                            if (v < 0) v = 0;
-                                            badge.textContent = v;
-                                        }
-                                        const requesterName = j.requester_name || (j.requester && j.requester.name) || null;
-                                        if (requesterName) showGlobalToast(`Akses PPI diberikan kepada ${requesterName}`, 'success', 5000);
-                                        else showGlobalToast(j.message || 'Akses PPI diberikan', 'success', 5000);
-                                    } else {
-                                        alert(j.message || 'Gagal memproses permintaan');
-                                        that.disabled = false;
-                                    }
-                                }).catch(() => {
-                                    alert('Terjadi kesalahan jaringan');
-                                    that.disabled = false;
-                                });
-                            });
-                            reject.addEventListener('click', function() {
-                                const that = this;
-                                that.disabled = true;
-                                const notes = prompt('Catatan penolakan (opsional)');
-                                const notifEl = that.closest('[data-notif-id]');
-                                const notifId = notifEl ? notifEl.getAttribute('data-notif-id') : null;
-                                fetch('/guru-anak/approvals/' + that.getAttribute('data-approval-id') + '/reject', {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                        'Accept': 'application/json',
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        approval_notes: notes
-                                    })
-                                }).then(r => r.json()).then(j => {
-                                    if (j.success) {
-                                        if (notifId) {
-                                            fetch('{{ route("notifications.mark-read") }}', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                                    'Content-Type': 'application/json',
-                                                    'Accept': 'application/json'
-                                                },
-                                                body: JSON.stringify({
-                                                    id: notifId
-                                                })
-                                            }).catch(() => {});
-                                        }
-                                        if (notifEl) notifEl.remove();
-                                        if (badge) {
-                                            let v = parseInt(badge.textContent || '0', 10) - 1;
-                                            if (v < 0) v = 0;
-                                            badge.textContent = v;
-                                        }
-                                        const requesterName = j.requester_name || null;
-                                        if (requesterName) showGlobalToast(`Permintaan akses ditolak untuk ${requesterName}`, 'danger', 5000);
-                                        else showGlobalToast(j.message || 'Permintaan akses ditolak', 'danger', 5000);
-                                    } else {
-                                        alert(j.message || 'Gagal memproses penolakan');
-                                        that.disabled = false;
-                                    }
-                                }).catch(() => {
-                                    alert('Terjadi kesalahan jaringan');
-                                    that.disabled = false;
-                                });
-                            });
-                            btnGroup.appendChild(accept);
-                            btnGroup.appendChild(reject);
-                        }
-                        container.appendChild(left);
-                        container.appendChild(btnGroup);
-                        // insert at top
-                        if (list.firstChild) list.insertBefore(container, list.firstChild);
-                        else list.appendChild(container);
-                    });
-                })
-                .catch(() => {});
-        }
+        // Polling dinonaktifkan, hanya gunakan notifikasi realtime via Echo/socket.io
+        // Laravel Echo + socket.io realtime notification
+        // Pastikan script socket.io dan Echo sudah termuat sebelum inisialisasi
+        // function loadScript(src, cb) {
+        //     if (document.querySelector('script[src="' + src + '"]')) return cb();
+        //     var s = document.createElement('script');
+        //     s.src = src;
+        //     s.onload = cb;
+        //     document.head.appendChild(s);
+        // }
 
-        // initial check and periodic polling every 5 seconds
-        checkNewNotifications();
-        setInterval(checkNewNotifications, 5000);
+        // function setupEchoRealtimeNotif() {
+        //     if (typeof window.io === 'undefined') {
+        //         return loadScript('https://cdn.jsdelivr.net/npm/socket.io-client@4/dist/socket.io.min.js', setupEchoRealtimeNotif);
+        //     }
+        //     if (typeof window.Echo === 'undefined') {
+        //         return loadScript('https://cdn.jsdelivr.net/npm/laravel-echo/dist/echo.iife.js', setupEchoRealtimeNotif);
+        //     }
+        //     if (typeof window.Echo === 'function') {
+        //         // Paksa host ke 'localhost' agar connect ke echo-server lokal
+        //         window.Echo = new window.Echo({
+        //             broadcaster: 'socket.io',
+        //             host: '127.0.0.1:6001',
+        //             // Jika ingin akses dari IP lain, ganti ke IP server
+        //         });
+        //         console.log('Echo initialized, connecting to ws://127.0.0.1:6001/socket.io/');
+        //     }
+        //     if (!window.Echo || typeof window.Echo.channel !== 'function') {
+        //         return setTimeout(setupEchoRealtimeNotif, 500);
+        //     }
+        //     window.Echo.channel('notifikasi-admin')
+        //         .listen('.NotifikasiAksesPPI', function(e) {
+        //             console.log('Realtime event diterima', e);
+        //             // Tambah badge
+        //             const badge = document.getElementById('nav-notif-count');
+        //             if (badge) {
+        //                 let v = parseInt(badge.textContent || '0', 10) + 1;
+        //                 badge.textContent = v;
+        //                 badge.classList.remove('bg-secondary');
+        //                 badge.classList.add('bg-danger');
+        //             }
+        //             // Tambah notifikasi ke list
+        //             const list = document.getElementById('nav-notifications-list');
+        //             if (list) {
+        //                 const container = document.createElement('div');
+        //                 container.className = 'list-group-item d-flex justify-content-between align-items-start';
+        //                 container.innerHTML = `<div class=\"me-2\"><p class=\"mb-0 small\">${e.message}</p><small class=\"text-muted\">Baru saja</small></div>`;
+        //                 list.insertBefore(container, list.firstChild);
+        //             }
+        //             if (typeof showGlobalToast === 'function') {
+        //                 showGlobalToast(e.message, 'info', 5000);
+        //             }
+        //         });
+        // }
+        // setupEchoRealtimeNotif();
+        // Handler realtime notifikasi admin (Echo)
+        // Pastikan Echo instance dan method channel sudah siap
+        if (window.Echo && typeof window.Echo.channel === 'function') {
+            // Handler Echo langsung di-nonaktifkan, gunakan hanya window.updateNavbarNotification untuk semua notifikasi realtime
+        }
     });
 </script>
 @endpush

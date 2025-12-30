@@ -23,7 +23,7 @@
     <link rel="canonical" href="{{ config('variables.productPage') ? config('variables.productPage') : '' }}" />
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('assets/img/am.png') }}" />
-
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Include Styles -->
     @include('layouts/sections/styles')
 
