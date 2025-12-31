@@ -167,6 +167,8 @@
                     <i class="ri-delete-bin-line"></i>
                   </button>
                 </div>
+                <!-- (mobile 'Lihat' handled inside dropdown) -->
+
                 <!-- Tombol titik tiga untuk mobile -->
                 <div class="dropdown d-md-none">
                   <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
@@ -227,6 +229,18 @@
             var dummyBtn = document.createElement('button');
             dummyBtn.setAttribute('data-karyawan-id', karyawanId);
             showDetail(dummyBtn);
+            if (window.bootstrap && typeof window.bootstrap.Modal === 'function') {
+              var modalEl = document.getElementById('detailModal');
+              var bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+              bsModal.show();
+            } else {
+              var opener = document.createElement('button');
+              opener.setAttribute('data-bs-toggle', 'modal');
+              opener.setAttribute('data-bs-target', '#detailModal');
+              document.body.appendChild(opener);
+              opener.click();
+              opener.remove();
+            }
           }
         </script>
       </div>

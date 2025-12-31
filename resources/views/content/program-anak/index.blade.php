@@ -189,7 +189,7 @@
       </div>
       <div class="modal-footer">
         <div class="me-auto">
-          @if(!(auth()->check() && optional(auth()->user())->role === 'admin'))
+          @if(auth()->check() && !in_array(optional(auth()->user())->role, ['admin','terapis','guru']))
           <div id="groupSuggestContainer" style="display:none">
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" id="groupSuggestToggle">
@@ -505,7 +505,7 @@
     window._groupSuggest = false;
     window.currentUser = {
       id: @json(Auth::id()),
-      role: @json(optional(Auth::user())->role),
+      role: @json(optional(Auth::user()) - > role),
       konsultanId: @json($currentKonsultanId ?? null)
     };
     window.currentKonsultanSpesRaw = @json($currentKonsultanSpesRaw ?? null);
@@ -1181,8 +1181,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary restore-previous-on-close" data-bs-dismiss="modal">Batal</button>
-        <button type="button" class="btn btn-primary" id="btnSaveEditProgram">Simpan</button>
+        <button type="button" class="btn btn-outline-secondary restore-previous-on-close" data-bs-dismiss="modal"><i class="ri-close-line me-2"></i>Batal</button>
+        <button type="button" class="btn btn-primary" id="btnSaveEditProgram"><i class="ri-save-line me-2"></i>Simpan</button>
       </div>
     </div>
   </div>

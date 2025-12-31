@@ -12,7 +12,10 @@
     <div class="card mb-4">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Edit Data Karyawan</h5>
-        <a href="{{ route('karyawan.index') }}" class="btn btn-secondary btn-sm">
+        <a href="{{ route('karyawan.index') }}" class="btn p-0 border-0 bg-transparent d-inline-flex d-sm-none align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+          <i class="ri-arrow-left-circle-fill" style="font-size:2em;font-weight:bold;"></i>
+        </a>
+        <a href="{{ route('karyawan.index') }}" class="btn btn-secondary btn-sm d-none d-sm-inline-flex align-items-center">
           <i class="ri-arrow-left-line me-2"></i>Kembali
         </a>
       </div>
@@ -144,12 +147,22 @@
               </div>
 
               <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-outline-secondary" disabled>
-                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
-                </button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-pekerjaan-tab').click()">
-                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
-                </button>
+                <div>
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" disabled>
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" disabled aria-hidden="true">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline-primary d-none d-sm-inline" onclick="document.getElementById('data-pekerjaan-tab').click()">
+                    Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-primary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-pekerjaan-tab').click()" aria-label="Selanjutnya">
+                    <i class="ri-arrow-right-line"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -216,12 +229,22 @@
               </div>
 
               <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-pribadi-tab').click()">
-                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
-                </button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-pendidikan-tab').click()">
-                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
-                </button>
+                <div>
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('data-pribadi-tab').click()">
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-pribadi-tab').click()" aria-label="Sebelumnya">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline-primary d-none d-sm-inline" onclick="document.getElementById('data-pendidikan-tab').click()">
+                    Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-primary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-pendidikan-tab').click()" aria-label="Selanjutnya">
+                    <i class="ri-arrow-right-line"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -251,16 +274,21 @@
                 Pastikan semua data yang Anda masukkan sudah benar sebelum menyimpan.
               </div>
 
-              <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-pekerjaan-tab').click()">
-                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
-                </button>
-                <div>
-                  <a href="{{ route('karyawan.index') }}" class="btn btn-outline-secondary me-2">
+              <div class="d-flex mt-4 align-items-center flex-nowrap">
+                <div class="me-2">
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('data-pekerjaan-tab').click()">
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-pekerjaan-tab').click()" aria-label="Sebelumnya">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div class="ms-auto d-flex align-items-center gap-2 flex-nowrap" style="min-width:0;">
+                  <a href="{{ route('karyawan.index') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="ri-close-line me-2"></i>Batal
                   </a>
-                  <button type="submit" class="btn btn-primary">
-                    <i class="ri-save-line me-2"></i>Perbarui
+                  <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <i class="ri-save-line me-2"></i>Simpan
                   </button>
                 </div>
               </div>
@@ -276,7 +304,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Find which tab has errors and activate it
-    @foreach($errors->keys() as $field)
+    @foreach($errors - > keys() as $field)
     @if(in_array($field, ['nama', 'nik', 'nip', 'email', 'jenis_kelamin', 'no_telepon', 'tempat_lahir', 'tanggal_lahir', 'alamat']))
     document.getElementById('data-pribadi-tab').click();
     @break

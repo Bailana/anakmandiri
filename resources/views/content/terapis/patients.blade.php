@@ -117,7 +117,7 @@ $isKepalaTerapis = true;
           <div class="flex-grow-1" style="min-width:200px;">
             <input type="text" name="search" class="form-control" placeholder="Cari nama anak atau NIS..." value="{{ request('search') }}">
           </div>
-          <div class="d-flex flex-row gap-2 w-100 w-sm-auto mt-sm-0" style="max-width:100%;">
+          <div class="d-flex flex-row gap-2 w-100 w-sm-auto mt-sm-0" style="max-width:100%;align-items:center;">
             <select name="status" class="form-select flex-fill flex-sm-unset" style="min-width:120px;max-width:150px;">
               <option value="">Status</option>
               <option value="aktif" {{ (isset($selectedStatus) && $selectedStatus === 'aktif') ? 'selected' : '' }}>Aktif</option>
@@ -131,8 +131,6 @@ $isKepalaTerapis = true;
               @endforeach
             </select>
             @endif
-          </div>
-          <div class="d-flex flex-row gap-2 w-100 w-sm-auto mt-sm-0">
             <button type="submit" class="btn btn-outline-primary flex-fill flex-sm-unset" style="min-width:0;" title="Cari">
               <i class="ri-search-line"></i>
             </button>
@@ -348,8 +346,14 @@ $isKepalaTerapis = true;
                 <h5 class="modal-title mb-0">Jadwal Terapi <small id="therapyScheduleModalName" class="text-muted"></small></h5>
                 <div>
                   <div class="btn-group btn-group-sm me-2" role="group" aria-label="View toggle">
-                    <button type="button" class="btn btn-outline-secondary active" id="viewTableBtn">Tabel</button>
-                    <button type="button" class="btn btn-outline-secondary" id="viewAgendaBtn">Agenda</button>
+                    <button type="button" class="btn btn-outline-secondary active" id="viewTableBtn" title="Tabel">
+                      <i class="ri-list-unordered d-inline d-sm-none" style="font-size:1.05rem;"></i>
+                      <span class="d-none d-sm-inline">Tabel</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="viewAgendaBtn" title="Agenda">
+                      <i class="ri-calendar-line d-inline d-sm-none" style="font-size:1.05rem;"></i>
+                      <span class="d-none d-sm-inline">Agenda</span>
+                    </button>
                   </div>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -665,8 +669,19 @@ $isKepalaTerapis = true;
                 out += `<tr data-schedule-id="${s.id}"><td>${tanggal}</td><td>${jam}</td><td class="text-muted">${terapisNama}</td>`;
                 if (canEditSchedules) {
                   out += `<td>` +
-                    `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-warning btn-edit-schedule me-1\" data-schedule-id=\"${s.id}\" title=\"Edit\"><i class=\"ri-edit-line\"></i></button>` +
-                    `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-danger btn-delete-schedule\" data-schedule-id=\"${s.id}\" title=\"Hapus\"><i class=\"ri-delete-bin-line\"></i></button>` +
+                    `<div class=\"d-none d-sm-flex gap-1 align-items-center\">` +
+                    `<button type=\\"button\\" class=\\"btn btn-icon btn-sm btn-outline-warning btn-edit-schedule me-1\\" data-schedule-id=\\"${s.id}\\" title=\\"Edit\\"><i class=\\"ri-edit-line\\"></i></button>` +
+                    `<button type=\\"button\\" class=\\"btn btn-icon btn-sm btn-outline-danger btn-delete-schedule\\" data-schedule-id=\\"${s.id}\\" title=\\"Hapus\\"><i class=\\"ri-delete-bin-line\\"></i></button>` +
+                    `</div>` +
+                    `<div class=\"dropdown d-sm-none\">` +
+                    `<button class=\"btn btn-sm p-0 border-0 bg-transparent\" type=\"button\" data-bs-toggle=\"dropdown\" aria-expanded=\"false\" style=\"box-shadow:none;\">` +
+                    `<i class=\"ri-more-2-fill\" style=\"font-weight: bold; font-size: 1.25em;\"></i>` +
+                    `</button>` +
+                    `<ul class=\"dropdown-menu dropdown-menu-end\">` +
+                    `<li><a class=\"dropdown-item\" href=\"#\" onclick=\"document.querySelector(\'button.btn-edit-schedule[data-schedule-id=\\\'${s.id}\\\']\').click();return false;\"><i class='ri-edit-line me-1'></i> Edit</a></li>` +
+                    `<li><a class=\"dropdown-item text-danger\" href=\"#\" onclick=\"document.querySelector(\'button.btn-delete-schedule[data-schedule-id=\\\'${s.id}\\\']\').click();return false;\"><i class='ri-delete-bin-line me-1'></i> Hapus</a></li>` +
+                    `</ul>` +
+                    `</div>` +
                     `</td>`;
                 }
                 out += `</tr>`;

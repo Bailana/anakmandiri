@@ -513,8 +513,8 @@
                       <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                      <li><a class="dropdown-item" href="#" data-id="{{ $p->id }}" data-bs-toggle="modal" data-bs-target="#modalViewProgram" onclick="document.querySelector('[data-id={{ $p->id }}].btn-view-program').click();return false;"><i class='ri-eye-line me-1'></i> Lihat</a></li>
-                      <li><a class="dropdown-item" href="#" data-id="{{ $p->id }}" onclick="document.querySelector('[data-id={{ $p->id }}].btn-edit-program').click();return false;"><i class='ri-edit-line me-1'></i> Edit</a></li>
+                      <li><a class="dropdown-item" href="#" data-id="{{ $p->id }}" data-bs-toggle="modal" data-bs-target="#modalViewProgram" onclick="document.querySelector('.btn-view-program[data-id=\'{{ $p->id }}\']').click();return false;"><i class='ri-eye-line me-1'></i> Lihat</a></li>
+                      <li><a class="dropdown-item" href="#" data-id="{{ $p->id }}" onclick="document.querySelector('.btn-edit-program[data-id=\'{{ $p->id }}\']').click();return false;"><i class='ri-edit-line me-1'></i> Edit</a></li>
                       <li>
                         <form method="POST" action="{{ route('program-anak.program-konsultan.destroy', $p->id) }}" class="d-inline">
                           @csrf

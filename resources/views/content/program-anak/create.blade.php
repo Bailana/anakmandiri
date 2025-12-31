@@ -72,9 +72,9 @@
                       <select name="program_items[0][kode_program]" class="form-select kode-select"></select>
                       <input type="hidden" name="program_items[0][program_konsultan_id]" class="program-konsultan-id">
                     </td>
-                    <td><input type="text" name="program_items[0][nama_program]" class="form-control nama-input" required></td>
-                    <td><textarea name="program_items[0][tujuan]" class="form-control tujuan-input" rows="1" required></textarea></td>
-                    <td><textarea name="program_items[0][aktivitas]" class="form-control aktivitas-input" rows="1" required></textarea></td>
+                    <td><input type="text" name="program_items[0][nama_program]" class="form-control nama-input" readonly required></td>
+                    <td><textarea name="program_items[0][tujuan]" class="form-control tujuan-input" rows="1" readonly required></textarea></td>
+                    <td><textarea name="program_items[0][aktivitas]" class="form-control aktivitas-input" rows="1" readonly required></textarea></td>
                     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
                   </tr>
                 </tbody>
@@ -191,9 +191,9 @@
     const tr = document.createElement('tr');
     tr.innerHTML = `
     <td>${buildKodeSelectHtml(barisIdx)}<input type="hidden" name="program_items[${barisIdx}][program_konsultan_id]" class="program-konsultan-id"></td>
-    <td><input type="text" name="program_items[${barisIdx}][nama_program]" class="form-control nama-input" required></td>
-    <td><textarea name="program_items[${barisIdx}][tujuan]" class="form-control tujuan-input" rows="1" required></textarea></td>
-    <td><textarea name="program_items[${barisIdx}][aktivitas]" class="form-control aktivitas-input" rows="1" required></textarea></td>
+    <td><input type="text" name="program_items[${barisIdx}][nama_program]" class="form-control nama-input" readonly required></td>
+    <td><textarea name="program_items[${barisIdx}][tujuan]" class="form-control tujuan-input" rows="1" readonly required></textarea></td>
+    <td><textarea name="program_items[${barisIdx}][aktivitas]" class="form-control aktivitas-input" rows="1" readonly required></textarea></td>
     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
   `;
     tbody.appendChild(tr);
