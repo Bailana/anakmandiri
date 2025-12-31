@@ -189,12 +189,14 @@
       </div>
       <div class="modal-footer">
         <div class="me-auto">
+          @if(!(auth()->check() && optional(auth()->user())->role === 'admin'))
           <div id="groupSuggestContainer" style="display:none">
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" id="groupSuggestToggle">
               <label class="form-check-label" for="groupSuggestToggle">Sarankan Terapi</label>
             </div>
           </div>
+          @endif
         </div>
         <button type="button" class="btn btn-outline-secondary restore-previous-on-close" data-bs-dismiss="modal">Tutup</button>
       </div>

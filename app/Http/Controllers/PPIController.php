@@ -161,7 +161,20 @@ class PPIController extends Controller
 
   public function create()
   {
-    $anakDidiks = AnakDidik::orderBy('nama')->get();
+    $user = Auth::user();
+    $anakQuery = AnakDidik::orderBy('nama');
+    // if current user is a guru, only show anak didik where they are guru_fokus
+    if ($user && $user->role === 'guru') {
+      $karyawan = Karyawan::where('nama', $user->name)->first();
+      $karyawanId = $karyawan ? $karyawan->id : null;
+      if ($karyawanId) {
+        $anakQuery = $anakQuery->where('guru_fokus_id', $karyawanId);
+      } else {
+        // no matching karyawan record found; return empty collection
+        $anakQuery = $anakQuery->whereRaw('0 = 1');
+      }
+    }
+    $anakDidiks = $anakQuery->get();
     $konsultans = Konsultan::orderBy('nama')->get();
     return view('content.ppi.create', compact('anakDidiks', 'konsultans'));
   }

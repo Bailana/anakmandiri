@@ -21,7 +21,7 @@
               <select name="anak_didik_id" id="anak_didik_id" class="form-select" required>
                 <option value="">Pilih Anak Didik</option>
                 @foreach($anakDidiks as $anak)
-                <option value="{{ $anak->id }}">{{ $anak->nama }} ({{ $anak->nis ?? '-' }})</option>
+                <option value="{{ $anak->id }}">{{ $anak->nama }}@if(!empty($anak->nis)) ({{ $anak->nis }})@endif</option>
                 @endforeach
               </select>
             </div>
@@ -97,9 +97,9 @@
 @push('page-script')
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const konsultanSpecs = @json((($konsultans?? collect())->mapWithKeys(function($k) {
-      return [$k->id => strtolower($k->spesialisasi?? '')];
-    })->toArray()));
+    const konsultanSpecs = @json((($konsultans ?? collect()) - > mapWithKeys(function($k) {
+      return [$k - > id => strtolower($k - > spesialisasi ?? '')];
+    }) - > toArray()));
     const pendidikanCache = {};
 
     function addOptionToSelect(sel, value, label, dataAttrs = {}) {

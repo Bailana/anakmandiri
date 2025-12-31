@@ -34,8 +34,8 @@
 <div id="ppi-alert-wrapper">@if (session('success'))<div class="alert alert-success alert-dismissible fade show"
     role="alert">{{ session('success') }}<button type="button" class="btn-close" data-bs-dismiss="alert"
       aria-label="Close"></button></div>@endif</div>
-<!-- Toast container for request-access notifications -->
-<div id="ppi-toast-container" class="position-fixed top-0 end-0 p-3" style="z-index:1080"></div>
+<!-- Toast container for request-access notifications (bottom-right) -->
+<div id="ppi-toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index:1080"></div>
 
 <!-- Search & Filter -->
 <div class="row mb-4">
@@ -206,7 +206,6 @@
         <div class="text-center text-muted">Memuat...</div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
       </div>
     </div>
   </div>
@@ -228,6 +227,46 @@
       if (!wrapper) return;
       wrapper.innerHTML =
         `<div id="ppi-alert" class="alert alert-${type} alert-dismissible fade show" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+    }
+
+    // show popup toast: prefer toastr if available, otherwise render a Bootstrap toast in #ppi-toast-container
+    function showPopupToast(message, type = 'success') {
+      try {
+        if (window.toastr && typeof toastr === 'object') {
+          if (type === 'success' && typeof toastr.success === 'function') return toastr.success(message);
+          if (type === 'error' && typeof toastr.error === 'function') return toastr.error(message);
+          if (typeof toastr.info === 'function') return toastr.info(message);
+        }
+      } catch (e) {
+        // ignore toastr errors and fallback to bootstrap toast
+      }
+
+      const container = document.getElementById('ppi-toast-container');
+      if (!container) {
+        // final fallback
+        try {
+          showAlert(message, type === 'success' ? 'success' : 'danger');
+          return;
+        } catch (e) {
+          alert(message);
+          return;
+        }
+      }
+
+      const id = 'ppi-toast-' + Date.now();
+      const bg = type === 'success' ? 'bg-success' : 'bg-danger';
+      const toastHtml = `
+        <div id="${id}" class="toast align-items-center text-white ${bg} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+          <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+        </div>`;
+      container.insertAdjacentHTML('beforeend', toastHtml);
+      const el = document.getElementById(id);
+      const bsToast = new bootstrap.Toast(el);
+      bsToast.show();
+      el.addEventListener('hidden.bs.toast', () => el.remove());
     }
 
     document.querySelectorAll('.btn-request-access').forEach(btn => {
@@ -335,7 +374,7 @@
       var anakId = btn.getAttribute('data-anak-didik-id');
       var isFokus = (btn.getAttribute('data-is-fokus') === '1');
       var currentUserId = @json(Auth::id());
-      var currentUserRole = @json(optional(Auth::user())->role);
+      var currentUserRole = @json(optional(Auth::user()) - > role);
       var canApprove = @json($canApprovePPI ?? false);
       fetch('/ppi/riwayat/' + anakId)
         .then(r => r.json())
@@ -385,19 +424,52 @@
                     <div class="small text-muted">${formatDateIndo(item.created_at)}</div>
                   </div>
                   <div class="text-end">
-                    <button class="btn btn-sm btn-outline-info me-1" onclick="viewPpiDetail(this)" data-ppi-id="${item.id}" title="Lihat"><i class='ri-eye-line'></i></button>`;
+                    <!-- Desktop: show individual small buttons -->
+                    <div class="d-none d-sm-inline-flex align-items-center">
+                      <button class="btn btn-sm btn-outline-info me-1" onclick="viewPpiDetail(this)" data-ppi-id="${item.id}" title="Lihat"><i class='ri-eye-line'></i></button>
+                      `;
             if (isFokus) {
-              html +=
-                `<button class="btn btn-sm btn-outline-secondary me-1" onclick="editPpi(this)" data-ppi-id="${item.id}" title="Edit"><i class='ri-edit-2-line'></i></button>`;
-              html +=
-                `<button class="btn btn-sm btn-outline-danger" onclick="deletePpi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>`;
+              html += `
+                      <button class="btn btn-sm btn-outline-secondary me-1" onclick="editPpi(this)" data-ppi-id="${item.id}" title="Edit"><i class='ri-edit-2-line'></i></button>
+                      <button class="btn btn-sm btn-outline-danger" onclick="deletePpi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>
+                      `;
             } else if (canApprove && item.status !== 'disetujui' && currentUserRole !== 'admin') {
               // show approve button only when user is not admin
-              html +=
-                `<button class="btn btn-sm btn-success me-1" onclick="approvePpi(${item.id})" title="Setujui"><i class='ri-check-line'></i></button>`;
+              html += `
+                      <button class="btn btn-sm btn-success me-1" onclick="approvePpi(${item.id})" title="Setujui"><i class='ri-check-line'></i></button>
+                      `;
             } else {
-              if (item.status) html += `<span class="badge bg-secondary me-1">${item.status}</span>`;
+              if (item.status) html += ` <span class="badge bg-secondary me-1">${item.status}</span> `;
             }
+            // close desktop buttons container
+            html += `
+                    </div>
+                    <!-- Mobile: condensed dropdown (three-dot) -->
+                    <div class="d-inline-flex d-sm-none">
+                      <div class="dropdown">
+                        <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" id="ppiActionsToggle${item.id}" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                          <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ppiActionsToggle${item.id}">
+                          <li><button class="dropdown-item" type="button" onclick="viewPpiDetail(this)" data-ppi-id="${item.id}">Lihat</button></li>
+                          `;
+            if (isFokus) {
+              html += `
+                          <li><button class="dropdown-item" type="button" onclick="editPpi(this)" data-ppi-id="${item.id}">Edit</button></li>
+                          <li><button class="dropdown-item text-danger" type="button" onclick="deletePpi(${item.id})">Hapus</button></li>
+                          `;
+            } else if (canApprove && item.status !== 'disetujui' && currentUserRole !== 'admin') {
+              html += `
+                          <li><button class="dropdown-item" type="button" onclick="approvePpi(${item.id})">Setujui</button></li>
+                          `;
+            } else {
+              if (item.status) html += ` <li><span class="dropdown-item-text">Status: ${item.status}</span></li> `;
+            }
+            html += `
+                        </ul>
+                      </div>
+                    </div>
+                    `;
             html += `
                   </div>
                 </div>
@@ -427,9 +499,9 @@
           var lastBtn = document.querySelector('button[data-bs-target="#riwayatPpiModal"]:focus') || document
             .querySelector('button[data-bs-target="#riwayatPpiModal"]');
           if (lastBtn) loadRiwayatPpi(lastBtn);
-          alert(res.message || 'PPI berhasil dihapus');
+          showPopupToast(res.message || 'PPI berhasil dihapus', 'success');
         } else {
-          alert(res.message || 'Gagal menghapus PPI');
+          showPopupToast(res.message || 'Gagal menghapus PPI', 'error');
         }
       }).catch(() => alert('Terjadi kesalahan jaringan'));
     }
@@ -606,13 +678,38 @@
 
         formHtml += `</div>
             <div class="d-flex gap-2 mt-2">
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addPpiEditRow(this)"><i class='ri-add-line'></i> Tambah</button>
-              <button type="submit" class="btn btn-sm btn-primary"><i class='ri-save-3-line'></i> Simpan</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="cancelPpiEdit(this)"><i class='ri-close-line'></i> Batal</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addPpiEditRow(this)" title="Tambah"><i class='ri-add-line'></i><span class="d-none d-sm-inline"> Tambah</span></button>
             </div>
           </form>`;
 
         modalBody.innerHTML = formHtml;
+
+        // ensure footer save button exists and is placed left of the Close button
+        try {
+          const footer = modalEl.querySelector('.modal-footer');
+          if (footer) {
+            // remove previous save button if present to avoid duplicates
+            const prev = footer.querySelector('#editPpiSaveBtn');
+            if (prev) prev.remove();
+
+            const closeBtn = footer.querySelector('[data-bs-dismiss="modal"]');
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.id = 'editPpiSaveBtn';
+            saveBtn.className = 'btn btn-sm btn-primary';
+            saveBtn.title = 'Simpan';
+            saveBtn.setAttribute('aria-label', 'Simpan');
+            saveBtn.innerHTML = "<i class='ri-save-3-line'></i><span class='d-none d-sm-inline'> Simpan</span>";
+            saveBtn.addEventListener('click', function() {
+              const formEl = document.getElementById('editPpiForm');
+              if (formEl) savePpiEdit(ppiId, formEl);
+            });
+            if (closeBtn) footer.insertBefore(saveBtn, closeBtn);
+            else footer.appendChild(saveBtn);
+          }
+        } catch (e) {
+          // ignore footer injection errors
+        }
       } catch (e) {
         console.error(e);
         const modalEl = document.getElementById('editPpiModal');
@@ -695,13 +792,14 @@
           var lastBtn = document.querySelector('button[data-bs-target="#riwayatPpiModal"]:focus') || document
             .querySelector('button[data-bs-target="#riwayatPpiModal"]');
           if (lastBtn) loadRiwayatPpi(lastBtn);
-          alert(res.message || 'PPI berhasil diperbarui');
+          // show popup toast (toastr preferred, otherwise Bootstrap toast)
+          showPopupToast(res.message || 'PPI berhasil diperbarui', 'success');
         } else {
-          alert(res.message || 'Gagal menyimpan perubahan');
+          showPopupToast(res.message || 'Gagal menyimpan perubahan', 'error');
         }
       }).catch(err => {
         console.error(err);
-        alert('Terjadi kesalahan jaringan');
+        showPopupToast('Terjadi kesalahan jaringan', 'error');
       });
     }
   });

@@ -12,7 +12,11 @@
     <div class="card mb-4">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Tambah Observasi/Evaluasi</h5>
-        <a href="{{ route('program.index') }}" class="btn btn-secondary btn-sm">
+        <!-- Mobile: icon-only circular back button (transparent, matches anak-didik detail); Desktop: text back button -->
+        <a href="{{ route('program.index') }}" class="btn p-0 border-0 bg-transparent d-inline-flex d-sm-none align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+          <i class="ri-arrow-left-circle-fill" style="font-size:2em;font-weight:bold;"></i>
+        </a>
+        <a href="{{ route('program.index') }}" class="btn btn-secondary d-none d-sm-inline-flex btn-sm align-items-center">
           <i class="ri-arrow-left-line me-2"></i>Kembali
         </a>
       </div>
@@ -98,6 +102,57 @@
             <div class="col-md-12" id="wrapper-penilaian-kemampuan">
               <label class="form-label">Penilaian Kemampuan Anak</label>
               <div class="table-responsive">
+                <style>
+                  /* Ensure Kemampuan column has a reasonable minimum width on all screens */
+                  table.table thead th:first-child,
+                  table.table tbody td:first-child {
+                    min-width: 320px !important;
+                  }
+
+                  /* Mobile: let scale columns size to their content while keeping table scrollable */
+                  @media (max-width: 576px) {
+
+                    /* use auto table layout so columns fit content; allow horizontal scrolling via .table-responsive */
+                    table.table {
+                      table-layout: auto !important;
+                      width: 100% !important;
+                      min-width: 0 !important;
+                    }
+
+                    /* first column (Kemampuan) should be flexible and wrap text
+                       — keep a reasonable minimum so it stays wide without shrinking scale cols */
+                    table.table thead th:first-child,
+                    table.table tbody td:first-child {
+                      width: auto !important;
+                      min-width: 320px !important;
+                      white-space: normal !important;
+                      vertical-align: middle;
+                    }
+
+                    /* allow scale columns to size to their content (text) and remain readable */
+                    table.table thead th:not(:first-child),
+                    table.table tbody td:not(:first-child) {
+                      width: auto !important;
+                      white-space: nowrap !important;
+                      padding: .35rem .5rem !important;
+                      text-align: center;
+                    }
+
+                    /* ensure input shrinks instead of forcing overflow */
+                    table.table tbody td:first-child .input-group {
+                      display: flex !important;
+                    }
+
+                    table.table tbody td:first-child .form-control {
+                      min-width: 0 !important;
+                      flex: 1 1 auto !important;
+                    }
+
+                    table.table tbody td:first-child .input-group .btn {
+                      flex: 0 0 36px !important;
+                    }
+                  }
+                </style>
                 <table class="table table-bordered align-middle">
                   <thead class="table-light">
                     <tr>

@@ -167,9 +167,9 @@ use Illuminate\Support\Facades\Route;
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const list = document.getElementById('nav-notifications-list');
-        window.CURRENT_USER_IS_ADMIN = @json(Auth::check() && Auth::user() && Auth::user() - > role === 'admin');
-        window.CURRENT_USER_IS_GURU = @json(Auth::check() && Auth::user() && Auth::user() - > role === 'guru');
-        window.CURRENT_USER_ID = @json(Auth::check() ? Auth::user() - > id : null);
+        window.CURRENT_USER_IS_ADMIN = @json(Auth::check() && Auth::user() && Auth::user()->role === 'admin');
+        window.CURRENT_USER_IS_GURU = @json(Auth::check() && Auth::user() && Auth::user()->role === 'guru');
+        window.CURRENT_USER_ID = @json(Auth::check() ? Auth::user()->id : null);
         // Pastikan Echo listener terpasang juga jika Echo sudah diinisialisasi lebih awal
         if (window.Echo && typeof window.Echo.channel === 'function') {
             // attach admin channel if needed
