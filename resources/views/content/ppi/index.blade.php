@@ -160,7 +160,6 @@
               flex-wrap: nowrap !important;
             }
           }
-
         </style>
         <div class="text-body-secondary">
           Menampilkan {{ $anakList->firstItem() ?? 0 }} hingga {{ $anakList->lastItem() ?? 0 }} dari
@@ -217,10 +216,10 @@
 
 @push('scripts')
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function() {
     // init bootstrap tooltips for action buttons
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
@@ -232,7 +231,7 @@
     }
 
     document.querySelectorAll('.btn-request-access').forEach(btn => {
-      btn.addEventListener('click', function () {
+      btn.addEventListener('click', function() {
         const anakId = this.dataset.id;
         if (!confirm('Kirim permintaan akses ke admin?')) return;
         const formData = new FormData();
@@ -249,9 +248,18 @@
           body: formData
         }).then(r => {
           if (!r.ok) {
-            // try to get message from response, otherwise throw generic
+            // try to parse JSON error and extract message, otherwise fall back to plain text or status
             return r.text().then(t => {
-              throw new Error((t && t.length) ? t : 'HTTP ' + r.status);
+              if (t) {
+                try {
+                  const parsed = JSON.parse(t);
+                  throw new Error(parsed && parsed.message ? parsed.message : t);
+                } catch (e) {
+                  // not JSON
+                  throw new Error(t);
+                }
+              }
+              throw new Error('HTTP ' + r.status);
             });
           }
           return r.json();
@@ -260,53 +268,68 @@
           if (j && j.success) showAlert(j.message || 'Permintaan berhasil dikirim');
           else showAlert(j && j.message ? j.message : 'Terjadi kesalahan', 'danger');
         }).catch(err => {
-          showAlert(err && err.message ? err.message : 'Terjadi kesalahan jaringan', 'danger');
+          // Be robust: jika `err.message` berisi JSON mentah, coba parse dan ambil properti `message`
+          let msg = err && err.message ? err.message : 'Terjadi kesalahan jaringan';
+          try {
+            const t = (typeof msg === 'string') ? msg.trim() : msg;
+            if (t && (t.startsWith('{') || t.startsWith('['))) {
+              const parsed = JSON.parse(t);
+              if (parsed) {
+                if (parsed.message) msg = parsed.message;
+                else if (parsed.error) msg = parsed.error;
+                else msg = JSON.stringify(parsed);
+              }
+            }
+          } catch (e) {
+            // ignore parse errors, keep original msg
+          }
+          showAlert(msg, 'danger');
         });
       });
     });
 
     // Check unread notifications and show alert for approved access
-    (function checkUnreadNotificationsForApproval() {
-      const tokenEl = document.querySelector('meta[name="csrf-token"]');
-      const token = tokenEl ? tokenEl.getAttribute('content') : '';
-      fetch('/notifications/unread-json', {
-          credentials: 'same-origin'
-        })
-        .then(r => r.json())
-        .then(j => {
-          if (!j || !j.success) return;
-          const notifs = j.notifications || [];
-          notifs.forEach(n => {
-            try {
-              const d = n.data || {};
-              if (d.action === 'approved') {
-                // show alert to the requester
-                showAlert(d.message || 'Permintaan akses Anda telah disetujui');
-                // mark notification as read so we don't show it repeatedly
-                if (n.id && token) {
-                  fetch("{{ route('notifications.mark-read') }}", {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'X-CSRF-TOKEN': token,
-                      'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                      id: n.id
-                    }),
-                    credentials: 'same-origin'
-                  }).catch(() => {});
-                }
-              }
-            } catch (e) {
-              // ignore
-            }
-          });
-        }).catch(() => {});
-    })();
+    // (function checkUnreadNotificationsForApproval() {
+    //   const tokenEl = document.querySelector('meta[name="csrf-token"]');
+    //   const token = tokenEl ? tokenEl.getAttribute('content') : '';
+    //   fetch('/notifications/unread-json', {
+    //       credentials: 'same-origin'
+    //     })
+    //     .then(r => r.json())
+    //     .then(j => {
+    //       if (!j || !j.success) return;
+    //       const notifs = j.notifications || [];
+    //       notifs.forEach(n => {
+    //         try {
+    //           const d = n.data || {};
+    //           if (d.action === 'approved') {
+    //             // show alert to the requester
+    //             showAlert(d.message || 'Permintaan akses Anda telah disetujui');
+    //             // mark notification as read so we don't show it repeatedly
+    //             if (n.id && token) {
+    //               fetch("{{ route('notifications.mark-read') }}", {
+    //                 method: 'POST',
+    //                 headers: {
+    //                   'Content-Type': 'application/json',
+    //                   'X-CSRF-TOKEN': token,
+    //                   'Accept': 'application/json'
+    //                 },
+    //                 body: JSON.stringify({
+    //                   id: n.id
+    //                 }),
+    //                 credentials: 'same-origin'
+    //               }).catch(() => {});
+    //             }
+    //           }
+    //         } catch (e) {
+    //           // ignore
+    //         }
+    //       });
+    //     }).catch(() => {});
+    // })();
 
     // Load riwayat PPI for an anak didik and render list
-    window.loadRiwayatPpi = function (btn) {
+    window.loadRiwayatPpi = function(btn) {
       var listDiv = document.getElementById('riwayatPpiList');
       listDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
       var anakId = btn.getAttribute('data-anak-didik-id');
@@ -388,7 +411,7 @@
     }
 
     // Delete PPI (only for guru fokus)
-    window.deletePpi = function (id) {
+    window.deletePpi = function(id) {
       if (!confirm('Hapus PPI ini? Tindakan ini tidak dapat dibatalkan.')) return;
       const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
       fetch('/ppi/' + id, {
@@ -411,7 +434,7 @@
       }).catch(() => alert('Terjadi kesalahan jaringan'));
     }
 
-    window.approvePpi = function (id) {
+    window.approvePpi = function(id) {
       if (!confirm('Setujui PPI ini?')) return;
       const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
       fetch('/ppi/' + id + '/approve', {
@@ -434,7 +457,7 @@
       }).catch(() => alert('Terjadi kesalahan jaringan'));
     }
 
-    window.viewPpiDetail = async function (btn, id) {
+    window.viewPpiDetail = async function(btn, id) {
       try {
         // support calling as (btn) or (btn, id)
         if (btn && !id && btn.getAttribute) {
@@ -530,7 +553,7 @@
     }
 
     // Open edit modal for a PPI entry and populate form
-    window.editPpi = async function (btn) {
+    window.editPpi = async function(btn) {
       try {
         const ppiId = btn.getAttribute('data-ppi-id');
         if (!ppiId) return;
@@ -597,7 +620,7 @@
       }
     }
 
-    window.addPpiEditRow = function (btn) {
+    window.addPpiEditRow = function(btn) {
       // find the .ppi-edit-items container within the current form/modal
       const form = btn.closest('form');
       const container = form ? form.querySelector('.ppi-edit-items') : null;
@@ -619,7 +642,7 @@
       container.appendChild(row);
     }
 
-    window.cancelPpiEdit = function (btn) {
+    window.cancelPpiEdit = function(btn) {
       // if inside modal, hide modal
       const modal = btn.closest('.modal');
       if (modal) {
@@ -637,7 +660,7 @@
       details.style.display = 'none';
     }
 
-    window.savePpiEdit = function (ppiId, form) {
+    window.savePpiEdit = function(ppiId, form) {
       const data = new FormData(form);
       const items = [];
       const ids = data.getAll('item_id[]');
@@ -682,6 +705,5 @@
       });
     }
   });
-
 </script>
 @endpush

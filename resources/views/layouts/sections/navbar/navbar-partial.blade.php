@@ -64,7 +64,8 @@ use Illuminate\Support\Facades\Route;
                 <li>
                     <div class="list-group list-group-flush" id="nav-notifications-list">
                         @if(Auth::check() && !$skipNotifRoles)
-                        @foreach(Auth::user()->unreadNotifications->take(6) as $n)
+                        @php $notifLimit = (Auth::check() && (Auth::user()->role === 'guru')) ? 4 : 6; @endphp
+                        @foreach(Auth::user()->unreadNotifications->take($notifLimit) as $n)
                         <div class="list-group-item d-flex justify-content-between align-items-start" data-notif-id="{{ $n->id }}">
                             <div class="me-2">
                                 <p class="mb-0 small">{{ $n->data['message'] ?? 'Notifikasi baru' }}</p>
@@ -169,6 +170,60 @@ use Illuminate\Support\Facades\Route;
         window.CURRENT_USER_IS_ADMIN = @json(Auth::check() && Auth::user() && Auth::user() - > role === 'admin');
         window.CURRENT_USER_IS_GURU = @json(Auth::check() && Auth::user() && Auth::user() - > role === 'guru');
         window.CURRENT_USER_ID = @json(Auth::check() ? Auth::user() - > id : null);
+        // Pastikan Echo listener terpasang juga jika Echo sudah diinisialisasi lebih awal
+        if (window.Echo && typeof window.Echo.channel === 'function') {
+            // attach admin channel if needed
+            if (window.CURRENT_USER_IS_ADMIN && !window._echo_admin_attached) {
+                try {
+                    window.Echo.channel('notifikasi-admin').listen('.NotifikasiAksesPPI', function(e) {
+                        if (window.updateNavbarNotification) window.updateNavbarNotification(e, 'admin');
+                    });
+                    window._echo_admin_attached = true;
+                } catch (err) {
+                    console.error('Gagal memasang admin Echo listener', err);
+                }
+            }
+            // attach guru channel for current user
+            if (window.CURRENT_USER_IS_GURU && window.CURRENT_USER_ID && !window._echo_guru_attached) {
+                try {
+                    var guruChannel = 'notifikasi-guru-' + window.CURRENT_USER_ID;
+                    window.Echo.channel(guruChannel).listen('.NotifikasiAksesPPI', function(e) {
+                        if (window.updateNavbarNotification) window.updateNavbarNotification(e, 'guru');
+                    });
+                    window._echo_guru_attached = true;
+                } catch (err) {
+                    console.error('Gagal memasang guru Echo listener', err);
+                }
+            }
+        }
+
+        // Jika user adalah guru atau admin: ketika dropdown notifikasi dibuka, tandai semua sebagai dibaca dan set badge menjadi 0
+        try {
+            var notifDropdown = document.querySelector('.dropdown-notifications');
+            if (notifDropdown && (window.CURRENT_USER_IS_GURU || window.CURRENT_USER_IS_ADMIN)) {
+                notifDropdown.addEventListener('shown.bs.dropdown', function() {
+                    try {
+                        var tokenEl2 = document.querySelector('meta[name="csrf-token"]');
+                        var token2 = tokenEl2 ? tokenEl2.getAttribute('content') : '';
+                        fetch('{{ route("notifications.mark-all-read") }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': token2,
+                                'Accept': 'application/json'
+                            }
+                        }).then(function(r) {
+                            return r.json();
+                        }).then(function(j) {
+                            if (j && j.success) {
+                                var badge2 = document.getElementById('nav-notif-count');
+                                if (badge2) badge2.textContent = '0';
+                                // Do not clear the dropdown list while it's open; only reset the badge count
+                            }
+                        }).catch(function() {});
+                    } catch (e) {}
+                });
+            }
+        } catch (e) {}
         // mark single notification read when clicked
         if (list) {
             list.addEventListener('click', function(e) {
@@ -205,6 +260,119 @@ use Illuminate\Support\Facades\Route;
             });
         }
 
+        // Fungsi untuk attach handler ke tombol Terima/Tolak pada notifikasi
+        function attachApprovalHandlers(parent) {
+            if (!parent) return;
+            var scope = parent;
+            // If parent is the whole list, query inside it; if it's a single item, it still works
+            (scope.querySelectorAll ? scope.querySelectorAll('.btn-accept-request') : []).forEach(function(btn) {
+                btn.onclick = function(e) {
+                    var approvalId = this.getAttribute('data-approval-id');
+                    if (!approvalId) return;
+                    var that = this;
+                    var notes = prompt('Catatan persetujuan (opsional)');
+                    that.disabled = true;
+                    var notifEl = that.closest('[data-notif-id]');
+                    var notifId = notifEl ? notifEl.getAttribute('data-notif-id') : null;
+                    fetch('/guru-anak/approvals/' + approvalId + '/approve', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            approval_notes: notes
+                        })
+                    }).then(r => r.json()).then(j => {
+                        if (j.success) {
+                            if (notifId) {
+                                fetch('{{ route("notifications.mark-read") }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        id: notifId
+                                    })
+                                }).catch(() => {});
+                            }
+                            var el = notifEl;
+                            if (el) el.remove();
+                            const badge = document.getElementById('nav-notif-count');
+                            if (badge) {
+                                let v = parseInt(badge.textContent || '0', 10) - 1;
+                                if (v < 0) v = 0;
+                                badge.textContent = v;
+                            }
+                        } else {
+                            alert(j.message || 'Gagal memproses permintaan');
+                            that.disabled = false;
+                        }
+                    }).catch(() => {
+                        alert('Terjadi kesalahan jaringan');
+                        that.disabled = false;
+                    });
+                }
+            });
+            (scope.querySelectorAll ? scope.querySelectorAll('.btn-reject-notif') : []).forEach(function(btn) {
+                btn.onclick = function(e) {
+                    var approvalId = this.getAttribute('data-approval-id');
+                    if (!approvalId) return;
+                    var that = this;
+                    var notes = prompt('Catatan penolakan (opsional)');
+                    that.disabled = true;
+                    var notifEl = that.closest('[data-notif-id]');
+                    var notifId = notifEl ? notifEl.getAttribute('data-notif-id') : null;
+                    fetch('/guru-anak/approvals/' + approvalId + '/reject', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            approval_notes: notes
+                        })
+                    }).then(r => r.json()).then(j => {
+                        if (j.success) {
+                            if (notifId) {
+                                fetch('{{ route("notifications.mark-read") }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        id: notifId
+                                    })
+                                }).catch(() => {});
+                            }
+                            var el = notifEl;
+                            if (el) el.remove();
+                            const badge = document.getElementById('nav-notif-count');
+                            if (badge) {
+                                let v = parseInt(badge.textContent || '0', 10) - 1;
+                                if (v < 0) v = 0;
+                                badge.textContent = v;
+                            }
+                        } else {
+                            alert(j.message || 'Gagal memproses penolakan');
+                            that.disabled = false;
+                        }
+                    }).catch(() => {
+                        alert('Terjadi kesalahan jaringan');
+                        that.disabled = false;
+                    });
+                }
+            });
+        }
+
+        // Pasang handler ke notifikasi yang sudah ada saat load
+        if (list) attachApprovalHandlers(list);
         const btnAll = document.getElementById('btn-mark-all-read');
         if (btnAll) {
             btnAll.addEventListener('click', function() {
@@ -284,11 +452,24 @@ use Illuminate\Support\Facades\Route;
                 const notifDiv = document.createElement('div');
                 notifDiv.className = 'list-group-item d-flex justify-content-between align-items-start';
                 notifDiv.setAttribute('data-notif-id', e.id || '');
-                notifDiv.innerHTML = `<div class=\"me-2\"><p class=\"mb-0 small\">${e.message || 'Notifikasi baru'}</p><small class=\"text-muted\">Baru saja</small></div>`;
+                notifDiv.innerHTML = `<div class="me-2"><p class="mb-0 small">${e.message || 'Notifikasi baru'}</p><small class="text-muted">Baru saja</small></div>`;
                 if (role === 'admin' && e.approval_id) {
-                    notifDiv.innerHTML += `<div class=\"btn-group btn-group-sm\"><button class=\"btn btn-icon btn-sm btn-success btn-accept-request\" data-approval-id=\"${e.approval_id}\" title=\"Terima\"><i class=\"ri-check-line\"></i></button><button class=\"btn btn-icon btn-sm btn-outline-danger btn-reject-notif ms-1\" data-approval-id=\"${e.approval_id}\" title=\"Tolak\"><i class=\"ri-close-line\"></i></button></div>`;
+                    notifDiv.innerHTML += `<div class="btn-group btn-group-sm"><button class="btn btn-icon btn-sm btn-success btn-accept-request" data-approval-id="${e.approval_id}" title="Terima"><i class="ri-check-line"></i></button><button class="btn btn-icon btn-sm btn-outline-danger btn-reject-notif ms-1" data-approval-id="${e.approval_id}" title="Tolak"><i class="ri-close-line"></i></button></div>`;
                 }
                 list.prepend(notifDiv);
+                // Attach handler ke tombol baru
+                attachApprovalHandlers(notifDiv);
+                // Jika ini notifikasi untuk guru, pastikan dropdown hanya menampilkan maksimal 4 items
+                if (role === 'guru') {
+                    try {
+                        const items = list.querySelectorAll('.list-group-item');
+                        if (items.length > 4) {
+                            for (let i = items.length - 1; i >= 4; i--) {
+                                if (items[i] && items[i].parentNode) items[i].parentNode.removeChild(items[i]);
+                            }
+                        }
+                    } catch (e) {}
+                }
             }
             // Tampilkan toastr hanya untuk guru, atau untuk admin hanya jika action = requested (permintaan akses baru)
             if ((role === 'guru') || (role === 'admin' && (!e.action || e.action === 'requested'))) {
@@ -297,112 +478,6 @@ use Illuminate\Support\Facades\Route;
         }
 
         // attach accept handlers for approval requests
-        document.querySelectorAll('.btn-accept-request').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                var approvalId = this.getAttribute('data-approval-id');
-                if (!approvalId) return;
-                var that = this;
-                that.disabled = true;
-                // capture notif id if present
-                var notifEl = that.closest('[data-notif-id]');
-                var notifId = notifEl ? notifEl.getAttribute('data-notif-id') : null;
-                fetch('/guru-anak/approvals/' + approvalId + '/approve', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json'
-                    }
-                }).then(r => r.json()).then(j => {
-                    if (j.success) {
-                        // mark notification as read (if id present)
-                        if (notifId) {
-                            fetch('{{ route("notifications.mark-read") }}', {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    id: notifId
-                                })
-                            }).catch(() => {});
-                        }
-                        var el = notifEl;
-                        if (el) el.remove();
-                        const badge = document.getElementById('nav-notif-count');
-                        if (badge) {
-                            let v = parseInt(badge.textContent || '0', 10) - 1;
-                            if (v < 0) v = 0;
-                            badge.textContent = v;
-                        }
-                        // Tidak perlu showGlobalToast di admin
-                    } else {
-                        alert(j.message || 'Gagal memproses permintaan');
-                        that.disabled = false;
-                    }
-                }).catch(() => {
-                    alert('Terjadi kesalahan jaringan');
-                    that.disabled = false;
-                });
-            });
-        });
-
-        // attach reject handlers for approval requests (from navbar)
-        document.querySelectorAll('.btn-reject-notif').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                var approvalId = this.getAttribute('data-approval-id');
-                if (!approvalId) return;
-                var that = this;
-                var notes = prompt('Catatan penolakan (opsional)');
-                that.disabled = true;
-                var notifEl = that.closest('[data-notif-id]');
-                var notifId = notifEl ? notifEl.getAttribute('data-notif-id') : null;
-                fetch('/guru-anak/approvals/' + approvalId + '/reject', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        approval_notes: notes
-                    })
-                }).then(r => r.json()).then(j => {
-                    if (j.success) {
-                        // mark notification as read (if id present)
-                        if (notifId) {
-                            fetch('{{ route("notifications.mark-read") }}', {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    id: notifId
-                                })
-                            }).catch(() => {});
-                        }
-                        var el = notifEl;
-                        if (el) el.remove();
-                        const badge = document.getElementById('nav-notif-count');
-                        if (badge) {
-                            let v = parseInt(badge.textContent || '0', 10) - 1;
-                            if (v < 0) v = 0;
-                            badge.textContent = v;
-                        }
-                        // Tidak perlu showGlobalToast di admin
-                    } else {
-                        alert(j.message || 'Gagal memproses penolakan');
-                        that.disabled = false;
-                    }
-                }).catch(() => {
-                    alert('Terjadi kesalahan jaringan');
-                    that.disabled = false;
-                });
-            });
-        });
 
         // Polling dinonaktifkan, hanya gunakan notifikasi realtime via Echo/socket.io
         // Laravel Echo + socket.io realtime notification

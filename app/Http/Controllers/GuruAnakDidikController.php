@@ -144,9 +144,7 @@ class GuruAnakDidikController extends Controller
       // If approver exists but is the same as requester, notify admins only (don't notify self)
       if ($approverUserId && $approverUserId == $user->id) {
         $admins = User::where('role', 'admin')->get();
-        if ($admins && $admins->count()) {
-          Notification::send($admins, new AccessRequestNotification($user->id, $requesterName, $anakDidik->id, $anakName, $approval->id));
-        }
+        // Notifikasi database ke admin di-nonaktifkan, hanya gunakan notifikasi realtime
       } elseif ($approverUserId) {
         // notify the approver (guru fokus)
         $approver = User::find($approverUserId);
@@ -157,16 +155,22 @@ class GuruAnakDidikController extends Controller
           }
         }
       } else {
-        // no approver configured -> notify admins
+        // no approver configured -> notify admins, CEGAH DUPLIKAT
         $admins = User::where('role', 'admin')->get();
-        if ($admins && $admins->count()) {
-          Notification::send($admins, new AccessRequestNotification($user->id, $requesterName, $anakDidik->id, $anakName, $approval->id));
+        foreach ($admins as $admin) {
+          $already = $admin->unreadNotifications()
+            ->where('type', AccessRequestNotification::class)
+            ->where('data->approval_id', $approval->id)
+            ->exists();
+          if (!$already) {
+            $admin->notify(new AccessRequestNotification($user->id, $requesterName, $anakDidik->id, $anakName, $approval->id));
+          }
         }
       }
-      // Broadcast event realtime ke admin HANYA SEKALI
+      // Broadcast event realtime ke admin SAJA
       $admins = User::where('role', 'admin')->get();
       if ($admins && $admins->count()) {
-        event(new NotifikasiAksesPPI($user->id, $requesterName, "Permintaan akses PPI dari $requesterName untuk anak $anakName", $approval->id));
+        event(new NotifikasiAksesPPI($user->id, $requesterName, "Permintaan akses PPI dari $requesterName untuk anak $anakName", $approval->id, $approval->id, 'admin'));
       }
     } catch (\Throwable $ex) {
       // don't block creation if notification fails; log if desired
@@ -188,8 +192,12 @@ class GuruAnakDidikController extends Controller
     $query = GuruAnakDidikApproval::where('approver_user_id', $user->id)
       ->with(['requesterUser', 'anakDidik']);
 
+    // By default, show both pending and rejected requests for the approver (useful for audit/review).
+    // If a specific status is requested via query string, honor it.
     if ($request->filled('status')) {
       $query->where('status', $request->status);
+    } else {
+      $query->whereIn('status', ['pending', 'rejected']);
     }
 
     $requests = $query->paginate(10)->appends($request->query());
@@ -228,13 +236,17 @@ class GuruAnakDidikController extends Controller
       $requesterId = $approval->requester_user_id;
       $anakId = $approval->anak_didik_id;
       $requester = User::find($requesterId);
+      $anak = \App\Models\AnakDidik::find($anakId);
+      $anakName = $anak ? $anak->nama : '';
       if ($requester) {
         $requesterName = $requester->name ?? null;
         // do not notify konsultan or terapis accounts
         if (!in_array($requester->role, ['konsultan', 'terapis'])) {
-          $requester->notify(new \App\Notifications\AccessRequestNotification($user->id, $user->name ?? 'Admin', $anakId, $requester->name ?? '', $approval->id, 'approved'));
-          // Broadcast event realtime ke guru yang meminta akses
-          event(new \App\Events\NotifikasiAksesPPI($requester->id, $requesterName, $user->name . ' telah menyetujui permintaan akses Anda untuk ' . ($requesterName ?: 'anak ini'), $approval->id));
+          $notif = new \App\Notifications\AccessRequestNotification($user->id, $user->name ?? 'Admin', $anakId, $anakName, $approval->id, 'approved');
+          $requester->notify($notif);
+          // Broadcast event realtime ke guru yang meminta akses SAJA, pesan sama dengan notifikasi database
+          $message = $notif->toDatabase($requester)['message'] ?? ($user->name . ' telah menyetujui permintaan akses Anda untuk ' . ($anakName ?: 'anak ini'));
+          event(new \App\Events\NotifikasiAksesPPI($requester->id, $requesterName, $message, $approval->id, $approval->id, 'guru'));
         }
       }
     } catch (\Throwable $ex) {
@@ -277,13 +289,17 @@ class GuruAnakDidikController extends Controller
     $requesterName = null;
     try {
       $requester = User::find($approval->requester_user_id);
+      $anak = \App\Models\AnakDidik::find($approval->anak_didik_id);
+      $anakName = $anak ? $anak->nama : '';
       if ($requester) {
         $requesterName = $requester->name ?? null;
         // do not notify konsultan or terapis accounts
         if (!in_array($requester->role, ['konsultan', 'terapis'])) {
-          $requester->notify(new \App\Notifications\AccessRequestNotification($user->id, $user->name ?? 'Admin', $approval->anak_didik_id, $requester->name ?? '', $approval->id, 'rejected'));
-          // Broadcast event realtime ke guru yang meminta akses
-          event(new \App\Events\NotifikasiAksesPPI($requester->id, $requesterName, $user->name . ' menolak permintaan akses Anda untuk ' . ($requesterName ?: 'anak ini'), $approval->id));
+          $notif = new \App\Notifications\AccessRequestNotification($user->id, $user->name ?? 'Admin', $approval->anak_didik_id, $anakName, $approval->id, 'rejected');
+          $requester->notify($notif);
+          // Broadcast event realtime ke guru yang meminta akses SAJA, pesan sama dengan notifikasi database
+          $message = $notif->toDatabase($requester)['message'] ?? ($user->name . ' menolak permintaan akses Anda untuk ' . ($anakName ?: 'anak ini'));
+          event(new \App\Events\NotifikasiAksesPPI($requester->id, $requesterName, $message, $approval->id, $approval->id, 'guru'));
         }
       }
     } catch (\Throwable $ex) {
