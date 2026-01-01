@@ -374,7 +374,7 @@
       var anakId = btn.getAttribute('data-anak-didik-id');
       var isFokus = (btn.getAttribute('data-is-fokus') === '1');
       var currentUserId = @json(Auth::id());
-      var currentUserRole = @json(optional(Auth::user()) - > role);
+      var currentUserRole = @json(optional(Auth::user())->role);
       var canApprove = @json($canApprovePPI ?? false);
       fetch('/ppi/riwayat/' + anakId)
         .then(r => r.json())

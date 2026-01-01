@@ -97,9 +97,9 @@
 @push('page-script')
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const konsultanSpecs = @json((($konsultans ?? collect()) - > mapWithKeys(function($k) {
-      return [$k - > id => strtolower($k - > spesialisasi ?? '')];
-    }) - > toArray()));
+    const konsultanSpecs = @json((($konsultans ?? collect())->mapWithKeys(function($k) {
+      return [$k->id => strtolower($k->spesialisasi ?? '')];
+    })->toArray()));
     const pendidikanCache = {};
 
     function addOptionToSelect(sel, value, label, dataAttrs = {}) {

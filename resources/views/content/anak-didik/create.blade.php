@@ -12,44 +12,51 @@
     <div class="card mb-4">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Tambah Anak Didik Baru</h5>
-        <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary btn-sm">
-          <i class="ri-arrow-left-line me-2"></i>Kembali
-        </a>
+        <div class="d-flex align-items-center gap-2">
+          <a href="{{ route('anak-didik.index') }}" class="btn p-0 border-0 bg-transparent d-inline-flex d-sm-none align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+            <i class="ri-arrow-left-circle-fill" style="font-size:2em;font-weight:bold;"></i>
+          </a>
+          <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary btn-sm d-none d-sm-inline-flex align-items-center">
+            <i class="ri-arrow-left-line me-2"></i>Kembali
+          </a>
+        </div>
       </div>
       <div class="card-body">
         <!-- Nav Tabs -->
-        <ul class="nav nav-tabs mb-3" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="data-diri-tab" data-bs-toggle="tab" data-bs-target="#data-diri"
-              type="button" role="tab" aria-controls="data-diri" aria-selected="true">
-              <i class="ri-user-line me-2"></i>Data Diri
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-keluarga-tab" data-bs-toggle="tab" data-bs-target="#data-keluarga"
-              type="button" role="tab" aria-controls="data-keluarga" aria-selected="false">
-              <i class="ri-home-heart-line me-2"></i>Data Keluarga
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-kesehatan-tab" data-bs-toggle="tab" data-bs-target="#data-kesehatan"
-              type="button" role="tab" aria-controls="data-kesehatan" aria-selected="false">
-              <i class="ri-heart-pulse-line me-2"></i>Data Kesehatan
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
-              type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
-              <i class="ri-book-line me-2"></i>Data Pendidikan
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="dokumen-tab" data-bs-toggle="tab" data-bs-target="#dokumen"
-              type="button" role="tab" aria-controls="dokumen" aria-selected="false">
-              <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
-            </button>
-          </li>
-        </ul>
+        <div class="mb-3" style="overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch;">
+          <ul class="nav nav-tabs mb-0 flex-nowrap" role="tablist" style="display:inline-flex;">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="data-diri-tab" data-bs-toggle="tab" data-bs-target="#data-diri"
+                type="button" role="tab" aria-controls="data-diri" aria-selected="true">
+                <i class="ri-user-line me-2"></i>Data Diri
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="data-keluarga-tab" data-bs-toggle="tab" data-bs-target="#data-keluarga"
+                type="button" role="tab" aria-controls="data-keluarga" aria-selected="false">
+                <i class="ri-home-heart-line me-2"></i>Data Keluarga
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="data-kesehatan-tab" data-bs-toggle="tab" data-bs-target="#data-kesehatan"
+                type="button" role="tab" aria-controls="data-kesehatan" aria-selected="false">
+                <i class="ri-heart-pulse-line me-2"></i>Data Kesehatan
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="data-pendidikan-tab" data-bs-toggle="tab" data-bs-target="#data-pendidikan"
+                type="button" role="tab" aria-controls="data-pendidikan" aria-selected="false">
+                <i class="ri-book-line me-2"></i>Data Pendidikan
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="dokumen-tab" data-bs-toggle="tab" data-bs-target="#dokumen"
+                type="button" role="tab" aria-controls="dokumen" aria-selected="false">
+                <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
+              </button>
+            </li>
+          </ul>
+        </div>
 
         <form id="anakDidikCreateForm" action="{{ route('anak-didik.store') }}" method="POST" enctype="multipart/form-data">
           @csrf
@@ -58,8 +65,8 @@
           <div class="tab-content">
             <!-- Data Diri Tab -->
             <div class="tab-pane fade show active" id="data-diri" role="tabpanel" aria-labelledby="data-diri-tab">
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
                   <input type="text" name="nama" class="form-control @error('nama') is-invalid @enderror"
                     placeholder="Masukkan nama lengkap" value="{{ old('nama') }}" required>
@@ -67,7 +74,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">NIS <small class="text-muted">(opsional)</small></label>
                   <input type="text" name="nis" id="nis" inputmode="numeric" pattern="\\d*" maxlength="20"
                     oninput="this.value=this.value.replace(/\\D/g,'').slice(0,20)"
@@ -78,8 +85,8 @@
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
                   <select name="jenis_kelamin" class="form-select @error('jenis_kelamin') is-invalid @enderror"
                     required>
@@ -93,7 +100,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Tanggal Lahir <span class="text-danger">*</span></label>
                   <input type="date" name="tanggal_lahir" class="form-control @error('tanggal_lahir') is-invalid @enderror"
                     value="{{ old('tanggal_lahir') }}" required>
@@ -103,8 +110,8 @@
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Tempat Lahir</label>
                   <input type="text" name="tempat_lahir" class="form-control @error('tempat_lahir') is-invalid @enderror"
                     placeholder="Kota/Kabupaten" value="{{ old('tempat_lahir') }}">
@@ -112,7 +119,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">NIK (Nomor Identitas)</label>
                   <input type="text" name="nik" id="nik" inputmode="numeric" pattern="\\d*" maxlength="16"
                     oninput="this.value=this.value.replace(/\\D/g,'').slice(0,16)"
@@ -123,8 +130,8 @@
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Guru Fokus</label>
                   <select name="guru_fokus_id" class="form-select @error('guru_fokus_id') is-invalid @enderror">
                     <option value="">Pilih Guru Fokus</option>
@@ -136,7 +143,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Email</label>
                   <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
                     placeholder="example@email.com" value="{{ old('email') }}">
@@ -147,19 +154,29 @@
               </div>
 
               <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-outline-secondary" disabled>
-                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
-                </button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-keluarga-tab').click()">
-                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
-                </button>
+                <div>
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" disabled>
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" disabled aria-hidden="true">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline-primary d-none d-sm-inline" onclick="document.getElementById('data-keluarga-tab').click()">
+                    Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-primary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-keluarga-tab').click()" aria-label="Selanjutnya">
+                    <i class="ri-arrow-right-line"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
             <!-- Data Keluarga Tab -->
             <div class="tab-pane fade" id="data-keluarga" role="tabpanel" aria-labelledby="data-keluarga-tab">
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Nomor KK (Kartu Keluarga)</label>
                   <input type="text" name="no_kk" id="no_kk" inputmode="numeric" pattern="\\d*" maxlength="16"
                     oninput="this.value=this.value.replace(/\\D/g,'').slice(0,16)"
@@ -168,7 +185,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">No. Akta Kelahiran</label>
                   <input type="text" name="no_akta_kelahiran" class="form-control @error('no_akta_kelahiran') is-invalid @enderror"
                     placeholder="Nomor Akta Kelahiran" value="{{ old('no_akta_kelahiran') }}">
@@ -178,8 +195,8 @@
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Nama Orang Tua/Wali</label>
                   <input type="text" name="nama_orang_tua" class="form-control @error('nama_orang_tua') is-invalid @enderror"
                     placeholder="Nama orang tua/wali" value="{{ old('nama_orang_tua') }}">
@@ -187,7 +204,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">No. Telepon Orang Tua</label>
                   <input type="tel" name="no_telepon_orang_tua" id="no_telepon_orang_tua" inputmode="tel" pattern="\\d*" maxlength="13"
                     oninput="this.value=this.value.replace(/\\D/g,'').slice(0,13)"
@@ -198,8 +215,8 @@
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Jumlah Saudara Kandung</label>
                   <input type="number" name="jumlah_saudara_kandung" class="form-control @error('jumlah_saudara_kandung') is-invalid @enderror"
                     placeholder="Jumlah saudara" value="{{ old('jumlah_saudara_kandung') }}" min="0">
@@ -207,7 +224,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Anak Ke-</label>
                   <input type="number" name="anak_ke" class="form-control @error('anak_ke') is-invalid @enderror"
                     placeholder="Anak ke berapa" value="{{ old('anak_ke') }}" min="1">
@@ -217,8 +234,8 @@
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-md-12">
+              <div class="row">
+                <div class="col-md-12 mb-3">
                   <label class="form-label">Tinggal Bersama</label>
                   <input type="text" name="tinggal_bersama" class="form-control @error('tinggal_bersama') is-invalid @enderror"
                     placeholder="Contoh: Orang Tua, Nenek, dll" value="{{ old('tinggal_bersama') }}">
@@ -228,19 +245,29 @@
                 </div>
               </div>
               <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-diri-tab').click()">
-                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
-                </button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-kesehatan-tab').click()">
-                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
-                </button>
+                <div>
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('data-diri-tab').click()">
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-diri-tab').click()" aria-label="Sebelumnya">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline-primary d-none d-sm-inline" onclick="document.getElementById('data-kesehatan-tab').click()">
+                    Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-primary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-kesehatan-tab').click()" aria-label="Selanjutnya">
+                    <i class="ri-arrow-right-line"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
             <!-- Data Kesehatan Tab -->
             <div class="tab-pane fade" id="data-kesehatan" role="tabpanel" aria-labelledby="data-kesehatan-tab">
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Tinggi Badan (cm)</label>
                   <input type="number" name="tinggi_badan" class="form-control @error('tinggi_badan') is-invalid @enderror"
                     placeholder="Dalam satuan cm" value="{{ old('tinggi_badan') }}" step="0.1" min="0">
@@ -248,7 +275,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Berat Badan (kg)</label>
                   <input type="number" name="berat_badan" class="form-control @error('berat_badan') is-invalid @enderror"
                     placeholder="Dalam satuan kg" value="{{ old('berat_badan') }}" step="0.1" min="0">
@@ -263,20 +290,30 @@
                 <strong>Catatan:</strong> Data kesehatan dan pengukuran dapat diperbarui secara berkala seiring perkembangan anak.
               </div>
               <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-keluarga-tab').click()">
-                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
-                </button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('data-pendidikan-tab').click()">
-                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
-                </button>
+                <div>
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('data-keluarga-tab').click()">
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-keluarga-tab').click()" aria-label="Sebelumnya">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline-primary d-none d-sm-inline" onclick="document.getElementById('dokumen-tab').click()">
+                    Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-primary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-pendidikan-tab').click()" aria-label="Selanjutnya">
+                    <i class="ri-arrow-right-line"></i>
+                  </button>
+                </div>
               </div>
 
             </div>
 
             <!-- Data Pendidikan Tab -->
             <div class="tab-pane fade" id="data-pendidikan" role="tabpanel" aria-labelledby="data-pendidikan-tab">
-              <div class="row mb-3">
-                <div class="col-md-6">
+              <div class="row">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Pendidikan Terakhir</label>
                   <select name="pendidikan_terakhir" class="form-select @error('pendidikan_terakhir') is-invalid @enderror">
                     <option value="">Pilih Pendidikan</option>
@@ -289,7 +326,7 @@
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 mb-3">
                   <label class="form-label">Asal Sekolah</label>
                   <input type="text" name="asal_sekolah" class="form-control @error('asal_sekolah') is-invalid @enderror"
                     placeholder="Nama sekolah asal" value="{{ old('asal_sekolah') }}">
@@ -299,8 +336,8 @@
                 </div>
               </div>
 
-              <div class="row mb-3">
-                <div class="col-md-12">
+              <div class="row">
+                <div class="col-md-12 mb-3">
                   <label class="form-label">Tanggal Pendaftaran</label>
                   <input type="date" name="tanggal_pendaftaran" class="form-control @error('tanggal_pendaftaran') is-invalid @enderror"
                     value="{{ old('tanggal_pendaftaran') }}">
@@ -310,12 +347,22 @@
                 </div>
               </div>
               <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-kesehatan-tab').click()">
-                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
-                </button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('dokumen-tab').click()">
-                  Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
-                </button>
+                <div>
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('data-kesehatan-tab').click()">
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-kesehatan-tab').click()" aria-label="Sebelumnya">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline-primary d-none d-sm-inline" onclick="document.getElementById('dokumen-tab').click()">
+                    Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-primary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('dokumen-tab').click()" aria-label="Selanjutnya">
+                    <i class="ri-arrow-right-line"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -405,14 +452,25 @@
               </div>
 
               <div class="d-flex justify-content-between mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('data-pendidikan-tab').click()">
-                  <i class="ri-arrow-left-line me-2"></i>Sebelumnya
-                </button>
                 <div>
-                  <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary me-2">
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('data-pendidikan-tab').click()">
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-pendidikan-tab').click()" aria-label="Sebelumnya">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div>
+                  <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary btn-sm me-2 d-none d-sm-inline">
                     <i class="ri-close-line me-2"></i>Batal
                   </a>
-                  <button id="anakDidikSaveBtn" type="submit" class="btn btn-primary">
+                  <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary btn-sm me-2 d-inline d-sm-none">
+                    <i class="ri-close-line me-2"></i>Batal
+                  </a>
+                  <button id="anakDidikSaveBtn" type="button" class="btn btn-primary btn-sm d-none d-sm-inline">
+                    <i class="ri-save-line me-2"></i>Simpan
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm d-inline d-sm-none anakDidikSaveBtn">
                     <i class="ri-save-line me-2"></i>Simpan
                   </button>
                 </div>
@@ -454,18 +512,18 @@
 <script>
   // Ensure create form submits even if a hidden invalid control would block native submit
   (function() {
-    var btn = document.getElementById('anakDidikSaveBtn');
     var form = document.getElementById('anakDidikCreateForm');
-    if (btn && form) {
+    if (!form) return;
+    var saveButtons = Array.prototype.slice.call(document.querySelectorAll('#anakDidikSaveBtn, .anakDidikSaveBtn'));
+    saveButtons.forEach(function(btn) {
       btn.addEventListener('click', function(e) {
-        // Bypass HTML5 validation since some required controls live in other (hidden) tabs
         form.noValidate = true;
         if (!form.__submitted) {
           form.__submitted = true;
           form.submit();
         }
       });
-    }
+    });
   })();
 </script>
 

@@ -28,7 +28,7 @@
                 <option value="">Pilih Anak Didik</option>
                 @foreach($anakDidiks as $anak)
                 <option value="{{ $anak->id }}" {{ old('anak_didik_id') == $anak->id ? 'selected' : '' }}>
-                  {{ $anak->nama }} ({{ $anak->nis }})
+                  {{ $anak->nama }}
                 </option>
                 @endforeach
               </select>
