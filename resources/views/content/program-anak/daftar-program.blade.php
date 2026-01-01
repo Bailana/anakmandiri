@@ -162,8 +162,12 @@
                 </div>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                  <i class="ri-close-line me-2"></i>Batal
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <i class="ri-refresh-line me-2"></i>Perbarui
+                </button>
               </div>
             </form>
           </div>
@@ -446,7 +450,7 @@
   </div>
 </div>
 
-<div class="row mt-4">
+<div class="row">
   <div class="col-12">
     <div class="card">
       <div class="table-responsive">
@@ -497,6 +501,7 @@
                       data-tujuan="{{ htmlentities($p->tujuan) }}"
                       data-aktivitas="{{ htmlentities($p->aktivitas) }}"
                       data-keterangan="{{ htmlentities($p->keterangan) }}"
+                      data-bs-toggle="modal" data-bs-target="#modalEditProgram"
                       title="Edit Program">
                       <i class="ri-edit-line"></i>
                     </button>
