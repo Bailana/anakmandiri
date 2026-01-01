@@ -29,6 +29,24 @@
         </div>
       </div>
     </div>
+    <style>
+      /* Riwayat modal: list-group item layout to match program-anak view */
+      #riwayatObservasiModal .list-group-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .5rem;
+      }
+
+      #riwayatObservasiModal .list-group-item .btn {
+        line-height: 1;
+        padding: .35rem .45rem;
+      }
+
+      #riwayatObservasiModal .fw-bold.bg-light {
+        font-size: .95rem;
+      }
+    </style>
   </div>
 </div>
 
@@ -110,36 +128,25 @@
                 @endif
               </td>
               <td>
-                <!-- Tombol aksi untuk desktop -->
-                <div class="d-none d-md-flex gap-1">
-                  <button type="button" class="btn btn-sm btn-outline-info" title="Lihat"
-                    onclick="showDetailObservasi('{{ $program->sumber }}', {{ $program->id }})">
-                    <i class="ri-eye-line"></i>
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning" title="Edit"
-                    onclick="editObservasi({{ $program->id }})">
-                    <i class="ri-edit-line"></i>
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus"
-                    onclick="hapusObservasi({{ $program->id }})">
-                    <i class="ri-delete-bin-line"></i>
+                <!-- Tombol Riwayat (desktop) - kecil ikon seperti di program-anak -->
+                <div class="d-none d-md-flex gap-2 align-items-center">
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-info btn-view-riwayat"
+                    data-program-id="{{ $program->id }}" data-anak-didik-id="{{ $program->anak_didik_id ?? ($program->anakDidik->id ?? '') }}"
+                    title="Riwayat" onclick="loadRiwayatObservasi(this)">
+                    <i class="ri-history-line"></i>
                   </button>
                 </div>
-                <!-- Tombol titik tiga untuk mobile -->
+                <!-- Tombol titik tiga untuk mobile (menu hanya berisi Riwayat) -->
                 <div class="dropdown d-md-none">
                   <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown"
                     aria-expanded="false" style="box-shadow:none;">
                     <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#"
-                        onclick="showDetailObservasi('{{ $program->sumber }}', {{ $program->id }});return false;"><i
-                          class="ri-eye-line me-1"></i> Lihat</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="editObservasi({{ $program->id }});return false;"><i
-                          class="ri-edit-line me-1"></i> Edit</a></li>
-                    <li><a class="dropdown-item text-danger" href="#"
-                        onclick="hapusObservasi({{ $program->id }});return false;"><i
-                          class="ri-delete-bin-line me-1"></i> Hapus</a></li>
+                    <li>
+                      <a class="dropdown-item" href="#" data-program-id="{{ $program->id }}" data-anak-didik-id="{{ $program->anak_didik_id ?? ($program->anakDidik->id ?? '') }}"
+                        onclick="loadRiwayatObservasi(this);return false;"><i class="ri-history-line me-1"></i> Riwayat</a>
+                    </li>
                   </ul>
                 </div>
               </td>
@@ -176,7 +183,6 @@
               display: none !important;
             }
           }
-
         </style>
       </div>
       <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
@@ -214,7 +220,6 @@
               flex-wrap: nowrap !important;
             }
           }
-
         </style>
         <div class="text-body-secondary">
           Menampilkan {{ $programs->firstItem() ?? 0 }} hingga {{ $programs->lastItem() ?? 0 }} dari
@@ -355,13 +360,9 @@
 
   <script>
     // Inject current user id from backend (must be outside function for valid JS)
-    var currentUserId = {
-      {
-        json_encode(Auth::id())
-      }
-    };
+    var currentUserId = @json(Auth::id());
     // Fungsi untuk menampilkan detail observasi secara aman
-    window.showDetailObservasi = function (sumber, id) {
+    window.showDetailObservasi = function(sumber, id) {
       // Pastikan modal detail ada di DOM
       var detailModalEl = document.getElementById('detailModal');
       if (!detailModalEl) return;
@@ -586,77 +587,159 @@
       }
     }
 
-    window.loadRiwayatObservasi = function (btn) {
+    window.loadRiwayatObservasi = function(btn) {
       resetDetailModal();
       var programId = btn.getAttribute('data-program-id');
       var listDiv = document.getElementById('riwayatObservasiList');
       listDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
       // Ambil id anak didik dari atribut data-anak-didik-id jika ada, fallback ke programId
       var anakDidikId = btn.getAttribute('data-anak-didik-id') || programId;
+      // simpan untuk refresh setelah penghapusan
+      window.currentRiwayatAnakId = anakDidikId;
+      var currentUserId = @json(Auth::id());
+
+      // prepare and show modal (manage stack similar to other views)
+      var modalEl = document.getElementById('riwayatObservasiModal');
+      var modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+      try {
+        if (modalEl) pushModalAndShow(modalEl);
+      } catch (e) {}
+
       fetch('/program/riwayat-observasi-program/' + anakDidikId)
         .then(response => response.json())
         .then(res => {
           if (!res.success || !res.riwayat || res.riwayat.length === 0) {
             listDiv.innerHTML = '<div class="text-center text-muted">Belum ada riwayat observasi/evaluasi.</div>';
+            if (modal) try {
+              modal.show();
+            } catch (e) {}
             return;
           }
-          // Group by konsultan (if present) else by user
-          const groups = {};
-          res.riwayat.forEach(item => {
-            const key = item.konsultan_id ? `konsultan_${item.konsultan_id}` : `user_${item.user_id}`;
-            const name = item.konsultan_name || item.user_name || '-';
-            if (!groups[key]) groups[key] = {
-              name: name,
-              items: []
-            };
-            groups[key].items.push(item);
-          });
+
+          // Render groups. Server may provide grouping (groups with .items) or a flat list of items.
           let html = '';
-          Object.keys(groups).forEach((userId, idx, arr) => {
-            const group = groups[userId];
-            html += `<div class="mb-3">
-              <div class="fw-bold bg-light p-2 rounded border mb-2"><i class='ri-user-line me-1'></i> ${group.name}</div>
-              <ul class="list-group">`;
-            group.items.forEach(item => {
-              html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><b>${item.hari}</b>, ${item.tanggal}</span>
-                <span class="d-none d-sm-flex">
-                  <button class="btn btn-sm btn-outline-info me-1" onclick="showDetailObservasi('${item.sumber}', ${item.id})" title="Lihat"><i class='ri-eye-line'></i></button>
-                  ${item.user_id == currentUserId ? `
-                    <button class="btn btn-sm btn-outline-warning me-1" onclick="editObservasi(${item.id})" title="Edit"><i class='ri-edit-line'></i></button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="hapusObservasi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>
-                  ` : ''}
-                </span>
-                <span class="d-inline-block d-sm-none dropdown">
-                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
-                    <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#" onclick="showDetailObservasi('${item.sumber}', ${item.id});return false;"><i class='ri-eye-line me-1'></i> Lihat</a></li>
-                    ${item.user_id == currentUserId ? `
-                      <li><a class="dropdown-item" href="#" onclick="editObservasi(${item.id});return false;"><i class='ri-edit-line me-1'></i> Edit</a></li>
-                      <li><a class="dropdown-item text-danger" href="#" onclick="hapusObservasi(${item.id});return false;"><i class='ri-delete-bin-line me-1'></i> Hapus</a></li>
-                    ` : ''}
-                  </ul>
-                </span>
-              </li>`;
+          let groups = [];
+          if (Array.isArray(res.riwayat) && res.riwayat.length > 0 && res.riwayat[0].items) {
+            groups = res.riwayat;
+          } else if (Array.isArray(res.riwayat)) {
+            // flat array of items -> group by konsultan_name or user_name client-side
+            const grouped = {};
+            res.riwayat.forEach(it => {
+              const name = it.konsultan_name || it.user_name || (it.konsultan && (it.konsultan.nama || it.konsultan.name)) || '-';
+              if (!grouped[name]) grouped[name] = [];
+              grouped[name].push(it);
             });
-            html += '</ul></div>';
+            groups = Object.keys(grouped).map(k => ({
+              name: k,
+              items: grouped[k]
+            }));
+          }
+
+          // helper: determine if the current logged-in user may edit/delete this item
+          function isItemEditable(item) {
+            if (!currentUserId) return false;
+            // common fields that might indicate owner
+            if (item.user_id && item.user_id == currentUserId) return true;
+            if (item.userId && item.userId == currentUserId) return true;
+            if (item.konsultan_id && item.konsultan_id == currentUserId) return true;
+            if (item.konsultan) {
+              if (item.konsultan.id && item.konsultan.id == currentUserId) return true;
+              if (item.konsultan.user_id && item.konsultan.user_id == currentUserId) return true;
+              if (item.konsultan.userId && item.konsultan.userId == currentUserId) return true;
+            }
+            return false;
+          }
+
+          groups.forEach(group => {
+            const groupName = group.name || group.konsultan_name || group.user_name || '-';
+            html += `<div class="mb-3">`;
+            html += `<div class="fw-bold bg-light p-2 rounded border mb-2"><i class='ri-user-line me-1'></i> ${groupName}</div>`;
+            html += `<ul class="list-group">`;
+            (group.items || []).forEach(item => {
+              html += `<li class="list-group-item d-flex justify-content-between align-items-center" data-sumber="${item.sumber || ''}" data-id="${item.id}">`;
+              // compute display day/date with fallbacks and basic formatting
+              try {
+                var displayDay = item.hari || '';
+                var displayDate = item.tanggal || item.date || item.created_at || item.datetime || '';
+                if (!displayDate && item.timestamp) displayDate = item.timestamp;
+                if (displayDate) {
+                  var parsed = new Date(displayDate);
+                  if (!isNaN(parsed.getTime())) {
+                    // use Indonesian locale for human-friendly output
+                    try {
+                      if (!displayDay) displayDay = parsed.toLocaleDateString('id-ID', {
+                        weekday: 'long'
+                      });
+                    } catch (e) {}
+                    try {
+                      displayDate = parsed.toLocaleDateString('id-ID');
+                    } catch (e) {}
+                  }
+                }
+              } catch (e) {
+                var displayDay = item.hari || '';
+                var displayDate = item.tanggal || '';
+              }
+              html += '<div><b>' + (displayDay || '') + '</b>, ' + (displayDate || '') + '</div>';
+
+              // Desktop actions (visible on sm and up)
+              html += `<div class="d-none d-sm-flex">`;
+              html += `<button class="btn btn-outline-info me-1" onclick="showDetailObservasi('${item.sumber || ''}', ${item.id})" title="Lihat"><i class='ri-eye-line'></i></button>`;
+              // Show Edit & Delete only when the item belongs to current user (UI only)
+              if (isItemEditable(item)) {
+                html += `<button class="btn btn-outline-warning me-1" onclick="(function(e){ window._lastClickedRiwayatItem = e.currentTarget.closest('li'); editObservasi(${item.id}); })(event)" title="Edit"><i class='ri-edit-line'></i></button>`;
+                html += `<button class="btn btn-outline-danger" onclick="hapusObservasi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>`;
+              }
+              html += `</div>`;
+
+              // Mobile actions dropdown
+              html += `<div class="d-inline-block d-sm-none dropdown">`;
+              html += `<button class="btn p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;"><i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.25em;"></i></button>`;
+              html += `<ul class="dropdown-menu dropdown-menu-end">`;
+              html += `<li><a class="dropdown-item" href="#" onclick="showDetailObservasi('${item.sumber || ''}', ${item.id});return false;"><i class='ri-eye-line me-1'></i> Lihat</a></li>`;
+              if (isItemEditable(item)) {
+                html += `<li><a class="dropdown-item" href="#" onclick="(function(e){ window._lastClickedRiwayatItem = e.currentTarget.closest('li'); editObservasi(${item.id});return false; })(event)"><i class='ri-edit-line me-1'></i> Edit</a></li>`;
+                html += `<li><a class="dropdown-item text-danger" href="#" onclick="hapusObservasi(${item.id});return false;"><i class='ri-delete-bin-line me-1'></i> Hapus</a></li>`;
+              }
+              html += `</ul></div>`;
+
+              html += `</li>`;
+            });
+            html += `</ul></div>`;
           });
+
           listDiv.innerHTML = html;
+          if (modal) try {
+            modal.show();
+          } catch (e) {}
         })
         .catch(() => {
           listDiv.innerHTML = '<div class="text-danger text-center">Gagal memuat data.</div>';
         });
     }
 
-    function editObservasi(id) {
-      // TODO: Implementasi edit observasi
-      alert('Edit observasi ID: ' + id);
+    window.editObservasi = function(id) {
+      // Navigate to edit page for the observasi; if a sumber was provided in rendering, caller
+      // should set window._lastSumberBeforeEdit. Fallback to id-only route.
+      try {
+        var sumber = null;
+        // if caller rendered item with a data-sumber attribute on last clicked element, prefer it
+        if (window._lastClickedRiwayatItem && window._lastClickedRiwayatItem.dataset && window._lastClickedRiwayatItem.dataset.sumber) {
+          sumber = window._lastClickedRiwayatItem.dataset.sumber;
+        }
+        if (sumber) {
+          window.location.href = '/program/observasi-program/' + sumber + '/' + id + '/edit';
+        } else {
+          window.location.href = '/program/observasi-program/' + id + '/edit';
+        }
+      } catch (e) {
+        // fallback
+        window.location.href = '/program/observasi-program/' + id + '/edit';
+      }
     }
 
     // Fungsi hapus observasi dengan logika aman
-    function hapusObservasi(id) {
+    window.hapusObservasi = function(id) {
       if (!confirm('Yakin ingin menghapus observasi ini?')) return;
       fetch('/program/observasi-program/' + id, {
           method: 'DELETE',
@@ -673,21 +756,21 @@
             var detailModalEl = document.getElementById('detailModal');
             var detailModal = detailModalEl ? bootstrap.Modal.getInstance(detailModalEl) : null;
             if (detailModal) detailModal.hide();
-            // Refresh daftar riwayat dengan id anak didik terakhir yang aktif di modal
-            var modal = document.getElementById('riwayatObservasiModal');
-            if (modal) {
-              var anakDidikId = null;
-              // Cari tombol yang terakhir membuka modal
-              var lastBtn = document.querySelector(
-                'button[data-bs-target="#riwayatObservasiModal"].active, button[data-bs-target="#riwayatObservasiModal"]:focus'
-                );
-              if (!lastBtn) lastBtn = document.querySelector('button[data-bs-target="#riwayatObservasiModal"]');
-              if (lastBtn) anakDidikId = lastBtn.getAttribute('data-anak-didik-id');
-              if (anakDidikId) {
-                // Buat dummy btn agar loadRiwayatObservasi tetap dapat parameter btn
-                var dummyBtn = document.createElement('button');
-                dummyBtn.setAttribute('data-anak-didik-id', anakDidikId);
+            // Refresh daftar riwayat: prefer stored currentRiwayatAnakId (set when riwayat dibuka)
+            var anakId = window.currentRiwayatAnakId || null;
+            if (!anakId) {
+              // fallback: try to find a button that opened the riwayat
+              var lastBtn = document.querySelector('button[data-program-id][data-anak-didik-id]');
+              if (lastBtn) anakId = lastBtn.getAttribute('data-anak-didik-id') || lastBtn.getAttribute('data-program-id');
+            }
+            if (anakId) {
+              var dummyBtn = document.createElement('button');
+              dummyBtn.setAttribute('data-anak-didik-id', anakId);
+              // reload riwayat (this will also ensure modal stays/opened)
+              try {
                 loadRiwayatObservasi(dummyBtn);
+              } catch (e) {
+                console.error('Gagal memanggil loadRiwayatObservasi', e);
               }
             }
           } else {
@@ -717,6 +800,23 @@
       bsToast.show();
     }
 
+    // Cleanup leftover backdrops when the riwayat modal is closed
+    (function() {
+      var riwayatEl = document.getElementById('riwayatObservasiModal');
+      if (!riwayatEl) return;
+      riwayatEl.addEventListener('hidden.bs.modal', function() {
+        // small timeout to allow Bootstrap internal handlers to run first
+        setTimeout(function() {
+          // only remove backdrops if no other modal is visible
+          if (!document.querySelector('.modal.show')) {
+            document.querySelectorAll('.modal-backdrop').forEach(function(el) {
+              if (el && el.parentNode) el.parentNode.removeChild(el);
+            });
+            document.body.classList.remove('modal-open');
+          }
+        }, 50);
+      });
+    })();
   </script>
 </div>
 @endsection

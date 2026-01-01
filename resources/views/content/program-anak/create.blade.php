@@ -47,7 +47,7 @@
               <label for="anak_didik_id" class="form-label">Nama Anak Didik</label>
               <select name="anak_didik_id" id="anak_didik_id" class="form-select" required>
                 <option value="">Pilih Anak Didik</option>
-                @foreach($anakDidiks as $anak)
+                @foreach(collect($anakDidiks)->sortBy(function($a) { return mb_strtoupper($a->nama ?? ''); }) as $anak)
                 <option value="{{ $anak->id }}">{{ $anak->nama }}</option>
                 @endforeach
               </select>

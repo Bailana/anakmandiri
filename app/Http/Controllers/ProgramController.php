@@ -512,4 +512,140 @@ class ProgramController extends Controller
       'riwayat' => $riwayatGabung,
     ]);
   }
+
+  /**
+   * Show edit form for an observasi/program item (supports sumber-aware lookup)
+   */
+  public function editObservasiProgram($idOrSumber, $maybeId = null)
+  {
+    $sumber = null;
+    if ($maybeId !== null) {
+      $sumber = $idOrSumber;
+      $id = $maybeId;
+    } else {
+      $id = $idOrSumber;
+    }
+
+    $program = null;
+    if ($sumber) {
+      if ($sumber === 'wicara') $program = \App\Models\ProgramWicara::with(['anakDidik', 'user'])->find($id);
+      elseif ($sumber === 'psikologi') $program = \App\Models\ProgramPsikologi::with(['anakDidik', 'konsultan', 'user'])->find($id);
+      elseif ($sumber === 'si') $program = \App\Models\ProgramSI::with(['anakDidik', 'user'])->find($id);
+    }
+    if (!$program) {
+      // try all sources (use only relations that exist on each model)
+      $program = \App\Models\ProgramWicara::with(['anakDidik', 'user'])->find($id)
+        ?? \App\Models\ProgramPsikologi::with(['anakDidik', 'konsultan', 'user'])->find($id)
+        ?? \App\Models\ProgramSI::with(['anakDidik', 'user'])->find($id);
+      if (!$program) abort(404);
+      // attempt to set sumber based on actual model class
+      if ($program instanceof \App\Models\ProgramPsikologi) $sumber = 'psikologi';
+      elseif ($program instanceof \App\Models\ProgramSI) $sumber = 'si';
+      else $sumber = 'wicara';
+    }
+
+    // Authorization: allow owner (user_id) or admin
+    $user = Auth::user();
+    if ($user->role !== 'admin' && $program->user_id && $program->user_id !== $user->id) {
+      abort(403, 'Anda tidak memiliki izin untuk mengedit data ini.');
+    }
+
+    // Prepare data for edit view (reuse create's data)
+    $anakDidiks = AnakDidik::orderBy('nama', 'asc')->get();
+    $konsultans = Konsultan::all();
+    $currentKonsultanId = null;
+    if ($user && $user->role === 'konsultan') {
+      $k = Konsultan::where('user_id', $user->id)->first();
+      if ($k) $currentKonsultanId = $k->id;
+    }
+
+    // Ensure the view receives $program and its sumber so the form can submit to the correct route
+    return view('content.program.edit', compact('program', 'anakDidiks', 'konsultans', 'currentKonsultanId', 'sumber'));
+  }
+
+  /**
+   * Update an observasi/program item (sumber-aware)
+   */
+  public function updateObservasiProgram(Request $request, $idOrSumber, $maybeId = null)
+  {
+    $sumber = null;
+    if ($maybeId !== null) {
+      $sumber = $idOrSumber;
+      $id = $maybeId;
+    } else {
+      $id = $idOrSumber;
+    }
+
+    // find model by sumber
+    $model = null;
+    if ($sumber === 'psikologi') $model = \App\Models\ProgramPsikologi::find($id);
+    elseif ($sumber === 'si') $model = \App\Models\ProgramSI::find($id);
+    else $model = \App\Models\ProgramWicara::find($id);
+    if (!$model) abort(404);
+
+    // Authorization: owner or admin
+    $user = Auth::user();
+    if ($user->role !== 'admin' && $model->user_id && $model->user_id !== $user->id) {
+      abort(403, 'Anda tidak memiliki izin untuk mengubah data ini.');
+    }
+
+    // Validate and map based on sumber / spesialisasi
+    $konsultan = null;
+    if ($request->filled('konsultan_id')) $konsultan = Konsultan::find($request->input('konsultan_id'));
+    $spesialisasi = $konsultan ? strtolower($konsultan->spesialisasi) : ($sumber ?: 'wicara');
+
+    if ($spesialisasi === 'sensori integrasi') {
+      $rules = [
+        'anak_didik_id' => 'required|exists:anak_didiks,id',
+        'kemampuan.*.judul' => 'nullable|string',
+        'kemampuan.*.skala' => 'nullable|integer|min:1|max:5',
+        'wawancara' => 'nullable|string',
+        'diagnosa' => 'nullable|string',
+      ];
+      $validated = $request->validate($rules);
+      $model->anak_didik_id = $validated['anak_didik_id'];
+      if ($request->has('kemampuan')) $model->kemampuan = array_values($request->input('kemampuan'));
+      $model->keterangan = $request->input('wawancara');
+      if ($request->filled('diagnosa')) $model->diagnosa = $request->input('diagnosa');
+      $model->save();
+    } elseif ($spesialisasi === 'psikologi') {
+      $rules = [
+        'anak_didik_id' => 'required|exists:anak_didiks,id',
+      ];
+      $validated = $request->validate($rules);
+      $model->anak_didik_id = $validated['anak_didik_id'];
+      $model->latar_belakang = $request->input('latar_belakang');
+      $model->metode_assessment = $request->input('metode_assessment');
+      $model->hasil_assessment = $request->input('hasil_assessment');
+      $model->kesimpulan = $request->input('kesimpulan');
+      if ($request->filled('diagnosa_psikologi')) $model->diagnosa_psikologi = $request->input('diagnosa_psikologi');
+      if ($request->filled('konsultan_id')) $model->konsultan_id = $request->input('konsultan_id');
+      $model->save();
+    } else {
+      // wicara (default)
+      $rules = [
+        'anak_didik_id' => 'required|exists:anak_didiks,id',
+        // when editing from riwayat we no longer require program metadata fields
+        'nama_program' => 'nullable|string|max:255',
+        'kategori' => 'nullable|in:bina_diri,akademik,motorik,perilaku,vokasi',
+      ];
+      $validated = $request->validate($rules);
+      $model->anak_didik_id = $validated['anak_didik_id'];
+      if ($request->has('kemampuan')) $model->kemampuan = array_values($request->input('kemampuan'));
+      $model->wawancara = $request->input('wawancara');
+      $model->kemampuan_saat_ini = $request->input('kemampuan_saat_ini');
+      $model->saran_rekomendasi = $request->input('saran_rekomendasi');
+      if ($request->filled('diagnosa')) $model->diagnosa = $request->input('diagnosa');
+      if ($request->filled('konsultan_id')) {
+        // only set konsultan_id if the column exists on this model/table
+        if (array_key_exists('konsultan_id', $model->getAttributes()) || in_array('konsultan_id', $model->getFillable())) {
+          $model->konsultan_id = $request->input('konsultan_id');
+        }
+      }
+      $model->save();
+    }
+
+    ActivityService::logUpdate(get_class($model), $model->id ?? null, 'Memperbarui observasi/evaluasi');
+    return redirect()->route('program.index')->with('success', 'Data observasi/evaluasi berhasil diperbarui');
+  }
 }

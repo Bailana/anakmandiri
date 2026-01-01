@@ -28,6 +28,11 @@ Route::middleware(['auth', 'role:admin,konsultan,terapis,guru'])->group(function
   Route::put('/program-anak/{anakDidikId}/konsultan/{konsultanId}/date/{date}/suggest', [App\Http\Controllers\ProgramAnakController::class, 'setSuggestForGroup'])->name('program-anak.suggest.group');
   Route::get('/program/observasi-program/{id}', [ProgramController::class, 'showObservasiProgram'])->name('program.observasi-program.show');
   Route::get('/program/observasi-program/{sumber}/{id}', [ProgramController::class, 'showObservasiProgram'])->name('program.observasi-program.show.withsumber');
+  // Edit / Update endpoints for consultants to edit their own observations
+  Route::get('/program/observasi-program/{id}/edit', [ProgramController::class, 'editObservasiProgram'])->name('program.observasi-program.edit');
+  Route::get('/program/observasi-program/{sumber}/{id}/edit', [ProgramController::class, 'editObservasiProgram'])->name('program.observasi-program.edit.withsumber');
+  Route::put('/program/observasi-program/{id}', [ProgramController::class, 'updateObservasiProgram'])->name('program.observasi-program.update');
+  Route::put('/program/observasi-program/{sumber}/{id}', [ProgramController::class, 'updateObservasiProgram'])->name('program.observasi-program.update.withsumber');
   // Export PDF for ProgramWicara (observasi/evaluasi)
   Route::get('/program/{id}/export-pdf', [ProgramController::class, 'exportPdf'])->name('program.export-pdf');
 });
