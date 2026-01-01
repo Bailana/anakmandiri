@@ -29,8 +29,8 @@ use Illuminate\Support\Facades\Route;
         $showMenu = false;
         }
         }
-        // Allow role 'terapis' to access certain menus even if menu roles don't include it
-        if (isset($menu->slug) && auth()->check() && auth()->user()->role === 'terapis') {
+        // Allow role 'terapis' and 'guru' to access certain menus even if menu roles don't include it
+        if (isset($menu->slug) && auth()->check() && in_array(auth()->user()->role, ['terapis','guru'])) {
         $slugStr = is_array($menu->slug) ? implode(',', $menu->slug) : $menu->slug;
         // Anak Didik, Observasi/Evaluasi (program.index) and Program Anak should be visible to terapis
         if (str_contains($slugStr, 'anak-didik') || str_contains($slugStr, 'program.index') || str_contains($slugStr, 'program-anak') || str_contains($slugStr, 'program')) {
