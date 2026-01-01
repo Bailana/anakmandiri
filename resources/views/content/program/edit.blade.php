@@ -58,7 +58,7 @@
             {{-- Removed program metadata fields (nama, kategori, deskripsi, target) for riwayat-edit view --}}
 
             {{-- Reuse create-style fields: psikologi blocks, diagnosa row, and penilaian kemampuan table ---}}
-            <div class="row mb-3" id="psikologiFields" style="display:none;">
+            <div class="row mb-3" id="psikologiFields" style="display:{{ !empty($isPsikologiProgram) ? '' : 'none' }};">
               <div class="col-md-12 mb-2">
                 <label for="latar_belakang" class="form-label">Latar Belakang</label>
                 <textarea name="latar_belakang" id="latar_belakang" class="form-control" rows="3">{{ old('latar_belakang', $program->latar_belakang) }}</textarea>
@@ -144,7 +144,7 @@
               </div>
             </div>
 
-            <div class="row mb-3" id="row-diagnosa" style="display:none;">
+            <div class="row mb-3" id="row-diagnosa" style="display:{{ (!empty($isPsikologiProgram) || (isset($selectedSpesialisasi) && $selectedSpesialisasi === 'wicara')) ? 'none' : 'none' }};">
               <div class="col-md-12" id="wrapper-diagnosa">
                 <label class="form-label">Diagnosa</label>
                 <input type="text" name="diagnosa" id="input-diagnosa" class="form-control" placeholder="Masukkan diagnosa..." value="{{ old('diagnosa', $program->diagnosa) }}">
@@ -152,7 +152,7 @@
 
             </div>
             <div class="row mb-3">
-              <div class="col-md-12" id="wrapper-penilaian-kemampuan">
+              <div class="col-md-12" id="wrapper-penilaian-kemampuan" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                 <label class="form-label">Penilaian Kemampuan Anak</label>
                 <div class="table-responsive">
                   <style>
@@ -269,7 +269,7 @@
 
               <div class="row mb-3" id="row-keterangan">
                 {{-- for SI konsultan, prefill wawancara into keterangan if applicable --}}
-                <div class="col-md-12" id="wrapper-keterangan">
+                <div class="col-md-12" id="wrapper-keterangan" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                   <label class="form-label">Keterangan</label>
                   <textarea name="wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Keterangan tambahan...">{{ old('wawancara', $program->wawancara) }}</textarea>
                   @error('wawancara')
@@ -278,7 +278,7 @@
                 </div>
               </div>
               <div class="row mb-3" id="row-wawancara">
-                <div class="col-md-12" id="wrapper-wawancara">
+                <div class="col-md-12" id="wrapper-wawancara" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                   <label class="form-label" id="label-wawancara">Wawancara</label>
                   <textarea name="wawancara" id="input-wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara', $program->wawancara) }}</textarea>
                   @error('wawancara')
@@ -287,7 +287,7 @@
                 </div>
               </div>
               <div class="row mb-3" id="row-kemampuan-saat-ini">
-                <div class="col-md-12" id="wrapper-kemampuan-saat-ini">
+                <div class="col-md-12" id="wrapper-kemampuan-saat-ini" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                   <label class="form-label">Kemampuan Saat Ini</label>
                   <textarea name="kemampuan_saat_ini" class="form-control @error('kemampuan_saat_ini') is-invalid @enderror" rows="3" placeholder="Deskripsikan kemampuan anak saat ini">{{ old('kemampuan_saat_ini', $program->kemampuan_saat_ini) }}</textarea>
                   @error('kemampuan_saat_ini')
@@ -296,7 +296,7 @@
                 </div>
               </div>
               <div class="row mb-3" id="row-saran-rekomendasi">
-                <div class="col-md-12" id="wrapper-saran-rekomendasi">
+                <div class="col-md-12" id="wrapper-saran-rekomendasi" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                   <label class="form-label">Saran / Rekomendasi</label>
                   <textarea name="saran_rekomendasi" class="form-control @error('saran_rekomendasi') is-invalid @enderror" rows="3" placeholder="Saran atau rekomendasi untuk program berikutnya">{{ old('saran_rekomendasi', $program->saran_rekomendasi) }}</textarea>
                   @error('saran_rekomendasi')
