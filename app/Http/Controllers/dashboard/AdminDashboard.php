@@ -43,7 +43,7 @@ class AdminDashboard extends Controller
           'icon' => 'ri-group-line'
         ],
         [
-          'label' => 'Total Users',
+          'label' => 'Total Pengguna',
           'value' => $totalUsers,
           'color' => 'primary',
           'icon' => 'ri-user-line'

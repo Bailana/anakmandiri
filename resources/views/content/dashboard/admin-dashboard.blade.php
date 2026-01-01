@@ -39,14 +39,29 @@
   @if(isset($dashboardData['stats']))
   <div class="col-12">
     <div class="row g-4">
+      @php
+      $karyawanTetap = \App\Models\Karyawan::where('status_kepegawaian', 'Tetap')->count();
+      @endphp
       @foreach($dashboardData['stats'] as $stat)
-      <div class="col">
+      @php $lowerLabel = strtolower($stat['label'] ?? ''); @endphp
+      @if($lowerLabel === 'terapis')
+      @continue
+      @endif
+      @php
+      $displayLabel = $stat['label'] ?? '';
+      $displayValue = $stat['value'] ?? 0;
+      if ($lowerLabel === 'guru') {
+      $displayLabel = 'Karyawan';
+      $displayValue = $karyawanTetap;
+      }
+      @endphp
+      <div class="col-6 col-sm-6 col-md-3 mb-3">
         <div class="card h-100">
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between">
               <div>
-                <p class="text-muted small mb-1">{{ $stat['label'] }}</p>
-                <h4 class="mb-0 text-{{ $stat['color'] }}">{{ $stat['value'] }}</h4>
+                <p class="text-muted small mb-1">{{ $displayLabel }}</p>
+                <h4 class="mb-0 text-{{ $stat['color'] }}">{{ $displayValue }}</h4>
               </div>
               <div class="avatar">
                 <div class="avatar-initial bg-{{ $stat['color'] }} rounded">
@@ -148,10 +163,48 @@
           </tbody>
         </table>
       </div>
-      <div class="card-footer">
-        <div class="d-flex justify-content-end">
-          {!! $dashboardData['activities']->links('pagination::bootstrap-5') !!}
+      <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
+        <style>
+          .pagination-footer-fix {
+            flex-wrap: nowrap !important;
+            gap: 0.5rem;
+          }
+
+          .pagination-footer-fix>div,
+          .pagination-footer-fix>nav {
+            min-width: 0;
+            max-width: 100%;
+          }
+
+          .pagination-footer-fix nav {
+            flex-shrink: 1;
+            flex-grow: 0;
+          }
+
+          @media (max-width: 767.98px) {
+            .pagination-footer-fix {
+              flex-direction: row !important;
+              align-items: center !important;
+              flex-wrap: nowrap !important;
+            }
+
+            .pagination-footer-fix>div,
+            .pagination-footer-fix>nav {
+              width: auto !important;
+              max-width: 100%;
+            }
+
+            .pagination-footer-fix nav ul.pagination {
+              flex-wrap: nowrap !important;
+            }
+          }
+        </style>
+        <div class="text-body-secondary">
+          Menampilkan {{ $dashboardData['activities']->firstItem() ?? 0 }} hingga {{ $dashboardData['activities']->lastItem() ?? 0 }} dari {{ $dashboardData['activities']->total() }} data
         </div>
+        <nav>
+          {!! $dashboardData['activities']->links('pagination::bootstrap-4') !!}
+        </nav>
       </div>
     </div>
   </div>

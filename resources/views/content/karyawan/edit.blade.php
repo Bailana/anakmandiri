@@ -304,7 +304,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Find which tab has errors and activate it
-    @foreach($errors - > keys() as $field)
+    @foreach($errors->keys() as $field)
     @if(in_array($field, ['nama', 'nik', 'nip', 'email', 'jenis_kelamin', 'no_telepon', 'tempat_lahir', 'tanggal_lahir', 'alamat']))
     document.getElementById('data-pribadi-tab').click();
     @break
