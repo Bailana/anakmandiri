@@ -513,17 +513,19 @@
               }
               if (keteranganBlock) keteranganBlock.textContent = program.wawancara || '-';
             } else {
-              // Restore wawancara & diagnosa
-              var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById(
-                'detailWawancara').parentElement : null;
-              if (wawancaraBlock) wawancaraBlock.style.display = '';
-              var diagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById(
-                'detailDiagnosa').parentElement : null;
-              if (diagnosaBlock) diagnosaBlock.style.display = '';
-              // Remove keterangan block if present
-              let keteranganBlock = document.getElementById('detailKeterangan');
-              if (keteranganBlock && keteranganBlock.parentElement) keteranganBlock.parentElement.parentElement
-                .removeChild(keteranganBlock.parentElement);
+              // Restore wawancara & diagnosa, but skip restoring when this is a psikologi detail view
+              if (sumber !== 'psikologi') {
+                var wawancaraBlock = document.getElementById('detailWawancara') ? document.getElementById(
+                  'detailWawancara').parentElement : null;
+                if (wawancaraBlock) wawancaraBlock.style.display = '';
+                var diagnosaBlock = document.getElementById('detailDiagnosa') ? document.getElementById(
+                  'detailDiagnosa').parentElement : null;
+                if (diagnosaBlock) diagnosaBlock.style.display = '';
+                // Remove keterangan block if present
+                let keteranganBlock = document.getElementById('detailKeterangan');
+                if (keteranganBlock && keteranganBlock.parentElement) keteranganBlock.parentElement.parentElement
+                  .removeChild(keteranganBlock.parentElement);
+              }
             }
             // Untuk SI dan Psikologi, sembunyikan Kemampuan Saat Ini & Saran Rekomendasi
             el = document.getElementById('detailKemampuanSaatIni');
@@ -544,10 +546,14 @@
                 el.textContent = program.saran_rekomendasi || '-';
               }
             }
-            // Diagnosa
+            // Diagnosa (only set general diagnosa when not psikologi)
             el = document.getElementById('detailDiagnosa');
             if (el && program && document.body.contains(el)) {
-              el.textContent = program.diagnosa || '-';
+              if (sumber !== 'psikologi') {
+                el.textContent = program.diagnosa || '-';
+              } else {
+                el.textContent = '';
+              }
             }
             // Tampilkan modal detail
             var detailModal = new bootstrap.Modal(detailModalEl);

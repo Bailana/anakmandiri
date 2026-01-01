@@ -52,6 +52,9 @@
               }
               // Also detect if this program record is a psikologi record
               $isPsikologiProgram = (isset($sumber) && $sumber === 'psikologi') || ($program instanceof \App\Models\ProgramPsikologi) || ($selectedSpesialisasi === 'psikologi');
+              // Detect if the currently logged-in user is a konsultan psikologi
+              $currentKons = optional(\App\Models\Konsultan::where('user_id', auth()->id())->first());
+              $isCurrentUserPsikologi = $currentKons && isset($currentKons->spesialisasi) && strtolower($currentKons->spesialisasi) === 'psikologi';
               @endphp
             </div>
 
@@ -230,12 +233,12 @@
                       <tr id="row-kemampuan-{{ $i }}">
                         <td>
                           <div class="input-group">
-                            <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" required value="{{ $k['judul'] ?? ($k['name'] ?? '') }}">
+                            <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" {{ empty($isPsikologiProgram) ? 'required' : '' }} value="{{ $k['judul'] ?? ($k['name'] ?? '') }}">
                             <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                           </div>
                         </td>
                         @for($skala=1;$skala<=5;$skala++)
-                          <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" {{ (isset($k['skala']) && intval($k['skala'])== $skala) ? 'checked' : '' }} required></td>
+                          <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" {{ (isset($k['skala']) && intval($k['skala'])== $skala) ? 'checked' : '' }} @if(!empty($isPsikologiProgram)) disabled @else required @endif></td>
                           @endfor
                       </tr>
                       @php $kemampuanIndex = $i + 1; @endphp
@@ -244,12 +247,12 @@
                       <tr id="row-kemampuan-0">
                         <td>
                           <div class="input-group">
-                            <input type="text" name="kemampuan[0][judul]" class="form-control" required placeholder="Jenis kemampuan">
+                            <input type="text" name="kemampuan[0][judul]" class="form-control" {{ empty($isPsikologiProgram) ? 'required' : '' }} placeholder="Jenis kemampuan">
                             <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                           </div>
                         </td>
                         @for($skala=1;$skala<=5;$skala++)
-                          <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}" required></td>
+                          <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}" @if(!empty($isPsikologiProgram)) disabled @else required @endif></td>
                           @endfor
                       </tr>
                       @php $kemampuanIndex = 1; @endphp
