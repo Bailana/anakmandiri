@@ -175,10 +175,10 @@ class KonsultanDashboard extends Controller
         ],
         [
           // Show 'Perlu Observasi' for several konsultan specializations, otherwise show program count
-          'label' => in_array($spec, ['psikologi','wicara','sensori integrasi','sensori_integrasi','si','pendidikan']) ? 'Perlu Observasi' : 'Program Konsultan',
-          'value' => in_array($spec, ['psikologi','wicara','sensori integrasi','sensori_integrasi','si','pendidikan']) ? $jumlahBelumUntukKonsultan : $jumlahProgramKonsultan,
-          'color' => in_array($spec, ['psikologi','wicara','sensori integrasi','sensori_integrasi','si','pendidikan']) ? 'danger' : 'info',
-          'icon' => in_array($spec, ['psikologi','wicara','sensori integrasi','sensori_integrasi','si','pendidikan']) ? 'ri-alert-line' : 'ri-book-2-line',
+          'label' => in_array($spec, ['psikologi', 'wicara', 'sensori integrasi', 'sensori_integrasi', 'si', 'pendidikan']) ? 'Perlu Observasi' : 'Program Konsultan',
+          'value' => in_array($spec, ['psikologi', 'wicara', 'sensori integrasi', 'sensori_integrasi', 'si', 'pendidikan']) ? $jumlahBelumUntukKonsultan : $jumlahProgramKonsultan,
+          'color' => in_array($spec, ['psikologi', 'wicara', 'sensori integrasi', 'sensori_integrasi', 'si', 'pendidikan']) ? 'danger' : 'info',
+          'icon' => in_array($spec, ['psikologi', 'wicara', 'sensori integrasi', 'sensori_integrasi', 'si', 'pendidikan']) ? 'ri-alert-line' : 'ri-book-2-line',
         ],
       ],
       'chartData' => [
