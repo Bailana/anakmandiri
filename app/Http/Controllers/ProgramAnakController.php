@@ -337,6 +337,14 @@ class ProgramAnakController extends Controller
       });
     }
 
+    // admin-only: filter by konsultan spesialisasi if provided (e.g., Psikologi, Pendidikan, Wicara, Sensori Integrasi)
+    if (request()->filled('filter_konsultan')) {
+      $filter = request('filter_konsultan');
+      $query->whereHas('konsultan', function ($q) use ($filter) {
+        $q->where('spesialisasi', 'like', "%{$filter}%");
+      });
+    }
+
     // order by kode_program prefix then numeric suffix (natural ordering like WIC001, WIC002)
     // Use MySQL 8+ regex functions if available: order by prefix (non-numeric part) then numeric suffix cast to integer
     try {

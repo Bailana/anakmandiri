@@ -185,4 +185,17 @@ use Illuminate\Support\Facades\Route;
         @endif
     </ul>
 
+    <!-- Sidebar logout button (bottom) -->
+    @if(auth()->check())
+    <div class="menu-footer px-3 py-3">
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-start">
+                <i class="ri ri-logout-box-r-line me-2"></i>
+                <span>Keluar</span>
+                <span class="badge bg-danger ms-auto"> </span>
+            </button>
+        </form>
+    </div>
+    @endif
 </aside>

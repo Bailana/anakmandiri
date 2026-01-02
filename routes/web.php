@@ -73,10 +73,13 @@ Route::middleware(['guest'])->group(function () {
   Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
   Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail'])->name('password.email');
 
-  // Reset Password Routes
-  Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
-  Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+  // Reset Password Routes (handled outside 'guest' so links from email work even if user is authenticated)
+  // NOTE: routes are defined below outside the 'guest' middleware group.
 });
+
+// Reset Password Routes available to all (so email link opens the reset form even when user is logged in)
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 
 Route::middleware(['auth'])->group(function () {
   Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -99,6 +102,10 @@ Route::middleware(['auth', 'role:admin'])->get('/dashboard', [App\Http\Controlle
 
 // Dashboard khusus guru
 Route::middleware(['auth', 'role:guru'])->get('/dashboard-guru', [App\Http\Controllers\dashboard\GuruDashboard::class, 'index'])->name('dashboard-guru');
+
+// AJAX endpoints for guru dashboard filters
+Route::middleware(['auth', 'role:guru'])->get('/dashboard-guru/programs-for-anak/{anakId}', [App\Http\Controllers\dashboard\GuruDashboard::class, 'programsForAnak'])->name('dashboard-guru.programs-for-anak');
+Route::middleware(['auth', 'role:guru'])->get('/dashboard-guru/chart-data', [App\Http\Controllers\dashboard\GuruDashboard::class, 'chartDataForAnak'])->name('dashboard-guru.chart-data');
 
 // Protected Routes
 Route::middleware(['auth'])->group(function () {

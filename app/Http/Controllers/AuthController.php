@@ -125,8 +125,19 @@ class AuthController extends Controller
       }
     );
 
-    return $status === Password::PASSWORD_RESET
-      ? redirect()->route('login')->with('status', 'Password berhasil diubah, silakan login dengan password baru Anda.')
-      : back()->withErrors(['email' => ['Terjadi kesalahan saat reset password. Silakan coba lagi.']]);
+    if ($status === Password::PASSWORD_RESET) {
+      // Ensure the current session is logged out so guest routes (login) are reachable
+      try {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+      } catch (\Exception $e) {
+        // ignore logout errors
+      }
+
+      return redirect()->route('login')->with('status', 'Password berhasil diubah, silakan login dengan password baru Anda.');
+    }
+
+    return back()->withErrors(['email' => ['Terjadi kesalahan saat reset password. Silakan coba lagi.']]);
   }
 }

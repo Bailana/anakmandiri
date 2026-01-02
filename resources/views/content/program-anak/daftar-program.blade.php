@@ -436,10 +436,23 @@
 
 <div class="row">
   <div class="col-12">
-    <form method="GET" action="{{ route('program-anak.daftar-program') }}" class="d-flex gap-2 align-items-end">
-      <div class="flex-grow-1">
+    <form method="GET" action="{{ route('program-anak.daftar-program') }}" class="d-flex gap-2 align-items-end flex-wrap">
+      <div class="flex-grow-1" style="min-width:160px;">
         <input type="text" name="search" class="form-control" placeholder="Cari kode, nama, tujuan atau aktivitas..." value="{{ request('search') }}">
       </div>
+
+      @if(auth()->check() && auth()->user()->role === 'admin')
+      <div style="min-width:180px;">
+        <select name="filter_konsultan" class="form-select">
+          <option value="" {{ request('filter_konsultan') == '' ? 'selected' : '' }}>Semua Konsultan</option>
+          <option value="Psikologi" {{ request('filter_konsultan') == 'Psikologi' ? 'selected' : '' }}>Psikologi</option>
+          <option value="Pendidikan" {{ request('filter_konsultan') == 'Pendidikan' ? 'selected' : '' }}>Pendidikan</option>
+          <option value="Wicara" {{ request('filter_konsultan') == 'Wicara' ? 'selected' : '' }}>Wicara</option>
+          <option value="Sensori Integrasi" {{ request('filter_konsultan') == 'Sensori Integrasi' ? 'selected' : '' }}>Sensori Integrasi</option>
+        </select>
+      </div>
+      @endif
+
       <button type="submit" class="btn btn-outline-primary" title="Cari">
         <i class="ri-search-line"></i>
       </button>
@@ -452,7 +465,7 @@
 
 <div class="row">
   <div class="col-12">
-    <div class="card">
+    <div class="card @if(auth()->check() && auth()->user()->role === 'admin') mt-3 @endif">
       <div class="table-responsive">
         <table class="table table-hover">
           <thead>
@@ -463,7 +476,7 @@
               <th>Tujuan</th>
               <th>Aktivitas</th>
               <th>Konsultan</th>
-              @if(auth()->check() && auth()->user()->role !== 'admin')
+              @if(auth()->check())
               <th>Aksi</th>
               @endif
             </tr>
@@ -471,13 +484,13 @@
           <tbody>
             @forelse($programs as $i => $p)
             <tr data-id="{{ $p->id }}">
-              <td>{{ ($programs->currentPage() - 1) * 15 + $i + 1 }}</td>
+              <td>{{ ($programs->currentPage() - 1) * $programs->perPage() + $i + 1 }}</td>
               <td class="text-heading mb-0 fw-medium">{{ $p->kode_program ?? '-' }}</td>
               <td>{{ $p->nama_program }}</td>
               <td>{{ Str::limit($p->tujuan, 100) }}</td>
               <td>{{ Str::limit($p->aktivitas, 100) }}</td>
               <td>{{ optional($p->konsultan)->nama ?? optional($p->konsultan)->spesialisasi ?? '-' }}</td>
-              @if(auth()->check() && auth()->user()->role !== 'admin')
+              @if(auth()->check())
               <td>
                 <div class="d-flex gap-2 align-items-center">
                   <div class="d-none d-sm-flex gap-2 align-items-center">
@@ -494,6 +507,7 @@
                       title="Lihat Detail">
                       <i class="ri-eye-line"></i>
                     </button>
+                    @if(auth()->user()->role !== 'admin')
                     <button type="button" class="btn btn-sm btn-icon btn-outline-warning btn-edit-program"
                       data-id="{{ $p->id }}"
                       data-kode="{{ $p->kode_program }}"
@@ -512,6 +526,7 @@
                         <i class="ri-delete-bin-line"></i>
                       </button>
                     </form>
+                    @endif
                   </div>
                   <div class="d-inline-block d-sm-none dropdown">
                     <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
@@ -519,6 +534,7 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                       <li><a class="dropdown-item" href="#" data-id="{{ $p->id }}" data-bs-toggle="modal" data-bs-target="#modalViewProgram" onclick="document.querySelector('.btn-view-program[data-id=\'{{ $p->id }}\']').click();return false;"><i class='ri-eye-line me-1'></i> Lihat</a></li>
+                      @if(auth()->user()->role !== 'admin')
                       <li><a class="dropdown-item" href="#" data-id="{{ $p->id }}" onclick="document.querySelector('.btn-edit-program[data-id=\'{{ $p->id }}\']').click();return false;"><i class='ri-edit-line me-1'></i> Edit</a></li>
                       <li>
                         <form method="POST" action="{{ route('program-anak.program-konsultan.destroy', $p->id) }}" class="d-inline">
@@ -527,21 +543,58 @@
                           <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Yakin ingin menghapus program ini?')"><i class='ri-delete-bin-line me-1'></i> Hapus</button>
                         </form>
                       </li>
+                      @endif
                     </ul>
                   </div>
                 </div>
-                @endif
+              </td>
+              @endif
             </tr>
             @empty
             <tr>
-              <td colspan="{{ auth()->check() && auth()->user()->role === 'admin' ? 6 : 7 }}" class="text-center">Tidak ada data ditemukan.</td>
+              <td colspan="{{ auth()->check() ? 7 : 6 }}" class="text-center">Tidak ada data ditemukan.</td>
             </tr>
             @endforelse
           </tbody>
         </table>
       </div>
       <!-- Pagination -->
-      <div class="card-footer d-flex justify-content-between align-items-center">
+      <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
+        <style>
+          .pagination-footer-fix {
+            flex-wrap: nowrap !important;
+            gap: 0.5rem;
+          }
+
+          .pagination-footer-fix>div,
+          .pagination-footer-fix>nav {
+            min-width: 0;
+            max-width: 100%;
+          }
+
+          .pagination-footer-fix nav {
+            flex-shrink: 1;
+            flex-grow: 0;
+          }
+
+          @media (max-width: 767.98px) {
+            .pagination-footer-fix {
+              flex-direction: row !important;
+              align-items: center !important;
+              flex-wrap: nowrap !important;
+            }
+
+            .pagination-footer-fix>div,
+            .pagination-footer-fix>nav {
+              width: auto !important;
+              max-width: 100%;
+            }
+
+            .pagination-footer-fix nav ul.pagination {
+              flex-wrap: nowrap !important;
+            }
+          }
+        </style>
         <div class="text-body-secondary">
           Menampilkan {{ $programs->firstItem() ?? 0 }} hingga {{ $programs->lastItem() ?? 0 }} dari {{ $programs->total() }} data
         </div>
