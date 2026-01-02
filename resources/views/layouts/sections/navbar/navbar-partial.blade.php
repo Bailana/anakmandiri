@@ -107,9 +107,9 @@ use Illuminate\Support\Facades\Route;
             <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
                 <div class="avatar avatar-online">
                     @if(Auth::check() && Auth::user()->avatar)
-                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="rounded-circle" />
+                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;" />
                     @else
-                    <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="rounded-circle" />
+                    <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;" />
                     @endif
                 </div>
             </a>
@@ -120,9 +120,9 @@ use Illuminate\Support\Facades\Route;
                             <div class="flex-shrink-0 me-3">
                                 <div class="avatar avatar-online">
                                     @if(Auth::check() && Auth::user()->avatar)
-                                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="w-px-40 h-auto rounded-circle" />
+                                    <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;" />
                                     @else
-                                    <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="w-px-40 h-auto rounded-circle" />
+                                    <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;" />
                                     @endif
                                 </div>
                             </div>

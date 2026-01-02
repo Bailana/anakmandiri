@@ -104,6 +104,8 @@ class ProfileController extends Controller
       // Store new avatar
       $path = $request->file('avatar')->store('avatars', 'public');
       $validated['avatar'] = $path;
+      // Keep avatar path to also persist into related Konsultan/Karyawan records
+      $avatarPath = $path;
     }
 
     // Update user
@@ -159,24 +161,34 @@ class ProfileController extends Controller
     if (!empty(array_filter($konsultanData))) {
       if ($konsultan) {
         $konsultan->update($konsultanData);
+        if (!empty($avatarPath)) {
+          $konsultan->foto_konsultan = $avatarPath;
+          $konsultan->save();
+        }
       } elseif ($user->role === 'konsultan') {
         $new = new Konsultan($konsultanData);
         if (Schema::hasColumn('konsultans', 'user_id')) {
           $new->user_id = $user->id;
         }
         $new->email = $user->email;
+        if (!empty($avatarPath)) $new->foto_konsultan = $avatarPath;
         $new->save();
       }
     }
     if (!empty(array_filter($karyawanData))) {
       if ($karyawan) {
         $karyawan->update($karyawanData);
+        if (!empty($avatarPath)) {
+          $karyawan->foto_karyawan = $avatarPath;
+          $karyawan->save();
+        }
       } elseif ($user->role === 'karyawan') {
         $new = new Karyawan($karyawanData);
         if (Schema::hasColumn('karyawans', 'user_id')) {
           $new->user_id = $user->id;
         }
         $new->email = $user->email;
+        if (!empty($avatarPath)) $new->foto_karyawan = $avatarPath;
         $new->save();
       }
     }

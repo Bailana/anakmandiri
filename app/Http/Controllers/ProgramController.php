@@ -456,7 +456,7 @@ class ProgramController extends Controller
       return [
         'id' => $p->id,
         'user_id' => $p->user_id,
-        'user_name' => $p->user ? $p->user->name : '-',
+        'user_name' => $p->user ? $p->user->name : null,
         'hari' => $hari,
         'tanggal' => $tanggal,
         'jam' => $p->updated_at ? $p->updated_at->format('H:i') : '-',
@@ -475,7 +475,7 @@ class ProgramController extends Controller
       return [
         'id' => $p->id,
         'user_id' => $p->user_id,
-        'user_name' => $p->user ? $p->user->name : '-',
+        'user_name' => $p->user ? $p->user->name : null,
         'hari' => $hari,
         'tanggal' => $tanggal,
         'jam' => $p->updated_at ? $p->updated_at->format('H:i') : '-',

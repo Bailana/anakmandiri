@@ -118,7 +118,7 @@
               <td>
                 <div class="d-flex align-items-center">
                   <div class="avatar avatar-sm me-3" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
-                    <img src="{{ asset('assets/img/avatars/' . (($karyawan->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;aspect-ratio:1/1;" />
+                    <img src="{{ $karyawan->foto_karyawan ? asset('storage/' . $karyawan->foto_karyawan) : asset('assets/img/avatars/' . (($karyawan->id % 4) + 1) . '.svg') }}" alt="Avatar" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;aspect-ratio:1/1;" />
                   </div>
                   <div>
                     <p class="text-heading mb-0 fw-medium">{{ $karyawan->nama }}</p>
@@ -462,11 +462,14 @@
         document.getElementById('detailPendidikan').textContent = karyawan.pendidikan_terakhir || '-';
         document.getElementById('detailInstitusi').textContent = karyawan.institusi_pendidikan || '-';
 
-        // Set Avatar
-        const avatarNum = (karyawanId % 4) + 1;
-        const avatarPath = '/assets/img/avatars/' + avatarNum + '.svg';
-        document.getElementById('detailAvatar').src = avatarPath;
-        console.log('Avatar path:', avatarPath); // Debug
+        // Set Avatar: prefer uploaded foto_karyawan when present
+        const detailAvatar = document.getElementById('detailAvatar');
+        if (karyawan.foto_karyawan) {
+          detailAvatar.src = '/storage/' + karyawan.foto_karyawan;
+        } else {
+          const avatarNum = (karyawanId % 4) + 1;
+          detailAvatar.src = '/assets/img/avatars/' + avatarNum + '.svg';
+        }
       })
       .catch(error => {
         console.error('Error:', error);

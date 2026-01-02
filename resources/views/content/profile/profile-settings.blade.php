@@ -9,7 +9,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     const uploadInput = document.getElementById('uploadInput');
     const uploadedAvatar = document.getElementById('uploadedAvatar');
-    const accountImageReset = document.querySelector('.account-image-reset');
+    const uploadFileName = document.getElementById('uploadFileName');
 
     if (uploadInput) {
       uploadInput.addEventListener('change', function(e) {
@@ -20,16 +20,12 @@
             uploadedAvatar.src = event.target.result;
           };
           reader.readAsDataURL(file);
+          if (uploadFileName) uploadFileName.textContent = file.name;
         }
       });
     }
 
-    if (accountImageReset) {
-      accountImageReset.addEventListener('click', function() {
-        uploadInput.value = '';
-        uploadedAvatar.src = "{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : asset('assets/img/avatars/1.png') }}";
-      });
-    }
+    // Reset button handler removed per request; no reset action available.
   });
 </script>
 @endsection
@@ -70,20 +66,18 @@
             <label for="uploadInput" class="btn btn-sm btn-primary me-3 mb-4" tabindex="0">
               <span class="d-none d-sm-block">Upload new photo</span>
               <i class="icon-base ri ri-upload-2-line d-block d-sm-none"></i>
-              <input type="file" id="uploadInput" class="account-file-input" name="avatar" hidden accept="image/png, image/jpeg,image/jpg,image/gif" />
+              <input type="file" id="uploadInput" form="profileForm" class="account-file-input" name="avatar" hidden accept="image/png, image/jpeg,image/jpg,image/gif" />
             </label>
-            <button type="button" class="btn btn-sm btn-outline-danger account-image-reset mb-4">
-              <i class="icon-base ri ri-refresh-line d-block d-sm-none"></i>
-              <span class="d-none d-sm-block">Reset</span>
-            </button>
+            <!-- Reset button removed -->
             <div>Allowed JPG, GIF or PNG. Max size of 2MB</div>
+            <div class="text-muted small mt-1" id="uploadFileName"></div>
           </div>
         </div>
       </div>
 
       <!-- Form -->
       <div class="card-body pt-0">
-        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
+        <form id="profileForm" method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
           @csrf
           @method('PUT')
 
@@ -260,42 +254,11 @@
               </div>
             </div>
 
-            <!-- Konsultan Data (editable when available or role is konsultan) -->
-            @if((isset($konsultan) && $konsultan) || Auth::user()->role === 'konsultan')
-            <div class="col-12">
-              <h5>Data Konsultan (disederhanakan)</h5>
-            </div>
-            @php
-            $kFields = [
-            'alamat' => 'Alamat',
-            'no_telepon' => 'No. Telepon',
-            'email' => 'Email',
-            'spesialisasi' => 'Spesialisasi',
-            'bidang_keahlian' => 'Bidang Keahlian',
-            'sertifikasi' => 'Sertifikasi',
-            'pengalaman_tahun' => 'Tahun Pengalaman',
-            ];
-            @endphp
-            @foreach($kFields as $field => $label)
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                @if(in_array($field, ['pengalaman_tahun']))
-                <input class="form-control" type="number" name="konsultan[{{ $field }}]" value="{{ old('konsultan.'.$field, $konsultan->{$field} ?? '') }}" />
-                @elseif(in_array($field, ['tanggal_lahir']))
-                <input class="form-control" type="date" name="konsultan[{{ $field }}]" value="{{ old('konsultan.'.$field, isset($konsultan) ? ($konsultan->{$field} ? $konsultan->{$field}->format('Y-m-d') : '') : '') }}" />
-                @else
-                <input class="form-control" type="text" name="konsultan[{{ $field }}]" value="{{ old('konsultan.'.$field, $konsultan->{$field} ?? '') }}" />
-                @endif
-                <label>{{ $label }}</label>
-              </div>
-            </div>
-            @endforeach
-            @endif
+            <!-- Konsultan section removed -->
 
             <!-- Karyawan section removed per request -->
 
-            <!-- Avatar Input Hidden -->
-            <input type="file" id="hiddenAvatarInput" name="avatar" hidden accept="image/png, image/jpeg,image/jpg,image/gif" />
+            <!-- Avatar Input Hidden removed (using uploadInput with form association) -->
 
             <!-- Submit Button -->
             <div class="col-12">

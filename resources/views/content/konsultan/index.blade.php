@@ -61,7 +61,8 @@
         <option value="">Spesialisasi</option>
         @foreach($spesialisasiOptions as $spesialisasi)
         <option value="{{ $spesialisasi }}" {{ request('spesialisasi') === $spesialisasi ? 'selected' : '' }}>
-          {{ $spesialisasi }}</option>
+          {{ $spesialisasi }}
+        </option>
         @endforeach
       </select>
       <!-- Filter Status Hubungan (desktop) -->
@@ -87,7 +88,8 @@
           <option value="">Spesialisasi</option>
           @foreach($spesialisasiOptions as $spesialisasi)
           <option value="{{ $spesialisasi }}" {{ request('spesialisasi') === $spesialisasi ? 'selected' : '' }}>
-            {{ $spesialisasi }}</option>
+            {{ $spesialisasi }}
+          </option>
           @endforeach
         </select>
         <select name="status_hubungan" class="form-select filter-mobile-equal" style="min-width:0;">
@@ -149,7 +151,7 @@
                 <div class="d-flex align-items-center">
                   <div class="avatar avatar-sm me-3"
                     style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
-                    <img src="{{ asset('assets/img/avatars/' . (($konsultan->id % 4) + 1) . '.svg') }}" alt="Avatar"
+                    <img src="{{ $konsultan->foto_konsultan ? asset('storage/' . $konsultan->foto_konsultan) : asset('assets/img/avatars/' . (($konsultan->id % 4) + 1) . '.svg') }}" alt="Avatar"
                       class="rounded-circle" style="width:36px;height:36px;object-fit:cover;aspect-ratio:1/1;" />
                   </div>
                   <div>
@@ -234,7 +236,6 @@
               display: none !important;
             }
           }
-
         </style>
         <script>
           // Agar tombol hapus di dropdown mobile tetap bisa pakai fungsi hapus yang sama
@@ -253,7 +254,6 @@
             dummyBtn.className = 'btn-detail';
             window.showDetail(dummyBtn);
           }
-
         </script>
       </div>
 
@@ -293,7 +293,6 @@
               flex-wrap: nowrap !important;
             }
           }
-
         </style>
         <div class="text-body-secondary">
           Menampilkan {{ $konsultans->firstItem() ?? 0 }} hingga {{ $konsultans->lastItem() ?? 0 }} dari
@@ -429,7 +428,7 @@
   window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   // Format Date
-  window.formatDate = function (dateString) {
+  window.formatDate = function(dateString) {
     if (!dateString) return '-';
     const options = {
       year: 'numeric',
@@ -440,7 +439,7 @@
   }
 
   // Show Detail
-  window.showDetail = function (button) {
+  window.showDetail = function(button) {
     const konsultanId = button.getAttribute('data-konsultan-id');
 
     fetch(`/konsultan/${konsultanId}`, {
@@ -502,12 +501,14 @@
         document.getElementById('detailPendidikan').textContent = konsultan.pendidikan_terakhir || '-';
         document.getElementById('detailInstitusi').textContent = konsultan.institusi_pendidikan || '-';
 
-        // Set Avatar
-        const avatarNum = (konsultanId % 4) + 1;
-        const avatarPath = (konsultan && konsultan.avatar_path) ? konsultan.avatar_path : '/assets/img/avatars/' +
-          avatarNum + '.svg';
-        document.getElementById('detailAvatar').src = avatarPath;
-        console.debug('Avatar path:', avatarPath); // Debug
+        // Set Avatar: prefer uploaded foto_konsultan when present
+        const detailAvatar = document.getElementById('detailAvatar');
+        if (konsultan && konsultan.foto_konsultan) {
+          detailAvatar.src = '/storage/' + konsultan.foto_konsultan;
+        } else {
+          const avatarNum = (konsultanId % 4) + 1;
+          detailAvatar.src = '/assets/img/avatars/' + avatarNum + '.svg';
+        }
       })
       .catch(error => {
         console.error('Error:', error);
@@ -516,7 +517,7 @@
   }
 
   // Delete Data
-  window.deleteData = function (button) {
+  window.deleteData = function(button) {
     const konsultanId = button.getAttribute('data-konsultan-id');
 
     if (confirm('Apakah Anda yakin ingin menghapus konsultan ini?')) {
@@ -560,7 +561,7 @@
     detailButtons.forEach(btn => {
       // avoid double-binding
       if (!btn.__detailBound) {
-        btn.addEventListener('click', function (ev) {
+        btn.addEventListener('click', function(ev) {
           try {
             if (typeof window.showDetail === 'function') {
               window.showDetail(btn);
@@ -578,7 +579,7 @@
     const deleteButtons = document.querySelectorAll('.btn-delete');
     deleteButtons.forEach(btn => {
       if (!btn.__deleteBound) {
-        btn.addEventListener('click', function (ev) {
+        btn.addEventListener('click', function(ev) {
           try {
             if (typeof window.deleteData === 'function') {
               window.deleteData(btn);
@@ -601,7 +602,7 @@
   }
 
   // Generic toast helper (matches other pages)
-  window.showToast = function (message, type = 'success') {
+  window.showToast = function(message, type = 'success') {
     let toast = document.getElementById('customToast');
     if (!toast) {
       toast = document.createElement('div');
@@ -625,6 +626,5 @@
       setTimeout(() => toast.classList.remove('show'), 2000);
     }
   }
-
 </script>
 @endpush
