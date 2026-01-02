@@ -39,9 +39,9 @@
       <!-- Desktop layout -->
       <div class="d-none d-sm-flex flex-row gap-2 w-100">
         <div class="flex-grow-1" style="min-width: 250px;">
-          <input type="text" name="search" class="form-control" placeholder="Cari nama, email, atau role..." value="{{ request('search') }}">
+          <input id="searchDesktop" type="text" name="search" class="form-control" placeholder="Cari nama, email, atau role..." value="{{ request('search') }}">
         </div>
-        <select name="role" class="form-select" style="max-width: 150px;">
+        <select id="roleDesktop" name="role" class="form-select" style="max-width: 150px;">
           <option value="">Role</option>
           @foreach($roleOptions as $role)
           <option value="{{ $role }}" {{ request('role') === $role ? 'selected' : '' }}>{{ ucfirst($role) }}</option>
@@ -56,9 +56,9 @@
       </div>
       <!-- Mobile layout -->
       <div class="d-flex d-sm-none flex-column gap-2 w-100">
-        <input type="text" name="search" class="form-control mb-2" placeholder="Cari nama, email, atau role..." value="{{ request('search') }}">
+        <input id="searchMobile" type="text" name="search_mobile" class="form-control mb-2" placeholder="Cari nama, email, atau role..." value="{{ request('search') }}">
         <div class="d-flex flex-row gap-2 w-100">
-          <select name="role" class="form-select" style="min-width:120px;">
+          <select id="roleMobile" name="role_mobile" class="form-select" style="min-width:120px;">
             <option value="">Role</option>
             @foreach($roleOptions as $role)
             <option value="{{ $role }}" {{ request('role') === $role ? 'selected' : '' }}>{{ ucfirst($role) }}</option>
@@ -156,7 +156,7 @@
         </tr>
         @empty
         <tr>
-          <td colspan="5" class="text-center">Tidak ada data pengguna.</td>
+          <td colspan="7" class="text-center">Tidak ada data pengguna.</td>
         </tr>
         @endforelse
       </tbody>
@@ -191,6 +191,51 @@
           if (form) form.submit();
         }
       }
+    </script>
+    <script>
+      // Ensure only visible responsive inputs submit their values.
+      (function() {
+        var searchDesktop = document.getElementById('searchDesktop');
+        var roleDesktop = document.getElementById('roleDesktop');
+        var searchMobile = document.getElementById('searchMobile');
+        var roleMobile = document.getElementById('roleMobile');
+        var form = searchDesktop && searchDesktop.closest('form');
+
+        function syncNames() {
+          var isMobile = window.matchMedia('(max-width: 575.98px)').matches;
+          if (isMobile) {
+            // mobile visible: ensure mobile inputs have correct names and desktop ones don't
+            if (searchMobile) searchMobile.name = 'search';
+            if (roleMobile) roleMobile.name = 'role';
+            if (searchDesktop) searchDesktop.removeAttribute('name');
+            if (roleDesktop) roleDesktop.removeAttribute('name');
+          } else {
+            if (searchDesktop) searchDesktop.name = 'search';
+            if (roleDesktop) roleDesktop.name = 'role';
+            if (searchMobile) searchMobile.removeAttribute('name');
+            if (roleMobile) roleMobile.removeAttribute('name');
+          }
+        }
+
+        // Copy values before submit to be safe
+        if (form) {
+          form.addEventListener('submit', function() {
+            var isMobile = window.matchMedia('(max-width: 575.98px)').matches;
+            if (isMobile) {
+              if (searchMobile && !searchDesktop) return;
+              if (searchMobile && searchDesktop) searchDesktop.value = searchMobile.value;
+              if (roleMobile && roleDesktop) roleDesktop.value = roleMobile.value;
+            } else {
+              if (searchDesktop && searchMobile) searchMobile.value = searchDesktop.value;
+              if (roleDesktop && roleMobile) roleMobile.value = roleDesktop.value;
+            }
+          });
+        }
+
+        window.addEventListener('resize', syncNames);
+        document.addEventListener('DOMContentLoaded', syncNames);
+        syncNames();
+      })();
     </script>
   </div>
   <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">

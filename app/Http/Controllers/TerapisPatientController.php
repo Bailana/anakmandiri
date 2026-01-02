@@ -228,7 +228,7 @@ class TerapisPatientController extends Controller
         }
       }
 
-      return redirect()->route('terapis.pasien.index')->with('success', 'Penugasan sudah ada — data diperbarui dan jadwal ditambahkan.');
+      return redirect()->route('terapis.pasien.index')->with('success', 'Jadwal terapi anak didik berhasil ditambahkan');
     }
 
     $assignment = GuruAnakDidik::create([

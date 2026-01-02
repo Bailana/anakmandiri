@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Karyawan;
+use App\Models\User;
 use App\Services\ActivityService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class KaryawanController extends Controller
 {
@@ -91,7 +93,18 @@ class KaryawanController extends Controller
       'pendidikan_terakhir' => 'nullable|string',
       'institusi_pendidikan' => 'nullable|string',
       'keahlian' => 'nullable|string',
+      'user_id' => 'nullable|exists:users,id',
     ]);
+
+    // If the karyawans table has user_id, try to set it from request or by matching email
+    if (Schema::hasColumn('karyawans', 'user_id')) {
+      if (empty($validated['user_id']) && !empty($validated['email'])) {
+        $matched = User::where('email', $validated['email'])->value('id');
+        if ($matched) {
+          $validated['user_id'] = $matched;
+        }
+      }
+    }
 
     Karyawan::create($validated);
 
@@ -149,7 +162,18 @@ class KaryawanController extends Controller
       'pendidikan_terakhir' => 'nullable|string',
       'institusi_pendidikan' => 'nullable|string',
       'keahlian' => 'nullable|string',
+      'user_id' => 'nullable|exists:users,id',
     ]);
+
+    // If the karyawans table has user_id, try to set it from request or by matching email
+    if (Schema::hasColumn('karyawans', 'user_id')) {
+      if (empty($validated['user_id']) && !empty($validated['email'])) {
+        $matched = User::where('email', $validated['email'])->value('id');
+        if ($matched) {
+          $validated['user_id'] = $matched;
+        }
+      }
+    }
 
     $karyawan->update($validated);
 

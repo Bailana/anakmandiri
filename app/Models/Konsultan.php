@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Konsultan extends Model
 {
   protected $fillable = [
+    'user_id',
     'nama',
     'nik',
     'jenis_kelamin',

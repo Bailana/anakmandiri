@@ -251,17 +251,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('notifications/unread-json', [App\Http\Controllers\NotificationController::class, 'unreadJson'])->name('notifications.unread-json');
   });
 
-  // Pasien Terapis - accessible to admin and terapis
+  // Pasien Terapis
+  // Index, jadwal, edit, update, destroy remain accessible to admin and terapis
   Route::middleware(['auth', 'role:admin,terapis'])->group(function () {
     Route::get('terapis/pasien', [App\Http\Controllers\TerapisPatientController::class, 'index'])->name('terapis.pasien.index');
-    Route::get('terapis/pasien/create', [App\Http\Controllers\TerapisPatientController::class, 'create'])->name('terapis.pasien.create');
-    Route::post('terapis/pasien', [App\Http\Controllers\TerapisPatientController::class, 'store'])->name('terapis.pasien.store');
     Route::get('terapis/pasien/{anakId}/jadwal', [App\Http\Controllers\TerapisPatientController::class, 'jadwalAnak'])->name('terapis.pasien.jadwal');
     Route::get('terapis/pasien/{id}/edit', [App\Http\Controllers\TerapisPatientController::class, 'edit'])->name('terapis.pasien.edit');
     Route::match(['put', 'patch'], 'terapis/pasien/{id}', [App\Http\Controllers\TerapisPatientController::class, 'update'])->name('terapis.pasien.update');
     Route::delete('terapis/pasien/{id}', [App\Http\Controllers\TerapisPatientController::class, 'destroy'])->name('terapis.pasien.destroy');
     Route::delete('terapis/jadwal/{id}', [App\Http\Controllers\TerapisPatientController::class, 'hapusJadwal'])->name('terapis.jadwal.destroy');
     Route::match(['put', 'patch'], 'terapis/jadwal/{id}', [App\Http\Controllers\TerapisPatientController::class, 'updateJadwal'])->name('terapis.jadwal.update');
+  });
+
+  // Create/store routes only for terapis (admin should not be able to create pasien terapis)
+  Route::middleware(['auth', 'role:terapis'])->group(function () {
+    Route::get('terapis/pasien/create', [App\Http\Controllers\TerapisPatientController::class, 'create'])->name('terapis.pasien.create');
+    Route::post('terapis/pasien', [App\Http\Controllers\TerapisPatientController::class, 'store'])->name('terapis.pasien.store');
   });
 
   Route::post('/anak-didik/{id}/toggle-status', [

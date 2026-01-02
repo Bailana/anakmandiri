@@ -96,7 +96,7 @@
                   type="text"
                   id="name"
                   name="name"
-                  value="{{ old('name', Auth::user()->name) }}"
+                  value="{{ old('name', isset($karyawan) && $karyawan->nama ? $karyawan->nama : (isset($konsultan) && $konsultan->nama ? $konsultan->nama : Auth::user()->name)) }}"
                   required />
                 <label for="name">Nama Lengkap</label>
                 @error('name')
@@ -112,9 +112,10 @@
                   class="form-control @error('email') is-invalid @enderror"
                   type="email"
                   id="email"
-                  name="email"
-                  value="{{ old('email', Auth::user()->email) }}"
-                  required />
+                  name="email_display"
+                  value="{{ old('email', isset($karyawan) && $karyawan->email ? $karyawan->email : (isset($konsultan) && $konsultan->email ? $konsultan->email : Auth::user()->email)) }}"
+                  disabled />
+                <input type="hidden" name="email" value="{{ old('email', isset($karyawan) && $karyawan->email ? $karyawan->email : (isset($konsultan) && $konsultan->email ? $konsultan->email : Auth::user()->email)) }}" />
                 <label for="email">Email</label>
                 @error('email')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
@@ -122,15 +123,7 @@
               </div>
             </div>
 
-            <!-- Role Badge -->
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <div class="form-control" style="background-color: #f5f5f5; cursor: not-allowed;">
-                  <span class="badge badge-primary">{{ strtoupper(Auth::user()->role) }}</span>
-                </div>
-                <label style="margin-top: -25px; background-color: white; padding: 0 4px;">Role</label>
-              </div>
-            </div>
+            <!-- Role hidden per request -->
 
             <!-- Phone -->
             <div class="col-md-6">
@@ -140,7 +133,7 @@
                   type="text"
                   id="phone"
                   name="phone"
-                  value="{{ old('phone', Auth::user()->phone ?? '') }}"
+                  value="{{ old('phone', isset($karyawan) && $karyawan->no_telepon ? $karyawan->no_telepon : (isset($konsultan) && $konsultan->no_telepon ? $konsultan->no_telepon : (Auth::user()->phone ?? ''))) }}"
                   placeholder="Nomor Telepon" />
                 <label for="phone">Nomor Telepon</label>
                 @error('phone')
@@ -157,7 +150,7 @@
                   type="text"
                   id="address"
                   name="address"
-                  value="{{ old('address', Auth::user()->address ?? '') }}"
+                  value="{{ old('address', isset($karyawan) && $karyawan->alamat ? $karyawan->alamat : (isset($konsultan) && $konsultan->alamat ? $konsultan->alamat : (Auth::user()->address ?? ''))) }}"
                   placeholder="Alamat" />
                 <label for="address">Alamat</label>
                 @error('address')
@@ -234,6 +227,23 @@
               </div>
             </div>
 
+            <!-- Keahlian (moved beside Country) -->
+            <div class="col-md-6">
+              <div class="form-floating form-floating-outline">
+                <input
+                  class="form-control @error('karyawan.keahlian') is-invalid @enderror"
+                  type="text"
+                  id="keahlian"
+                  name="karyawan[keahlian]"
+                  value="{{ old('karyawan.keahlian', isset($karyawan) ? ($karyawan->keahlian ?? '') : '') }}"
+                  placeholder="Keahlian" />
+                <label for="keahlian">Keahlian</label>
+                @error('karyawan.keahlian')
+                <span class="invalid-feedback d-block">{{ $message }}</span>
+                @enderror
+              </div>
+            </div>
+
             <!-- Bio -->
             <div class="col-md-12">
               <div class="form-floating form-floating-outline">
@@ -249,6 +259,40 @@
                 @enderror
               </div>
             </div>
+
+            <!-- Konsultan Data (editable when available or role is konsultan) -->
+            @if((isset($konsultan) && $konsultan) || Auth::user()->role === 'konsultan')
+            <div class="col-12">
+              <h5>Data Konsultan (disederhanakan)</h5>
+            </div>
+            @php
+            $kFields = [
+            'alamat' => 'Alamat',
+            'no_telepon' => 'No. Telepon',
+            'email' => 'Email',
+            'spesialisasi' => 'Spesialisasi',
+            'bidang_keahlian' => 'Bidang Keahlian',
+            'sertifikasi' => 'Sertifikasi',
+            'pengalaman_tahun' => 'Tahun Pengalaman',
+            ];
+            @endphp
+            @foreach($kFields as $field => $label)
+            <div class="col-md-6">
+              <div class="form-floating form-floating-outline">
+                @if(in_array($field, ['pengalaman_tahun']))
+                <input class="form-control" type="number" name="konsultan[{{ $field }}]" value="{{ old('konsultan.'.$field, $konsultan->{$field} ?? '') }}" />
+                @elseif(in_array($field, ['tanggal_lahir']))
+                <input class="form-control" type="date" name="konsultan[{{ $field }}]" value="{{ old('konsultan.'.$field, isset($konsultan) ? ($konsultan->{$field} ? $konsultan->{$field}->format('Y-m-d') : '') : '') }}" />
+                @else
+                <input class="form-control" type="text" name="konsultan[{{ $field }}]" value="{{ old('konsultan.'.$field, $konsultan->{$field} ?? '') }}" />
+                @endif
+                <label>{{ $label }}</label>
+              </div>
+            </div>
+            @endforeach
+            @endif
+
+            <!-- Karyawan section removed per request -->
 
             <!-- Avatar Input Hidden -->
             <input type="file" id="hiddenAvatarInput" name="avatar" hidden accept="image/png, image/jpeg,image/jpg,image/gif" />

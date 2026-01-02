@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Konsultan;
+use App\Models\User;
 use App\Services\ActivityService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class KonsultanDataController extends Controller
 {
@@ -71,7 +73,7 @@ class KonsultanDataController extends Controller
    */
   public function store(Request $request)
   {
-    $validated = $request->validate([
+    $rules = [
       'nama' => 'required|string|max:255',
       'nik' => 'nullable|string|unique:konsultans',
       'jenis_kelamin' => 'nullable|in:laki-laki,perempuan',
@@ -88,7 +90,22 @@ class KonsultanDataController extends Controller
       'tanggal_registrasi' => 'nullable|date',
       'pendidikan_terakhir' => 'nullable|string',
       'institusi_pendidikan' => 'nullable|string',
-    ]);
+    ];
+
+    if (Schema::hasColumn('konsultans', 'user_id')) {
+      $rules['user_id'] = 'nullable|exists:users,id';
+    }
+
+    $validated = $request->validate($rules);
+
+    if (Schema::hasColumn('konsultans', 'user_id')) {
+      if (empty($validated['user_id']) && !empty($validated['email'])) {
+        $matched = User::where('email', $validated['email'])->value('id');
+        if ($matched) {
+          $validated['user_id'] = $matched;
+        }
+      }
+    }
 
     Konsultan::create($validated);
 
@@ -129,7 +146,7 @@ class KonsultanDataController extends Controller
    */
   public function update(Request $request, Konsultan $konsultan)
   {
-    $validated = $request->validate([
+    $rules = [
       'nama' => 'required|string|max:255',
       'nik' => 'nullable|string|unique:konsultans,nik,' . $konsultan->id,
       'jenis_kelamin' => 'nullable|in:laki-laki,perempuan',
@@ -146,7 +163,22 @@ class KonsultanDataController extends Controller
       'tanggal_registrasi' => 'nullable|date',
       'pendidikan_terakhir' => 'nullable|string',
       'institusi_pendidikan' => 'nullable|string',
-    ]);
+    ];
+
+    if (Schema::hasColumn('konsultans', 'user_id')) {
+      $rules['user_id'] = 'nullable|exists:users,id';
+    }
+
+    $validated = $request->validate($rules);
+
+    if (Schema::hasColumn('konsultans', 'user_id')) {
+      if (empty($validated['user_id']) && !empty($validated['email'])) {
+        $matched = User::where('email', $validated['email'])->value('id');
+        if ($matched) {
+          $validated['user_id'] = $matched;
+        }
+      }
+    }
 
     $konsultan->update($validated);
 
