@@ -23,6 +23,10 @@ use Illuminate\Support\Facades\Route;
         @foreach ($menuData[0]->menu as $menu)
         @php
         $showMenu = true;
+        // Hide the 'Layouts' menu for all roles
+        if (isset($menu->name) && strtolower($menu->name) === 'layouts') {
+        $showMenu = false;
+        }
         // Sembunyikan menu berdasarkan properti roles jika ada
         if (isset($menu->roles) && is_array($menu->roles)) {
         if (!auth()->check() || !in_array(auth()->user()->role, $menu->roles)) {
