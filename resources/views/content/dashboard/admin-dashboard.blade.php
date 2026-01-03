@@ -165,6 +165,7 @@
       </div>
       <div class="card-footer d-flex justify-content-between align-items-center pagination-footer-fix">
         <style>
+          /* Pastikan pagination dan info tetap satu baris di mobile */
           .pagination-footer-fix {
             flex-wrap: nowrap !important;
             gap: 0.5rem;
@@ -203,7 +204,7 @@
           Menampilkan {{ $dashboardData['activities']->firstItem() ?? 0 }} hingga {{ $dashboardData['activities']->lastItem() ?? 0 }} dari {{ $dashboardData['activities']->total() }} data
         </div>
         <nav>
-          {!! $dashboardData['activities']->links('pagination::bootstrap-4') !!}
+          {{ $dashboardData['activities']->links('pagination::bootstrap-4') }}
         </nav>
       </div>
     </div>
