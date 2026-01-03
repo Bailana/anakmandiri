@@ -6,9 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
+use App\Models\User;
+use App\Notifications\LoginAttemptNotification;
+use App\Mail\LoginAttemptMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
 use App\Services\ActivityService;
+use App\Mail\ResetPasswordMail;
 
 class AuthController extends Controller
 {
@@ -32,6 +38,16 @@ class AuthController extends Controller
       // Log login activity
       ActivityService::logLogin();
 
+      // Reset failed login attempts on successful login
+      try {
+        $user = Auth::user();
+        if ($user) {
+          Cache::forget('login_attempts:' . $user->id);
+        }
+      } catch (\Exception $e) {
+        // ignore cache errors
+      }
+
       $user = Auth::user();
       switch ($user->role) {
         case 'admin':
@@ -45,6 +61,37 @@ class AuthController extends Controller
         default:
           Auth::logout();
           return back()->withErrors(['email' => 'Role tidak dikenali.'])->onlyInput('email');
+      }
+    }
+
+    // Failed login: increment attempt counter and notify if threshold reached
+    $email = $request->input('email');
+    $user = User::where('email', $email)->first();
+    if ($user) {
+      $key = 'login_attempts:' . $user->id;
+      $attempts = Cache::get($key, 0) + 1;
+      Cache::put($key, $attempts, now()->addMinutes(60));
+
+      if ($attempts >= 3) {
+        try {
+          // create a password reset token so user can quickly reset if needed
+          $token = Password::broker()->createToken($user);
+          $resetUrl = route('password.reset', ['token' => $token, 'email' => $user->email]);
+
+          // Send as Mailable with embedded image (CID) for better email client compatibility
+          Mail::to($user->email)->send(new LoginAttemptMail($user->name ?? $user->email, $resetUrl, now()));
+
+          // keep Notification in place as fallback (non-blocking)
+          try {
+            $user->notify(new LoginAttemptNotification($request->ip(), now(), $token, $user->email));
+          } catch (\Exception $e) {
+            // ignore
+          }
+        } catch (\Exception $e) {
+          // ignore notification errors
+        }
+        // reset counter after notifying
+        Cache::forget($key);
       }
     }
 
@@ -78,13 +125,27 @@ class AuthController extends Controller
   {
     $request->validate(['email' => 'required|email']);
 
-    $status = Password::sendResetLink(
-      $request->only('email')
-    );
+    $email = $request->input('email');
+    $user = User::where('email', $email)->first();
 
-    return $status === Password::RESET_LINK_SENT
-      ? back()->with(['status' => 'Kami telah mengirimkan link reset password ke email Anda.'])
-      : back()->withErrors(['email' => 'Email tidak ditemukan atau terjadi kesalahan.']);
+    if (!$user) {
+      return back()->withErrors(['email' => 'Email tidak ditemukan atau terjadi kesalahan.']);
+    }
+
+    try {
+      $token = Password::broker()->createToken($user);
+      $resetUrl = route('password.reset', ['token' => $token, 'email' => $user->email]);
+
+      Mail::to($user->email)->send(new ResetPasswordMail($user->name ?? $user->email, $resetUrl, now()));
+
+      return back()->with(['status' => 'Kami telah mengirimkan link reset password ke email Anda.']);
+    } catch (\Exception $e) {
+      // fallback to default broker sendResetLink if something goes wrong
+      $status = Password::sendResetLink($request->only('email'));
+      return $status === Password::RESET_LINK_SENT
+        ? back()->with(['status' => 'Kami telah mengirimkan link reset password ke email Anda.'])
+        : back()->withErrors(['email' => 'Email tidak ditemukan atau terjadi kesalahan.']);
+    }
   }
 
   // Show reset password form
