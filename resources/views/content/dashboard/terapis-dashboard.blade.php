@@ -62,123 +62,141 @@
   </div>
   @endif
 
-  <!-- Therapy Session Trend -->
-  @if(isset($dashboardData['chartData']))
-  <div class="col-lg-8">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">{{ $dashboardData['chartData']['title'] }}</h5>
-      </div>
-      <div class="card-body">
-        <div id="terapisTrendChart"></div>
-      </div>
-    </div>
-  </div>
-  @endif
-
-  <!-- Quick Actions removed -->
-
-  <!-- Sesi Hari Ini -->
-  <div class="col-lg-4">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5 class="card-title m-0">⏰ Sesi Hari Ini</h5>
-      </div>
-      <div class="card-body">
-        <div class="list-group list-group-flush">
-          @forelse(($dashboardData['jadwal_hari_ini'] ?? []) as $jadwal)
-          <div class="list-group-item">
-            <div class="d-flex justify-content-between align-items-start">
+  <!-- Therapy type cards (top 3) styled like admin stats -->
+  @if(isset($dashboardData['therapyCounts']))
+  <div class="col-12 mt-3">
+    <div class="row g-4">
+      @foreach($dashboardData['therapyCounts'] as $tc)
+      @php
+      // cycle colors for visual variety
+      $colors = ['info','success','warning','primary','danger'];
+      $color = $colors[array_rand($colors)];
+      @endphp
+      <div class="col-12 col-sm-6 col-md-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
               <div>
-                <h6 class="mb-1">Pasien: {{ $jadwal->assignment->anakDidik->nama ?? '-' }}</h6>
-                <p class="text-muted small mb-1">Jam: {{ $jadwal->jam_mulai ?? '-' }}</p>
-                <p class="text-muted small mb-0">Tipe: {{ $jadwal->jenis_terapi ?? '-' }}</p>
+                <p class="text-muted small mb-1">{{ $tc['label'] }}</p>
+                <h4 class="mb-0 text-{{ $color }}">{{ $tc['count'] }}</h4>
+                <p class="small text-muted mb-0">Anak mengikuti terapi</p>
               </div>
-              <span class="badge bg-success">Akan Dimulai</span>
+              <div class="avatar">
+                <div class="avatar-initial bg-{{ $color }} rounded">
+                  <i class="icon-base ri ri-heart-pulse-line icon-24px"></i>
+                </div>
+              </div>
             </div>
           </div>
-          @empty
-          <div class="list-group-item text-center text-muted">Tidak ada sesi terapi hari ini.</div>
-          @endforelse
+        </div>
+      </div>
+      @endforeach
+
+      @php $missing = 3 - count($dashboardData['therapyCounts']); @endphp
+      @for($i = 0; $i < max(0, $missing); $i++)
+        <div class="col-12 col-sm-6 col-md-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center text-muted">
+            <p class="mb-0">Tidak ada data</p>
+          </div>
+        </div>
+    </div>
+    @endfor
+  </div>
+</div>
+@endif
+
+<!-- Therapy Session Trend -->
+@if(isset($dashboardData['chartData']))
+<div class="col-lg-8">
+  <div class="card h-100">
+    <div class="card-header">
+      <h5 class="card-title m-0">{{ $dashboardData['chartData']['title'] }}</h5>
+    </div>
+    <div class="card-body">
+      <div id="terapisTrendChart"></div>
+    </div>
+  </div>
+</div>
+@endif
+
+<!-- Quick Actions removed -->
+
+<!-- Sesi Hari Ini (left) and Daftar Pasien Aktif (right) -->
+<div class="col-12">
+  <div class="row">
+    <div class="col-lg-4 mb-3 mb-lg-0">
+      <div class="card h-100 sesi-card">
+        <div class="card-header">
+          <h5 class="card-title m-0">⏰ Sesi Hari Ini</h5>
+        </div>
+        <div class="card-body">
+          @php $jadwalList = $dashboardData['jadwal_hari_ini'] ?? []; @endphp
+          <style>
+            .sesi-card .card-body {
+              display: flex;
+              flex-direction: column;
+            }
+
+            .sesi-list-wrapper.scrollable {
+              max-height: 360px;
+              overflow-y: auto;
+              -webkit-overflow-scrolling: touch;
+            }
+          </style>
+          <div class="list-group list-group-flush sesi-list-wrapper {{ count($jadwalList) >= 4 ? 'scrollable' : '' }}">
+            @forelse($jadwalList as $jadwal)
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="mb-1">Pasien: {{ $jadwal->assignment->anakDidik->nama ?? '-' }}</h6>
+                  <p class="text-muted small mb-1">Jam: {{ $jadwal->jam_mulai ?? '-' }}</p>
+                  <p class="text-muted small mb-0">Tipe: {{ $jadwal->jenis_terapi ?? '-' }}</p>
+                </div>
+                @php
+                try {
+                $now = \Carbon\Carbon::now();
+                $start = \Carbon\Carbon::parse($jadwal->jam_mulai);
+                $end = (clone $start)->addHour();
+                if ($now->between($start, $end)) {
+                $badgeClass = 'bg-primary';
+                $badgeText = 'Berlangsung';
+                } elseif ($now->lt($start)) {
+                $badgeClass = 'bg-warning';
+                $badgeText = 'Akan Dimulai';
+                } else {
+                $badgeClass = 'bg-success';
+                $badgeText = 'Selesai';
+                }
+                } catch (\Exception $e) {
+                $badgeClass = 'bg-secondary';
+                $badgeText = '—';
+                }
+                @endphp
+                <span class="badge {{ $badgeClass }}">{{ $badgeText }}</span>
+              </div>
+            </div>
+            @empty
+            <div class="list-group-item text-center text-muted">Tidak ada sesi terapi hari ini.</div>
+            @endforelse
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card h-100">
+        <div class="card-header">
+          <h5 class="card-title m-0">📊 Jam Terapi per Terapis</h5>
+          <p class="small text-muted mb-0">Jumlah jam (1 jam per anak yang terdaftar)</p>
+        </div>
+        <div class="card-body">
+          <div id="terapisHoursChart" style="min-height:320px;"></div>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Pasien dengan Progres Positif removed -->
-
-  <!-- Daftar Pasien Aktif -->
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="card-title m-0">👥 Daftar Pasien Aktif</h5>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>No</th>
-              <th>Nama Pasien</th>
-              <th>Jenis Terapi</th>
-              <th>Total Sesi</th>
-              <th>Progres</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>Ibu Ani Wijaya</td>
-              <td>Konseling Keluarga</td>
-              <td>8</td>
-              <td>
-                <div class="progress" style="height: 6px; width: 100px;">
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 85%" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-              </td>
-              <td><span class="badge bg-success">Aktif</span></td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td>Pak Budi Santoso</td>
-              <td>Terapi Stress</td>
-              <td>6</td>
-              <td>
-                <div class="progress" style="height: 6px; width: 100px;">
-                  <div class="progress-bar bg-success" role="progressbar" style="width: 72%" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-              </td>
-              <td><span class="badge bg-success">Aktif</span></td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td>Siti Nurhaliza</td>
-              <td>Terapi Depresi</td>
-              <td>10</td>
-              <td>
-                <div class="progress" style="height: 6px; width: 100px;">
-                  <div class="progress-bar bg-info" role="progressbar" style="width: 60%" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-              </td>
-              <td><span class="badge bg-info">Monitoring</span></td>
-            </tr>
-            <tr>
-              <td>4</td>
-              <td>Ahmad Rizki</td>
-              <td>Terapi Kecemasan</td>
-              <td>7</td>
-              <td>
-                <div class="progress" style="height: 6px; width: 100px;">
-                  <div class="progress-bar bg-warning" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
-              </td>
-              <td><span class="badge bg-warning">Perlu Perhatian</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+</div>
 </div>
 
 @if(isset($dashboardData['chartData']))
@@ -236,6 +254,79 @@
       const chart = new ApexCharts(chartElement, options);
       chart.render();
     }
+  });
+</script>
+@endif
+@if(isset($dashboardData['terapisHoursChart']) && count($dashboardData['terapisHoursChart']['labels'])>0)
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const el = document.getElementById('terapisHoursChart');
+    if (!el) return;
+    const lineOptions = {
+      series: [{
+        name: 'Jam Terapi',
+        data: @json($dashboardData['terapisHoursChart']['series'])
+      }],
+      chart: {
+        type: 'line',
+        height: 350,
+        toolbar: {
+          show: true
+        },
+        zoom: {
+          enabled: true
+        }
+      },
+      legend: {
+        show: false
+      },
+      colors: ['#7367f0'],
+      stroke: {
+        curve: 'smooth',
+        width: 3
+      },
+      markers: {
+        size: 5,
+        colors: ['#7367f0'],
+        strokeColors: '#fff',
+        strokeWidth: 2,
+        hover: {
+          size: 7
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: '12px',
+          colors: ["#304758"]
+        }
+      },
+      xaxis: {
+        categories: @json($dashboardData['terapisHoursChart']['labels']),
+        labels: {
+          style: {
+            fontSize: '12px'
+          }
+        }
+      },
+      yaxis: {
+        title: {
+          text: 'Jam'
+        }
+      },
+      grid: {
+        borderColor: '#f1f1f1'
+      },
+      tooltip: {
+        y: {
+          formatter: function(val) {
+            return val + ' jam';
+          }
+        }
+      }
+    };
+    const chart = new ApexCharts(el, lineOptions);
+    chart.render();
   });
 </script>
 @endif
