@@ -39,7 +39,10 @@ class KonsultanDashboard extends Controller
         $spec = 'wicara';
       } elseif (ProgramSI::where('user_id', $user->id)->exists()) {
         $spec = 'sensori integrasi';
-      } elseif (ProgramPendidikan::where('created_by', $user->id)->exists() || ProgramPendidikan::where('konsultan_id', $user->id)->exists()) {
+      } elseif (
+        ProgramPendidikan::where('created_by', $user->id)->exists() ||
+        ($konsultanId && ProgramPendidikan::where('konsultan_id', $konsultanId)->exists())
+      ) {
         $spec = 'pendidikan';
       } else {
         $spec = '';
@@ -47,71 +50,59 @@ class KonsultanDashboard extends Controller
     }
 
 
-    // Grafik: jumlah anak didik yang sudah diobservasi/evaluasi oleh konsultan ini
+    // Grafik: jumlah anak didik yang sudah diobservasi tiap bulan (6 bulan terakhir)
     $chartCategories = [];
     $chartSeries = [];
-    // Run records lookup when we have an inferred specialization ($spec)
-    if ($spec) {
+    // prepare months (last 6 months including current)
+    $months = [];
+    $now = now();
+    for ($i = 5; $i >= 0; $i--) {
+      $dt = $now->copy()->subMonths($i);
+      $months[] = $dt->format('M Y');
+    }
+
+    foreach ($months as $mIndex => $label) {
+      // compute month start and end
+      $dt = $now->copy()->subMonths(5 - $mIndex)->startOfMonth();
+      $start = $dt->copy()->startOfDay();
+      $end = $dt->copy()->endOfMonth()->endOfDay();
+
+      // count distinct anak_didik observed in this month depending on spec
       if ($spec === 'psikologi') {
         if ($konsultanId) {
-          $q = ProgramPsikologi::where('konsultan_id', $konsultanId);
+          $count = ProgramPsikologi::where('konsultan_id', $konsultanId)
+            ->whereBetween('created_at', [$start, $end])
+            ->distinct()->pluck('anak_didik_id')->count();
         } else {
-          $q = ProgramPsikologi::where('user_id', $user->id);
+          $count = ProgramPsikologi::where('user_id', $user->id)
+            ->whereBetween('created_at', [$start, $end])
+            ->distinct()->pluck('anak_didik_id')->count();
         }
-        $records = $q->selectRaw('anak_didik_id, COUNT(*) as total')
-          ->groupBy('anak_didik_id')
-          ->with('anakDidik')
-          ->get();
-      } elseif ($spec === 'wicara') {
-        $records = ProgramWicara::where('user_id', $user->id)
-          ->selectRaw('anak_didik_id, COUNT(*) as total')
-          ->groupBy('anak_didik_id')
-          ->with('anakDidik')
-          ->get();
+      } elseif ($spec === 'wicara' || $spec === 'pendidikan') {
+        // both wicara and pendidikan use ProgramWicara entries by user
+        $count = ProgramWicara::where('user_id', $user->id)
+          ->whereBetween('created_at', [$start, $end])
+          ->distinct()->pluck('anak_didik_id')->count();
       } elseif ($spec === 'sensori integrasi' || $spec === 'sensori_integrasi' || $spec === 'si') {
-        $records = ProgramSI::where('user_id', $user->id)
-          ->selectRaw('anak_didik_id, COUNT(*) as total')
-          ->groupBy('anak_didik_id')
-          ->with('anakDidik')
-          ->get();
-      } elseif ($spec === 'pendidikan') {
-        if ($konsultanId) {
-          $q = ProgramPendidikan::where('konsultan_id', $konsultanId);
-        } else {
-          $q = ProgramPendidikan::where('created_by', $user->id);
-        }
-        $records = $q->selectRaw('anak_didik_id, COUNT(*) as total')
-          ->groupBy('anak_didik_id')
-          ->with('anakDidik')
-          ->get();
+        $count = ProgramSI::where('user_id', $user->id)
+          ->whereBetween('created_at', [$start, $end])
+          ->distinct()->pluck('anak_didik_id')->count();
       } else {
-        // fallback to assessments when no special program table applies
+        // fallback to Assessment.tanggal_assessment
         if ($konsultanId) {
-          $records = Assessment::where('konsultan_id', $konsultanId)
-            ->selectRaw('anak_didik_id, COUNT(*) as total')
-            ->groupBy('anak_didik_id')
-            ->with('anakDidik')
-            ->get();
+          $count = Assessment::where('konsultan_id', $konsultanId)
+            ->whereBetween('tanggal_assessment', [$start, $end])
+            ->distinct()->pluck('anak_didik_id')->count();
         } else {
-          $records = collect();
+          $count = 0;
         }
       }
 
-      foreach ($records as $r) {
-        $chartCategories[] = $r->anakDidik ? $r->anakDidik->nama : 'Anak Didik';
-        $chartSeries[] = $r->total;
-      }
+      $chartCategories[] = $label;
+      $chartSeries[] = $count;
     }
 
-    // Riwayat aktivitas konsultan (ambil 10 assessment terbaru)
-    $riwayatAktivitas = [];
-    if ($konsultanId) {
-      $riwayatAktivitas = Assessment::where('konsultan_id', $konsultanId)
-        ->orderByDesc('tanggal_assessment')
-        ->with('anakDidik')
-        ->limit(10)
-        ->get();
-    }
+    // Riwayat Aktivitas Konsultan removed from dashboard (not displayed)
 
     // Pie chart: perbandingan anak didik sudah/belum diobservasi dalam 6 bulan terakhir
     $anakDidikAktif = AnakDidik::where('status', 'aktif')->get();
@@ -136,15 +127,10 @@ class KonsultanDashboard extends Controller
         ->where('created_at', '>=', $sixMonthsAgo)
         ->distinct()->pluck('anak_didik_id')->toArray();
     } elseif ($spec === 'pendidikan') {
-      if ($konsultanId) {
-        $anakDidikSudahDiobservasi = ProgramPendidikan::where('konsultan_id', $konsultanId)
-          ->where('created_at', '>=', $sixMonthsAgo)
-          ->distinct()->pluck('anak_didik_id')->toArray();
-      } else {
-        $anakDidikSudahDiobservasi = ProgramPendidikan::where('created_by', $user->id)
-          ->where('created_at', '>=', $sixMonthsAgo)
-          ->distinct()->pluck('anak_didik_id')->toArray();
-      }
+      // For konsultan pendidikan, consider anak didik observed via ProgramWicara by this user
+      $anakDidikSudahDiobservasi = ProgramWicara::where('user_id', $user->id)
+        ->where('created_at', '>=', $sixMonthsAgo)
+        ->distinct()->pluck('anak_didik_id')->toArray();
     } else {
       $anakDidikSudahDiobservasi = $konsultanId ? Assessment::where('konsultan_id', $konsultanId)
         ->where('tanggal_assessment', '>=', $sixMonthsAgo)
@@ -163,24 +149,23 @@ class KonsultanDashboard extends Controller
     ];
     $anakDidikBelumDiobservasi = $anakDidikAktif->whereNotIn('id', $anakDidikSudahDiobservasi);
 
-    $dashboardData = [
-      'role' => 'konsultan',
-      'message' => 'Selamat datang di Dashboard Konsultan',
-      'stats' => [
-        [
-          'label' => 'Anak Didik Aktif',
-          'value' => $jumlahAnakDidikAktif,
-          'color' => 'success',
-          'icon' => 'ri-group-line',
-        ],
-        [
-          // Show 'Perlu Observasi' for several konsultan specializations, otherwise show program count
-          'label' => in_array($spec, ['psikologi', 'wicara', 'sensori integrasi', 'sensori_integrasi', 'si', 'pendidikan']) ? 'Perlu Observasi' : 'Program Konsultan',
-          'value' => in_array($spec, ['psikologi', 'wicara', 'sensori integrasi', 'sensori_integrasi', 'si', 'pendidikan']) ? $jumlahBelumUntukKonsultan : $jumlahProgramKonsultan,
-          'color' => in_array($spec, ['psikologi', 'wicara', 'sensori integrasi', 'sensori_integrasi', 'si', 'pendidikan']) ? 'danger' : 'info',
-          'icon' => in_array($spec, ['psikologi', 'wicara', 'sensori integrasi', 'sensori_integrasi', 'si', 'pendidikan']) ? 'ri-alert-line' : 'ri-book-2-line',
-        ],
+    // Build stats array: always show 'Anak Didik Aktif' and 'Perlu Observasi' (remove Program Konsultan card)
+    $stats = [
+      [
+        'label' => 'Anak Didik Aktif',
+        'value' => $jumlahAnakDidikAktif,
+        'color' => 'success',
+        'icon' => 'ri-group-line',
       ],
+      [
+        'label' => 'Perlu Observasi',
+        'value' => $jumlahBelumUntukKonsultan,
+        'color' => 'danger',
+        'icon' => 'ri-alert-line',
+      ],
+    ];
+    $isKonsultanPendidikanFlag = in_array($spec, ['pendidikan']);
+    $dashboardData = [
       'chartData' => [
         'title' => 'Jumlah Observasi/Evaluasi per Anak Didik',
         'categories' => $chartCategories,
@@ -191,9 +176,10 @@ class KonsultanDashboard extends Controller
           ]
         ],
       ],
-      'riwayatAktivitas' => $riwayatAktivitas,
+      'stats' => $stats,
       'anakDidikBelumDiobservasi' => $anakDidikBelumDiobservasi,
       'pieChartData' => $pieChartData,
+      'isKonsultanPendidikan' => $isKonsultanPendidikanFlag,
     ];
 
     return view('content.dashboard.konsultan-dashboard', compact('dashboardData', 'user'));

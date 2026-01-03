@@ -12,7 +12,7 @@
 @endsection
 
 @section('content')
-<div class="row gy-6">
+<div class="row gy-4">
   <!-- Welcome Card -->
   <div class="col-md-12">
     <div class="card bg-warning text-white">
@@ -46,7 +46,7 @@
           <div class="card-body">
             <div class="d-flex align-items-center justify-content-between">
               <div>
-                <p class="text-muted small mb-1">{{ $stat['label'] }}</p>
+                <p class="text-muted small mb-1">{{ $stat['display_title'] ?? $stat['label'] }}</p>
                 <h4 class="mb-0 text-{{ $stat['color'] }}">{{ $stat['value'] }}</h4>
               </div>
               <div class="avatar">
@@ -70,10 +70,10 @@
       <div class="col-md-6">
         <div class="card h-100">
           <div class="card-header">
-            <h5 class="card-title m-0">Perbandingan Observasi Anak Didik (6 Bulan Terakhir)</h5>
+            <h5 class="card-title m-0">Observasi/Evaluasi</h5>
           </div>
           <div class="card-body">
-            @if(!empty($dashboardData['pieChartData']['series']) && array_sum($dashboardData['pieChartData']['series']) > 0)
+            @if(isset($dashboardData['pieChartData']['series']))
             <div id="pieChartObservasi" style="width:100%; min-height:320px;"></div>
             @else
             <div class="text-center text-muted py-5">Belum ada data observasi/evaluasi</div>
@@ -217,49 +217,7 @@
         });
       </script>
       @endif
-      <div class="card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <div>
-            <h5 class="card-title m-0">Riwayat Aktivitas Konsultan</h5>
-            <p class="small text-muted mb-0">Menampilkan aktivitas observasi/evaluasi terbaru</p>
-          </div>
-          <div>
-            <span class="badge bg-primary"><i class="ri-calendar-line me-1"></i>Terbaru</span>
-          </div>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Waktu</th>
-                <th>Anak Didik</th>
-                <th>Kategori</th>
-                <th>Hasil</th>
-              </tr>
-            </thead>
-            <tbody>
-              @if(count($dashboardData['riwayatAktivitas']) > 0)
-              @foreach($dashboardData['riwayatAktivitas'] as $aktivitas)
-              <tr>
-                <td>
-                  <small class="text-muted">
-                    {{ $aktivitas->tanggal_assessment ? $aktivitas->tanggal_assessment->diffForHumans() : '' }}
-                  </small>
-                </td>
-                <td>{{ $aktivitas->anakDidik->nama ?? 'Anak Didik' }}</td>
-                <td>{{ $aktivitas->kategori ?? 'Observasi/Evaluasi' }}</td>
-                <td><span class="badge bg-primary">{{ $aktivitas->hasil_penilaian ?? '-' }}</span></td>
-              </tr>
-              @endforeach
-              @else
-              <tr>
-                <td colspan="4" class="text-center text-muted py-4">Belum ada aktivitas observasi/evaluasi.</td>
-              </tr>
-              @endif
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Riwayat Aktivitas Konsultan removed as requested -->
     </div>
     @endif
 
