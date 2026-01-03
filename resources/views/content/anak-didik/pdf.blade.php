@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Laporan Perkembangan {{ $anakDidik->nama }}</title>
+  <title>{{ $anakDidik->nama }}</title>
   <style>
     * {
       margin: 0;
@@ -35,22 +35,33 @@
       margin-bottom: 5px;
     }
 
+    /* Full-width kop surat header */
+    .kop-full {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .kop-full img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
     .header {
-      text-align: center;
-      margin-bottom: 30px;
-      border-bottom: 3px solid #333;
-      padding-bottom: 15px;
+      margin-top: 10px;
+      margin-bottom: 18px;
     }
 
     .header h1 {
-      font-size: 24px;
-      margin-bottom: 5px;
+      font-size: 20px;
+      margin-bottom: 6px;
       color: #1e3a8a;
     }
 
     .header p {
       font-size: 12px;
       color: #666;
+      margin: 0;
     }
 
     .section {
@@ -249,9 +260,13 @@
     Tekan <strong>Ctrl+P</strong> (Windows) atau <strong>Cmd+P</strong> (Mac) untuk menyimpan laporan sebagai PDF
   </div>
 
-  <!-- Header -->
+  <!-- Full-width kop surat header -->
+  <div class="kop-full">
+    <img src="{{ asset('assets/img/kop_surat.png') }}" alt="Kop Surat">
+  </div>
+
   <div class="header">
-    <h1>Laporan Perkembangan Anak Didik</h1>
+    <h1>Data Diri Anak Didik</h1>
     <p>Tanggal Laporan: {{ now()->format('d F Y') }}</p>
   </div>
 
@@ -283,6 +298,53 @@
         <div class="info-label">Alamat</div>
         <div class="info-value">{{ $anakDidik->alamat ?? '-' }}</div>
       </div>
+      <div class="info-item">
+        <div class="info-label">Email</div>
+        <div class="info-value">{{ $anakDidik->email ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Nomor Telepon</div>
+        <div class="info-value">{{ $anakDidik->no_telepon ?? '-' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Keluarga -->
+  <div class="section">
+    <h2>Data Keluarga</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Nama Orang Tua / Wali</div>
+        <div class="info-value">{{ $anakDidik->nama_orang_tua ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">No. Telepon Orang Tua</div>
+        <div class="info-value">{{ $anakDidik->no_telepon_orang_tua ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Nomor Kartu Keluarga (KK)</div>
+        <div class="info-value">{{ $anakDidik->no_kk ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">NIK</div>
+        <div class="info-value">{{ $anakDidik->nik ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Tinggal Bersama</div>
+        <div class="info-value">{{ $anakDidik->tinggal_bersama ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Jumlah Saudara Kandung</div>
+        <div class="info-value">{{ $anakDidik->jumlah_saudara_kandung ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Anak Ke</div>
+        <div class="info-value">{{ $anakDidik->anak_ke ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">No. Akta Kelahiran</div>
+        <div class="info-value">{{ $anakDidik->no_akta_kelahiran ?? '-' }}</div>
+      </div>
     </div>
   </div>
 
@@ -297,6 +359,25 @@
       <div class="info-item">
         <div class="info-label">Berat Badan</div>
         <div class="info-value">{{ $anakDidik->berat_badan ? $anakDidik->berat_badan . ' kg' : '-' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Pendidikan -->
+  <div class="section">
+    <h2>Data Pendidikan</h2>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Pendidikan Terakhir</div>
+        <div class="info-value">{{ $anakDidik->pendidikan_terakhir ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Asal Sekolah</div>
+        <div class="info-value">{{ $anakDidik->asal_sekolah ?? '-' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Tanggal Pendaftaran</div>
+        <div class="info-value">{{ $anakDidik->tanggal_pendaftaran ? $anakDidik->tanggal_pendaftaran->format('d F Y') : '-' }}</div>
       </div>
     </div>
   </div>
@@ -434,7 +515,7 @@
 
 
   <div class="footer">
-    <p>Dokumen ini adalah laporan resmi perkembangan anak didik yang dihasilkan otomatis oleh sistem.</p>
+    <p>Dokumen ini adalah data resmi anak didik yang dihasilkan otomatis oleh sistem.</p>
     <p>Dicetak pada: {{ now()->format('d F Y H:i:s') }}</p>
   </div>
 </body>

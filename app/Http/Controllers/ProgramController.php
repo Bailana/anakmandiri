@@ -21,8 +21,22 @@ class ProgramController extends Controller
    */
   public function exportPdf($id)
   {
-    $program = ProgramWicara::with(['anakDidik.guruFokus', 'konsultan'])->findOrFail($id);
-    return view('content.program.pdf', compact('program'));
+    // Try to find the record across known program tables (wicara, psikologi, si)
+    $program = ProgramWicara::with(['anakDidik.guruFokus', 'user'])->find($id);
+    $sumber = 'wicara';
+    if (!$program) {
+      // ProgramPsikologi has a konsultan relation
+      $program = ProgramPsikologi::with(['anakDidik.guruFokus', 'konsultan', 'user'])->find($id);
+      $sumber = 'psikologi';
+    }
+    if (!$program) {
+      $program = \App\Models\ProgramSI::with(['anakDidik.guruFokus', 'user'])->find($id);
+      $sumber = 'si';
+    }
+    if (!$program) {
+      abort(404);
+    }
+    return view('content.program.pdf', compact('program', 'sumber'));
   }
   /**
    * API: Detail Observasi/Evaluasi dari tabel program_wicara (untuk modal lihat)
@@ -98,6 +112,7 @@ class ProgramController extends Controller
     return response()->json([
       'success' => true,
       'data' => [
+        'id' => $program->id,
         'anak_didik_nama' => $program->anakDidik->nama ?? '-',
         'guru_fokus_nama' => $program->anakDidik && $program->anakDidik->guruFokus ? $program->anakDidik->guruFokus->nama : '-',
         'hari' => $hariTanggal[0],

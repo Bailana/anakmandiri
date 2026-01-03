@@ -3,54 +3,97 @@
 @section('title', 'Export PDF - Observasi/Evaluasi Program')
 
 @section('content')
-<div class="container py-4">
-  <div class="alert alert-warning d-print-none" style="font-size:1rem">
-    <strong>Petunjuk:</strong> Tekan <b>Ctrl+P</b> (atau <b>Cmd+P</b> di Mac) lalu pilih <b>Save as PDF</b> untuk menyimpan file ini sebagai PDF.
+<div class="container py-2">
+  <div class="d-print-none" style="font-size:0.95rem;margin-bottom:8px;color:#6c757d">
+    <strong>Petunjuk:</strong> Tekan <b>Ctrl+P</b> (atau <b>Cmd+P</b>) lalu pilih <b>Save as PDF</b> untuk menyimpan file ini sebagai PDF.
   </div>
-  <h2 class="mb-3">Detail Observasi/Evaluasi Program</h2>
-  <table class="table table-bordered">
+
+  @php $s = $sumber ?? 'wicara'; @endphp
+  <h3 style="margin-bottom:0.5rem">Detail Observasi/Evaluasi</h3>
+  <p style="margin-top:0;margin-bottom:12px;font-size:0.95rem">Sumber: {{ strtoupper($s) }}</p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:0.95rem">
     <tr>
-      <th style="width:30%">Anak Didik</th>
-      <td>{{ $program->anakDidik->nama ?? '-' }}</td>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd;width:30%">Anak Didik</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->anakDidik->nama ?? '-' }}</td>
     </tr>
     <tr>
-      <th>Guru Fokus</th>
-      <td>{{ $program->anakDidik && $program->anakDidik->guruFokus ? $program->anakDidik->guruFokus->nama : '-' }}</td>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Guru Fokus</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->anakDidik && $program->anakDidik->guruFokus ? $program->anakDidik->guruFokus->nama : '-' }}</td>
     </tr>
     <tr>
-      <th>Konsultan</th>
-      <td>{{ $program->konsultan->nama ?? '-' }}</td>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Konsultan</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->konsultan->nama ?? ($program->user->name ?? '-') }}</td>
     </tr>
     <tr>
-      <th>Tanggal</th>
-      <td>{{ $program->created_at ? $program->created_at->format('d/m/Y') : '-' }}</td>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Tanggal</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->created_at ? $program->created_at->format('d/m/Y') : '-' }}</td>
     </tr>
     <tr>
-      <th>Kemampuan</th>
-      <td>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Diagnosa</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->diagnosa ?? '-' }}</td>
+    </tr>
+    @if($s === 'psikologi')
+    <tr>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Latar Belakang</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->latar_belakang ?? '-' }}</td>
+    </tr>
+    <tr>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Metode Assessment</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->metode_assessment ?? '-' }}</td>
+    </tr>
+    <tr>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Hasil Assessment</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->hasil_assessment ?? '-' }}</td>
+    </tr>
+    <tr>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Kesimpulan</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->kesimpulan ?? '-' }}</td>
+    </tr>
+    <tr>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Diagnosa</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->diagnosa_psikologi ?? $program->diagnosa ?? '-' }}</td>
+    </tr>
+    @else
+    <tr>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Kemampuan</th>
+      <td style="padding:6px;border:1px solid #ddd">
         @if(is_array($program->kemampuan) && count($program->kemampuan) > 0)
-        <table class="table table-sm table-bordered mb-0">
-          <thead class="table-light">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
             <tr>
-              <th>Kemampuan</th>
-              <th class="text-center">1</th>
-              <th class="text-center">2</th>
-              <th class="text-center">3</th>
-              <th class="text-center">4</th>
-              <th class="text-center">5</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:left">Kemampuan</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">1</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">2</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">3</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">4</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">5</th>
             </tr>
+
           </thead>
           <tbody>
             @foreach($program->kemampuan as $item)
             <tr>
-              <td>{{ $item['judul'] ?? '-' }}</td>
+              <td style="border:1px solid #ddd;padding:6px">{{ $item['judul'] ?? '-' }}</td>
               @for($skala=1; $skala<=5; $skala++)
-                <td class="text-center">@if(isset($item['skala']) && (int)$item['skala'] === $skala)✔️@endif
+                <td style="border:1px solid #ddd;padding:6px;text-align:center">@if(isset($item['skala']) && (int)$item['skala'] === $skala)✔️@endif
       </td>
       @endfor
     </tr>
     @endforeach
     </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="6" style="padding:6px;font-size:12px;color:#555;background:#fafafa">
+          <strong>Keterangan skala:</strong>
+          <span style="margin-left:2px">1: Tidak Mampu</span>
+          <span style="margin-left:2px">2: Kurang Mampu</span>
+          <span style="margin-left:2px">3: Cukup Mampu</span>
+          <span style="margin-left:2px">4: Mampu</span>
+          <span style="margin-left:2px">5: Sangat Mampu</span>
+        </td>
+      </tr>
+    </tfoot>
   </table>
   @else
   <em>Tidak ada data kemampuan</em>
@@ -58,17 +101,19 @@
   </td>
   </tr>
   <tr>
-    <th>Wawancara</th>
-    <td>{{ $program->wawancara ?? '-' }}</td>
+    <th style="text-align:left;padding:6px;border:1px solid #ddd">Wawancara / Keterangan</th>
+    <td style="padding:6px;border:1px solid #ddd">{{ $program->wawancara ?? $program->keterangan ?? '-' }}</td>
   </tr>
   <tr>
-    <th>Kemampuan Saat Ini</th>
-    <td>{{ $program->kemampuan_saat_ini ?? '-' }}</td>
+    <th style="text-align:left;padding:6px;border:1px solid #ddd">Kemampuan Saat Ini</th>
+    <td style="padding:6px;border:1px solid #ddd">{{ $program->kemampuan_saat_ini ?? '-' }}</td>
   </tr>
   <tr>
-    <th>Saran / Rekomendasi</th>
-    <td>{{ $program->saran_rekomendasi ?? '-' }}</td>
+    <th style="text-align:left;padding:6px;border:1px solid #ddd">Saran / Rekomendasi</th>
+    <td style="padding:6px;border:1px solid #ddd">{{ $program->saran_rekomendasi ?? '-' }}</td>
   </tr>
+  @endif
+
   </table>
 </div>
 @endsection

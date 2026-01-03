@@ -557,6 +557,15 @@
             }
             // Tampilkan modal detail
             var detailModal = new bootstrap.Modal(detailModalEl);
+            // Set export PDF link to open the export in a new tab
+            try {
+              var exportBtnEl = document.getElementById('exportPdfBtn');
+              if (exportBtnEl) {
+                var pdfUrl = '/program/' + (program.id || id) + '/export-pdf';
+                exportBtnEl.href = pdfUrl;
+                exportBtnEl.target = '_blank';
+              }
+            } catch (e) {}
             detailModal.show();
           }
         });

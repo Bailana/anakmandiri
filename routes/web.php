@@ -187,6 +187,7 @@ Route::middleware(['auth'])->group(function () {
   });
   // Allow konsultan, terapis, admin, and guru to view program index/show (read-only for guru)
   Route::middleware(['auth', 'role:admin,konsultan,terapis,guru'])->group(function () {
+    Route::get('program/{id}/export-pdf', [App\Http\Controllers\ProgramController::class, 'exportPdf'])->name('program.export-pdf');
     Route::resource('program', 'App\Http\Controllers\ProgramController')->only(['index', 'show']);
   });
   Route::middleware(['auth', 'role:konsultan'])->group(function () {
