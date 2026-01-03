@@ -44,7 +44,7 @@
     <form method="GET" action="{{ route('anak-didik.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <!-- Search Field -->
       <div class="flex-grow-1">
-        <input type="text" name="search" class="form-control" placeholder="Cari nama atau NIS..." value="{{ request('search') }}">
+        <input id="searchDesktop" type="text" name="search" class="form-control" placeholder="Cari nama atau NIS..." value="{{ request('search') }}">
       </div>
       <!-- Filter Jenis Kelamin -->
       <select name="jenis_kelamin" class="form-select d-none d-sm-block" style="max-width: 150px;">
@@ -349,6 +349,79 @@
   </div>
 </div>
 <script>
+  (function() {
+    var searchDesktop = document.getElementById('searchDesktop');
+    var jenisKelaminMobile = document.querySelector('.d-sm-none select[name="jenis_kelamin"]');
+    var guruFokusMobile = document.querySelector('.d-sm-none select[name="guru_fokus"]');
+    var jenisKelaminDesktop = document.querySelector('.d-none.d-sm-block select[name="jenis_kelamin"]') || document.querySelector('select[name="jenis_kelamin"]');
+    var guruFokusDesktop = document.querySelector('.d-none.d-sm-block select[name="guru_fokus"]') || document.querySelector('select[name="guru_fokus"]');
+    var form = searchDesktop && searchDesktop.closest('form');
+
+    function syncNames() {
+      var isMobile = window.matchMedia('(max-width: 575.98px)').matches;
+      // Always keep desktop search input named 'search' so mobile submit uses it
+      if (searchDesktop) searchDesktop.name = 'search';
+
+      if (isMobile) {
+        if (jenisKelaminMobile) jenisKelaminMobile.name = 'jenis_kelamin';
+        if (jenisKelaminDesktop) jenisKelaminDesktop.removeAttribute('name');
+        if (guruFokusMobile) guruFokusMobile.name = 'guru_fokus';
+        if (guruFokusDesktop) guruFokusDesktop.removeAttribute('name');
+      } else {
+        if (jenisKelaminDesktop) jenisKelaminDesktop.name = 'jenis_kelamin';
+        if (jenisKelaminMobile) jenisKelaminMobile.removeAttribute('name');
+        if (guruFokusDesktop) guruFokusDesktop.name = 'guru_fokus';
+        if (guruFokusMobile) guruFokusMobile.removeAttribute('name');
+      }
+    }
+
+    if (form) {
+      form.addEventListener('submit', function() {
+        var isMobile = window.matchMedia('(max-width: 575.98px)').matches;
+        if (isMobile) {
+          // copy mobile selects into desktop selects so server receives filters
+          if (jenisKelaminMobile && jenisKelaminDesktop) jenisKelaminDesktop.value = jenisKelaminMobile.value;
+          if (guruFokusMobile && guruFokusDesktop) guruFokusDesktop.value = guruFokusMobile.value;
+        } else {
+          if (jenisKelaminDesktop && jenisKelaminMobile) jenisKelaminMobile.value = jenisKelaminDesktop.value;
+          if (guruFokusDesktop && guruFokusMobile) guruFokusMobile.value = guruFokusDesktop.value;
+        }
+
+        // Ensure `search` is always submitted: prefer desktop input, fallback to any text input, otherwise create hidden input
+        var searchVal = '';
+        if (searchDesktop && typeof searchDesktop.value !== 'undefined') searchVal = searchDesktop.value;
+        else {
+          var anyText = form.querySelector('input[type="text"]');
+          if (anyText) searchVal = anyText.value;
+        }
+
+        var existingSearch = form.querySelector('input[name="search"]');
+        if (!existingSearch) {
+          existingSearch = document.createElement('input');
+          existingSearch.type = 'hidden';
+          existingSearch.name = 'search';
+          form.appendChild(existingSearch);
+        }
+        existingSearch.value = searchVal;
+
+        // Diagnostic log for debugging network params
+        try {
+          console.log('Daftar AnakDidik submit ->', {
+            search: existingSearch.value,
+            jenis_kelamin: (jenisKelaminDesktop && jenisKelaminDesktop.value) || (jenisKelaminMobile && jenisKelaminMobile.value) || '',
+            guru_fokus: (guruFokusDesktop && guruFokusDesktop.value) || (guruFokusMobile && guruFokusMobile.value) || ''
+          });
+        } catch (e) {
+          // ignore
+        }
+      });
+    }
+
+    window.addEventListener('resize', syncNames);
+    document.addEventListener('DOMContentLoaded', syncNames);
+    syncNames();
+  })();
+
   window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   window.formatDate = function(dateString) {

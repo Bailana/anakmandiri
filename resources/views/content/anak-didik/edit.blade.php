@@ -64,10 +64,7 @@
               </button>
             </li>
             <li class="nav-item" role="presentation">
-              <button class="nav-link" id="terapi-tab" data-bs-toggle="tab" data-bs-target="#terapi"
-                type="button" role="tab" aria-controls="terapi" aria-selected="false">
-                <i class="ri-hospital-line me-2"></i>Program Terapi
-              </button>
+              <!-- Program Terapi tab removed -->
             </li>
           </ul>
         </div>
@@ -501,61 +498,8 @@
               </div>
             </div>
 
-            <!-- Program Terapi Tab -->
-            <div class="tab-pane fade" id="terapi" role="tabpanel" aria-labelledby="terapi-tab">
-              <div class="alert alert-info mb-4" role="alert">
-                <i class="ri-information-line me-2"></i>
-                <strong>Program Terapi:</strong> Informasi tentang program terapi yang sedang diikuti oleh anak.
-              </div>
-
-              @if($anakDidik->therapyPrograms && $anakDidik->therapyPrograms->count() > 0)
-              <div class="table-responsive">
-                <table class="table table-sm table-hover">
-                  <thead>
-                    <tr>
-                      <th>Jenis Terapi</th>
-                      <th>Tanggal Mulai</th>
-                      <th>Tanggal Selesai</th>
-                      <th>Status</th>
-                      <th>Catatan</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @foreach($anakDidik->therapyPrograms as $therapy)
-                    <tr>
-                      <td>
-                        @if($therapy->type_therapy === 'si')
-                        <span class="badge bg-label-primary">Sensori Integrasi</span>
-                        @elseif($therapy->type_therapy === 'wicara')
-                        <span class="badge bg-label-success">Terapi Wicara</span>
-                        @elseif($therapy->type_therapy === 'perilaku')
-                        <span class="badge bg-label-info">Terapi Perilaku</span>
-                        @endif
-                      </td>
-                      <td>{{ $therapy->tanggal_mulai?->format('d/m/Y') ?? '-' }}</td>
-                      <td>{{ $therapy->tanggal_selesai?->format('d/m/Y') ?? '-' }}</td>
-                      <td>
-                        @if($therapy->is_active)
-                        <span class="badge bg-success">Aktif</span>
-                        @else
-                        <span class="badge bg-danger">Tidak Aktif</span>
-                        @endif
-                      </td>
-                      <td><small>{{ $therapy->notes ?? '-' }}</small></td>
-                    </tr>
-                    @endforeach
-                  </tbody>
-                </table>
-              </div>
-              @else
-              <div class="alert alert-warning" role="alert">
-                <i class="ri-alert-line me-2"></i>
-                Belum ada program terapi yang terdaftar untuk anak ini.
-              </div>
-              @endif
-            </div>
+            <!-- Program Terapi removed -->
           </div>
-
 
         </form>
       </div>
@@ -570,28 +514,75 @@
   document.addEventListener('DOMContentLoaded', function() {
     const statusToggle = document.getElementById('statusToggle');
     const statusLabel = document.getElementById('statusLabel');
+    const statusInput = document.getElementById('statusInput');
+
+    if (!statusToggle) return;
+
+    // Initialize UI from hidden input (source of truth)
+    const initialStatus = (statusInput && statusInput.value) ? statusInput.value : '{{ $anakDidik->status ?? "nonaktif" }}';
+    const initialChecked = initialStatus === 'aktif';
+    statusToggle.checked = initialChecked;
+    statusLabel.textContent = initialChecked ? 'Aktif' : 'Non Aktif';
+
+    let pending = false;
+
     statusToggle.addEventListener('change', function() {
-      const status = statusToggle.checked ? 'aktif' : 'nonaktif';
-      statusLabel.textContent = statusToggle.checked ? 'Aktif' : 'Non Aktif';
+      if (pending) return; // avoid duplicate requests
+
+      // desired status after this interaction
+      const desiredStatus = statusToggle.checked ? 'aktif' : 'nonaktif';
+
+      // disable while request in progress
+      pending = true;
+      statusToggle.disabled = true;
+
+      const body = new URLSearchParams();
+      body.append('status', desiredStatus);
+
       fetch("{{ route('anak-didik.toggle-status', $anakDidik->id) }}", {
           method: 'POST',
+          credentials: 'same-origin',
           headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
           },
-          body: JSON.stringify({
-            status
-          })
+          body: body
         })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            toastr.success('Status anak didik berhasil diperbarui!');
-          } else {
-            toastr.error('Gagal memperbarui status!');
+        .then(async response => {
+          let data = {};
+          try {
+            data = await response.json();
+          } catch (e) {}
+          if (!response.ok) {
+            if (response.status === 419 || response.status === 401) {
+              throw new Error('Sesi berakhir atau token CSRF tidak valid. Silakan refresh halaman dan coba lagi.');
+            }
+            throw new Error((data && data.message) ? data.message : 'Gagal memperbarui status');
           }
+
+          const newStatus = (data && data.status) ? data.status : desiredStatus;
+          if (statusInput) statusInput.value = newStatus;
+
+          // reflect server state in UI
+          const isActive = newStatus === 'aktif';
+          statusToggle.checked = isActive;
+          statusLabel.textContent = isActive ? 'Aktif' : 'Non Aktif';
+          toastr.success('Status anak didik berhasil diperbarui!');
         })
-        .catch(() => toastr.error('Gagal memperbarui status!'));
+        .catch(err => {
+          // revert to value from statusInput (server/source of truth)
+          const serverStatus = (statusInput && statusInput.value) ? statusInput.value : initialStatus;
+          const serverChecked = serverStatus === 'aktif';
+          statusToggle.checked = serverChecked;
+          statusLabel.textContent = serverChecked ? 'Aktif' : 'Non Aktif';
+          console.error('Toggle status error:', err);
+          toastr.error(err.message || 'Gagal memperbarui status!');
+        })
+        .finally(() => {
+          pending = false;
+          statusToggle.disabled = false;
+        });
     });
   });
 </script>

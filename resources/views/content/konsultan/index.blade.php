@@ -47,7 +47,7 @@
     <form method="GET" action="{{ route('konsultan.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <!-- Search Field -->
       <div class="flex-grow-1">
-        <input type="text" name="search" class="form-control" placeholder="Cari nama, NIK, atau email..."
+        <input id="searchDesktop" type="text" name="search" class="form-control" placeholder="Cari nama, NIK, atau email..."
           value="{{ request('search') }}">
       </div>
       <!-- Filter Jenis Kelamin (desktop) -->
@@ -108,7 +108,7 @@
           }
         }
       </style>
-      <!-- Mobile: tombol search & reset side by side -->
+      <!-- Mobile: tombol search & reset side by side (uses desktop search input) -->
       <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none">
         <button type="submit"
           class="btn btn-outline-primary w-50 d-inline-flex align-items-center justify-content-center p-0"
@@ -425,6 +425,56 @@
 
 @push('page-script')
 <script>
+  (function() {
+    var searchDesktop = document.getElementById('searchDesktop');
+    var jenisKelaminMobile = document.querySelector('.d-sm-none select[name="jenis_kelamin"]');
+    var spesialisasiMobile = document.querySelector('.d-sm-none select[name="spesialisasi"]');
+    var statusMobile = document.querySelector('.d-sm-none select[name="status_hubungan"]');
+    var jenisKelaminDesktop = document.querySelector('.d-none.d-sm-block select[name="jenis_kelamin"]') || document.querySelector('select[name="jenis_kelamin"]');
+    var spesialisasiDesktop = document.querySelector('.d-none.d-sm-block select[name="spesialisasi"]') || document.querySelector('select[name="spesialisasi"]');
+    var statusDesktop = document.querySelector('.d-none.d-sm-block select[name="status_hubungan"]') || document.querySelector('select[name="status_hubungan"]');
+    var form = searchDesktop && searchDesktop.closest('form');
+
+    function syncNames() {
+      var isMobile = window.matchMedia('(max-width: 575.98px)').matches;
+      if (searchDesktop) searchDesktop.name = 'search';
+      if (isMobile) {
+        if (jenisKelaminMobile) jenisKelaminMobile.name = 'jenis_kelamin';
+        if (jenisKelaminDesktop) jenisKelaminDesktop.removeAttribute('name');
+        if (spesialisasiMobile) spesialisasiMobile.name = 'spesialisasi';
+        if (spesialisasiDesktop) spesialisasiDesktop.removeAttribute('name');
+        if (statusMobile) statusMobile.name = 'status_hubungan';
+        if (statusDesktop) statusDesktop.removeAttribute('name');
+      } else {
+        if (jenisKelaminDesktop) jenisKelaminDesktop.name = 'jenis_kelamin';
+        if (jenisKelaminMobile) jenisKelaminMobile.removeAttribute('name');
+        if (spesialisasiDesktop) spesialisasiDesktop.name = 'spesialisasi';
+        if (spesialisasiMobile) spesialisasiMobile.removeAttribute('name');
+        if (statusDesktop) statusDesktop.name = 'status_hubungan';
+        if (statusMobile) statusMobile.removeAttribute('name');
+      }
+    }
+
+    if (form) {
+      form.addEventListener('submit', function() {
+        var isMobile = window.matchMedia('(max-width: 575.98px)').matches;
+        if (isMobile) {
+          if (jenisKelaminMobile && jenisKelaminDesktop) jenisKelaminDesktop.value = jenisKelaminMobile.value;
+          if (spesialisasiMobile && spesialisasiDesktop) spesialisasiDesktop.value = spesialisasiMobile.value;
+          if (statusMobile && statusDesktop) statusDesktop.value = statusMobile.value;
+        } else {
+          if (jenisKelaminDesktop && jenisKelaminMobile) jenisKelaminMobile.value = jenisKelaminDesktop.value;
+          if (spesialisasiDesktop && spesialisasiMobile) spesialisasiMobile.value = spesialisasiDesktop.value;
+          if (statusDesktop && statusMobile) statusMobile.value = statusDesktop.value;
+        }
+      });
+    }
+
+    window.addEventListener('resize', syncNames);
+    document.addEventListener('DOMContentLoaded', syncNames);
+    syncNames();
+  })();
+
   window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
   // Format Date

@@ -42,17 +42,17 @@
     <form method="GET" action="{{ route('karyawan.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <!-- Search Field -->
       <div class="flex-grow-1">
-        <input type="text" name="search" class="form-control" placeholder="Cari nama, NIP, atau email..." value="{{ request('search') }}">
+        <input id="searchDesktop" type="text" name="search" class="form-control" placeholder="Cari nama, NIP, atau email..." value="{{ request('search') }}">
       </div>
       <!-- Filter Posisi (desktop) -->
-      <select name="posisi" class="form-select d-none d-sm-block" style="max-width: 150px;">
+      <select id="posisiDesktop" name="posisi" class="form-select d-none d-sm-block" style="max-width: 150px;">
         <option value="">Posisi</option>
         @foreach($posisiOptions as $posisi)
         <option value="{{ $posisi }}" {{ request('posisi') === $posisi ? 'selected' : '' }}>{{ $posisi }}</option>
         @endforeach
       </select>
       <!-- Filter Status (desktop) -->
-      <select name="status_kepegawaian" class="form-select d-none d-sm-block" style="max-width: 150px;">
+      <select id="statusDesktop" name="status_kepegawaian" class="form-select d-none d-sm-block" style="max-width: 150px;">
         <option value="">Status</option>
         <option value="tetap" {{ request('status_kepegawaian') === 'tetap' ? 'selected' : '' }}>Tetap</option>
         <option value="training" {{ request('status_kepegawaian') === 'training' ? 'selected' : '' }}>Training</option>
@@ -60,13 +60,13 @@
       </select>
       <!-- Mobile: filter posisi & status side by side -->
       <div class="d-flex flex-row gap-2 w-100 d-flex d-sm-none">
-        <select name="posisi" class="form-select" style="min-width:120px;">
+        <select id="posisiMobile" name="posisi" class="form-select" style="min-width:120px;">
           <option value="">Posisi</option>
           @foreach($posisiOptions as $posisi)
           <option value="{{ $posisi }}" {{ request('posisi') === $posisi ? 'selected' : '' }}>{{ $posisi }}</option>
           @endforeach
         </select>
-        <select name="status_kepegawaian" class="form-select" style="min-width:120px;">
+        <select id="statusMobile" name="status_kepegawaian" class="form-select" style="min-width:120px;">
           <option value="">Status</option>
           <option value="tetap" {{ request('status_kepegawaian') === 'tetap' ? 'selected' : '' }}>Tetap</option>
           <option value="training" {{ request('status_kepegawaian') === 'training' ? 'selected' : '' }}>Training</option>
@@ -532,5 +532,53 @@
         });
     }
   }
+</script>
+@endpush
+
+@push('scripts')
+<script>
+  (function() {
+    var searchDesktop = document.getElementById('searchDesktop');
+    var posisiMobile = document.getElementById('posisiMobile');
+    var posisiDesktop = document.getElementById('posisiDesktop');
+    var statusMobile = document.getElementById('statusMobile');
+    var statusDesktop = document.getElementById('statusDesktop');
+    var form = searchDesktop && searchDesktop.closest('form');
+
+    function syncNames() {
+      var isMobile = window.matchMedia('(max-width: 575.98px)').matches;
+      if (isMobile) {
+        if (searchDesktop) searchDesktop.name = 'search';
+        if (posisiMobile) posisiMobile.name = 'posisi';
+        if (posisiDesktop) posisiDesktop.removeAttribute('name');
+        if (statusMobile) statusMobile.name = 'status_kepegawaian';
+        if (statusDesktop) statusDesktop.removeAttribute('name');
+      } else {
+        if (searchDesktop) searchDesktop.name = 'search';
+        if (posisiDesktop) posisiDesktop.name = 'posisi';
+        if (posisiMobile) posisiMobile.removeAttribute('name');
+        if (statusDesktop) statusDesktop.name = 'status_kepegawaian';
+        if (statusMobile) statusMobile.removeAttribute('name');
+      }
+    }
+
+    if (form) {
+      form.addEventListener('submit', function() {
+        var isMobile = window.matchMedia('(max-width: 575.98px)').matches;
+        if (isMobile) {
+          // desktop search input is always used; ensure selects copy to desktop selects if needed
+          if (posisiMobile && posisiDesktop) posisiDesktop.value = posisiMobile.value;
+          if (statusMobile && statusDesktop) statusDesktop.value = statusMobile.value;
+        } else {
+          if (posisiDesktop && posisiMobile) posisiMobile.value = posisiDesktop.value;
+          if (statusDesktop && statusMobile) statusMobile.value = statusDesktop.value;
+        }
+      });
+    }
+
+    window.addEventListener('resize', syncNames);
+    document.addEventListener('DOMContentLoaded', syncNames);
+    syncNames();
+  })();
 </script>
 @endpush
