@@ -470,6 +470,7 @@
                       </div>
                     </div>
                     `;
+
             html += `
                   </div>
                 </div>
@@ -640,9 +641,37 @@
         const data = await res.json();
 
         const items = data.items || [];
-        // build program options from global or items
-        const programOptions = Array.from(new Set(((window._ppiProgramOptions || []).concat(items.map(i => i
-          .nama_program || (i.program_konsultan && i.program_konsultan.nama_program) || '')))));
+        // try to fetch full program list for the anak so Edit dropdown matches Add form (kode - nama)
+        let programOptions = [];
+        try {
+          const anakId = data.anak ? data.anak.id : null;
+          if (anakId) {
+            const pr = await fetch(`/program-anak/riwayat-program/${anakId}`);
+            if (pr.ok) {
+              const pj = await pr.json();
+              if (pj && pj.success && Array.isArray(pj.riwayat)) {
+                const set = new Set();
+                pj.riwayat.forEach(group => {
+                  (group.items || []).forEach(it => {
+                    const label = it.kode_program ? (it.kode_program + ' - ' + (it.nama_program || '')) : (it.nama_program || '');
+                    if (label) set.add(label);
+                  });
+                });
+                programOptions = Array.from(set);
+              }
+            }
+          }
+        } catch (e) {
+          // ignore fetch errors and fall back
+        }
+
+        // fallback: build from existing cache and current items
+        if (!programOptions || programOptions.length === 0) {
+          programOptions = Array.from(new Set(((window._ppiProgramOptions || []).concat(items.map(i => i
+            .nama_program || (i.program_konsultan && i.program_konsultan.nama_program) || '')))));
+        }
+        // store for addPpiEditRow
+        window._ppiProgramOptions = programOptions;
 
         let formHtml = `<form id="editPpiForm" onsubmit="event.preventDefault(); savePpiEdit(${ppiId}, this);">
             <div class="mb-2"><strong>Program tanggal: ${data.created_at ? data.created_at.split('T')[0] : ''}</strong></div>
@@ -652,9 +681,11 @@
           items.forEach(it => {
             // program select
             let progOpts = `<option value="">-- Pilih program --</option>`;
+            // determine selected label: prefer program_konsultan kode + name when available
+            const selectedLabel = (it.program_konsultan && it.program_konsultan.kode_program) ? (it.program_konsultan.kode_program + ' - ' + (it.program_konsultan.nama_program || it.nama_program || '')) : (it.nama_program || '');
             programOptions.forEach(po => {
-              const sel = (po === (it.nama_program || (it.program_konsultan && it.program_konsultan
-                .nama_program))) ? 'selected' : '';
+              // match either exact label ("kode - nama" or "nama") or entries where option ends with " - nama"
+              const sel = (po === selectedLabel || (selectedLabel && po.endsWith(' - ' + selectedLabel))) ? 'selected' : '';
               progOpts += `<option ${sel}>${po}</option>`;
             });
             // categories

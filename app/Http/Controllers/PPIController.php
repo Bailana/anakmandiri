@@ -256,10 +256,22 @@ class PPIController extends Controller
 
     $ppis = Ppi::with('items')->where('anak_didik_id', $anakId)->orderByDesc('created_at')->get();
     $riwayat = $ppis->map(function ($p) {
+      // choose a representative item for preview: prefer Akademik category when present
+      $displayItem = null;
+      if ($p->items && $p->items->count()) {
+        foreach ($p->items as $it) {
+          if ($it->kategori && strtolower(trim($it->kategori)) === 'akademik') {
+            $displayItem = $it;
+            break;
+          }
+        }
+        if (!$displayItem) $displayItem = $p->items->first();
+      }
+
       return [
         'id' => $p->id,
-        'nama_program' => $p->keterangan ? ($p->keterangan) : ($p->items->first()->nama_program ?? ''),
-        'kategori' => $p->items->first()->kategori ?? '',
+        'nama_program' => $p->keterangan ? ($p->keterangan) : ($displayItem->nama_program ?? ''),
+        'kategori' => $displayItem->kategori ?? '',
         'created_at' => $p->created_at ? $p->created_at->toDateTimeString() : '',
         'periode_mulai' => $p->periode_mulai ? $p->periode_mulai : null,
         'periode_selesai' => $p->periode_selesai ? $p->periode_selesai : null,

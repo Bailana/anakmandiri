@@ -205,11 +205,13 @@
           items.forEach(it => {
             const label = (it.kode_program ? (it.kode_program + ' - ') : '') + (it.nama_program || it.nama || '');
             if (!optionsMap.has(label)) {
+              // prefer program_konsultan_id when provided by API; fallback to program-anak id
+              const pkId = it.program_konsultan_id ? it.program_konsultan_id : (it.id ? it.id : '');
               optionsMap.set(label, {
                 value: it.nama_program || it.nama || '',
                 label: label,
                 data: {
-                  id: it.id || '',
+                  id: pkId,
                   kode: it.kode_program || '',
                   tujuan: it.tujuan || '',
                   aktivitas: it.aktivitas || ''
