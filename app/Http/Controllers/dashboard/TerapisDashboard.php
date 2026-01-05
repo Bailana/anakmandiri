@@ -11,12 +11,9 @@ class TerapisDashboard extends Controller
   {
     $user = Auth::user();
 
-    // Ambil jadwal terapi hari ini untuk terapis ini
+    // Ambil jadwal terapi hari ini (agregat untuk semua terapis)
     $today = now()->format('Y-m-d');
     $jadwalHariIni = \App\Models\GuruAnakDidikSchedule::with(['assignment.anakDidik'])
-      ->whereHas('assignment', function ($q) use ($user) {
-        $q->where('user_id', $user->id);
-      })
       ->whereDate('tanggal_mulai', $today)
       ->orderBy('jam_mulai')
       ->get();
@@ -29,8 +26,8 @@ class TerapisDashboard extends Controller
 
     // Hitung jumlah anak didik per jenis terapi untuk terapis ini (aktif)
     $therapyCounts = [];
-    $assignments = \App\Models\GuruAnakDidik::where('user_id', $user->id)
-      ->where('status', 'aktif')
+    // Ambil semua penugasan aktif (global) sehingga semua terapis melihat informasi yang sama
+    $assignments = \App\Models\GuruAnakDidik::where('status', 'aktif')
       ->with('anakDidik')
       ->get();
 
