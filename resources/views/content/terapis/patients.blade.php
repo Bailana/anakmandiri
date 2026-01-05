@@ -242,8 +242,8 @@ $isKepalaTerapis = true;
                 @endif
               </td>
               <td>
-                @if(isset($user) && in_array($user->role, ['admin','terapis']))
-                <!-- Tombol aksi untuk desktop -->
+                @if(isset($user) && ($user->role === 'admin' || ($user->role === 'terapis' && $isKepalaTerapis)))
+                <!-- Admin or Kepala Klinik: full actions -->
                 <div class="d-none d-md-flex gap-1 align-items-center">
                   <button type="button" class="btn btn-icon btn-sm btn-outline-info me-1" title="Lihat Jadwal" onclick="showTherapySchedules(this)" data-anak-id="{{ $assign->anak_didik_id }}" data-anak-nama="{{ $assign->anakDidik->nama ?? '-' }}">
                     <i class="ri-eye-line"></i>
@@ -264,6 +264,21 @@ $isKepalaTerapis = true;
                     <li><a class="dropdown-item" href="#" onclick="showTherapySchedulesDropdown({{ $assign->anak_didik_id }}, '{{ $assign->anakDidik->nama ?? '-' }}');return false;"><i class="ri-eye-line me-1"></i> Lihat Jadwal</a></li>
                     <li><a class="dropdown-item" href="{{ route('terapis.pasien.edit', $assign->id) }}"><i class="ri-edit-line me-1"></i> Edit Status</a></li>
                     <li><a class="dropdown-item text-danger" href="#" onclick="deleteAssignDropdown(this, {{ $assign->id }});return false;"><i class="ri-delete-bin-line me-1"></i> Hapus</a></li>
+                  </ul>
+                </div>
+                @elseif(isset($user) && $user->role === 'terapis')
+                <!-- Terapis (bukan Kepala Klinik): lihat jadwal saja -->
+                <div class="d-none d-md-flex gap-1 align-items-center">
+                  <button type="button" class="btn btn-icon btn-sm btn-outline-info me-1" title="Lihat Jadwal" onclick="showTherapySchedules(this)" data-anak-id="{{ $assign->anak_didik_id }}" data-anak-nama="{{ $assign->anakDidik->nama ?? '-' }}">
+                    <i class="ri-eye-line"></i>
+                  </button>
+                </div>
+                <div class="dropdown d-md-none">
+                  <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                    <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="showTherapySchedulesDropdown({{ $assign->anak_didik_id }}, '{{ $assign->anakDidik->nama ?? '-' }}');return false;"><i class="ri-eye-line me-1"></i> Lihat Jadwal</a></li>
                   </ul>
                 </div>
                 @endif
