@@ -58,9 +58,23 @@ use App\Http\Controllers\AuthController;
 
 // Redirect home to dashboard or login
 Route::get('/', function () {
-  // if (Auth::check()) {
-  //   return redirect()->route('dashboard-analytics');
-  // }
+  if (Auth::check()) {
+    $user = Auth::user();
+    switch ($user->role) {
+      case 'admin':
+        return redirect()->route('dashboard-admin');
+      case 'guru':
+        return redirect()->route('dashboard-guru');
+      case 'terapis':
+        return redirect()->route('dashboard-terapis');
+      case 'konsultan':
+        return redirect()->route('dashboard-konsultan');
+      default:
+        // If role not recognized, fall back to login
+        Auth::logout();
+        return redirect()->route('login');
+    }
+  }
   return redirect()->route('login');
 });
 
@@ -109,58 +123,6 @@ Route::middleware(['auth', 'role:guru'])->get('/dashboard-guru/chart-data', [App
 
 // Protected Routes
 Route::middleware(['auth'])->group(function () {
-  // Dashboard Routes - menggunakan satu route yang handle semua role
-  // // Route::get('/dashboard', [Analytics::class, 'index'])->name('dashboard-analytics');
-
-  // // layout routes removed (Layouts menu hidden)
-
-  // // pages
-
-
-  // // cards
-  // Route::get('/cards/basic', [CardBasic::class, 'index'])->name('cards-basic');
-
-  // // User Interface
-  // Route::get('/ui/accordion', [Accordion::class, 'index'])->name('ui-accordion');
-  // Route::get('/ui/alerts', [Alerts::class, 'index'])->name('ui-alerts');
-  // Route::get('/ui/badges', [Badges::class, 'index'])->name('ui-badges');
-  // Route::get('/ui/buttons', [Buttons::class, 'index'])->name('ui-buttons');
-  // Route::get('/ui/carousel', [Carousel::class, 'index'])->name('ui-carousel');
-  // Route::get('/ui/collapse', [Collapse::class, 'index'])->name('ui-collapse');
-  // Route::get('/ui/dropdowns', [Dropdowns::class, 'index'])->name('ui-dropdowns');
-  // Route::get('/ui/footer', [Footer::class, 'index'])->name('ui-footer');
-  // Route::get('/ui/list-groups', [ListGroups::class, 'index'])->name('ui-list-groups');
-  // Route::get('/ui/modals', [Modals::class, 'index'])->name('ui-modals');
-  // Route::get('/ui/navbar', [Navbar::class, 'index'])->name('ui-navbar');
-  // Route::get('/ui/offcanvas', [Offcanvas::class, 'index'])->name('ui-offcanvas');
-  // Route::get('/ui/pagination-breadcrumbs', [PaginationBreadcrumbs::class, 'index'])->name('ui-pagination-breadcrumbs');
-  // Route::get('/ui/progress', [Progress::class, 'index'])->name('ui-progress');
-  // Route::get('/ui/spinners', [Spinners::class, 'index'])->name('ui-spinners');
-  // Route::get('/ui/tabs-pills', [TabsPills::class, 'index'])->name('ui-tabs-pills');
-  // Route::get('/ui/toasts', [Toasts::class, 'index'])->name('ui-toasts');
-  // Route::get('/ui/tooltips-popovers', [TooltipsPopovers::class, 'index'])->name('ui-typography');
-
-  // // extended ui
-  // Route::get('/extended/ui-perfect-scrollbar', [PerfectScrollbar::class, 'index'])->name('extended-ui-perfect-scrollbar');
-  // Route::get('/extended/ui-text-divider', [TextDivider::class, 'index'])->name('extended-ui-text-divider');
-
-  // // icons
-  // Route::get('/icons/icons-ri', [RiIcons::class, 'index'])->name('icons-ri');
-
-  // // form elements
-  // Route::get('/forms/basic-inputs', [BasicInput::class, 'index'])->name('forms-basic-inputs');
-  // Route::get('/forms/input-groups', [InputGroups::class, 'index'])->name('forms-input-groups');
-
-  // // form layouts
-  // Route::get('/form/layouts-vertical', [VerticalForm::class, 'index'])->name('form-layouts-vertical');
-  // Route::get('/form/layouts-horizontal', [HorizontalForm::class, 'index'])->name('form-layouts-horizontal');
-
-  // // tables
-  // Route::get('/tables/basic', [TablesBasic::class, 'index'])->name('tables-basic');
-
-  // Admin Only Routes
-  // Anak Didik Routes (admin & guru & konsultan: index/show, admin: full)
-  // Semua user bisa akses daftar & detail anak didik
 
   Route::get('anak-didik', [App\Http\Controllers\AnakDidikController::class, 'index'])->name('anak-didik.index');
   // Resource route harus sebelum show manual agar edit tidak bentrok

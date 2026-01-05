@@ -32,6 +32,35 @@ class AuthController extends Controller
       'password' => ['required'],
     ]);
 
+    // Prevent login for users whose related Karyawan/Konsultan records are non-active
+    try {
+      $email = $request->input('email');
+      $userForCheck = User::where('email', $email)->first();
+      if ($userForCheck) {
+        // Check konsultan status when present
+        if ($userForCheck->role === 'konsultan') {
+          $kons = $userForCheck->konsultan;
+          if ($kons && !empty($kons->status_hubungan)) {
+            $s = strtolower(trim($kons->status_hubungan));
+            if (stripos($s, 'non') !== false || (stripos($s, 'tidak') !== false && stripos($s, 'aktif') !== false)) {
+              return back()->withErrors(['email' => 'Akun konsultan Anda tidak aktif. Silakan hubungi administrator.'])->onlyInput('email');
+            }
+          }
+        }
+
+        // Check karyawan status when present
+        $karyawan = \App\Models\Karyawan::where('user_id', $userForCheck->id)->first();
+        if ($karyawan && !empty($karyawan->status_kepegawaian)) {
+          $s2 = strtolower(trim($karyawan->status_kepegawaian));
+          if (stripos($s2, 'non') !== false || (stripos($s2, 'tidak') !== false && stripos($s2, 'aktif') !== false)) {
+            return back()->withErrors(['email' => 'Akun karyawan Anda tidak aktif. Silakan hubungi administrator.'])->onlyInput('email');
+          }
+        }
+      }
+    } catch (\Exception $e) {
+      // ignore check errors and proceed to normal auth attempt
+    }
+
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
       $request->session()->regenerate();
 
