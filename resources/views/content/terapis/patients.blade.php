@@ -368,7 +368,7 @@ $isKepalaTerapis = true;
                       <span class="d-none d-sm-inline">Agenda</span>
                     </button>
                   </div>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <!-- close button removed as requested -->
                 </div>
               </div>
             </div>
@@ -525,6 +525,8 @@ $isKepalaTerapis = true;
   });
   // whether current user (server-side) can edit/delete schedules (terapis Kepala Klinik)
   const canEditSchedules = @json($isKepalaTerapis ?? false);
+  // list of therapist names (used to populate dropdown when editing a schedule)
+  const therapistsList = @json(isset($therapists) ? $therapists->pluck('name') : []);
 
   // store current anak id shown in modal so we can refresh later
   window._currentTherapyAnakId = null;
@@ -682,11 +684,11 @@ $isKepalaTerapis = true;
                 out += `<tr data-schedule-id="${s.id}"><td>${tanggal}</td><td>${jam}</td><td class="text-muted">${terapisNama}</td>`;
                 if (canEditSchedules) {
                   out += `<td>` +
-                    `<div class=\"d-none d-sm-flex gap-1 align-items-center\">` +
-                    `<button type=\\"button\\" class=\\"btn btn-icon btn-sm btn-outline-warning btn-edit-schedule me-1\\" data-schedule-id=\\"${s.id}\\" title=\\"Edit\\"><i class=\\"ri-edit-line\\"></i></button>` +
-                    `<button type=\\"button\\" class=\\"btn btn-icon btn-sm btn-outline-danger btn-delete-schedule\\" data-schedule-id=\\"${s.id}\\" title=\\"Hapus\\"><i class=\\"ri-delete-bin-line\\"></i></button>` +
+                    `<div class="d-none d-md-flex gap-1 align-items-center">` +
+                    `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-warning btn-edit-schedule me-1\" data-schedule-id=\"${s.id}\" title=\"Edit\"><i class=\"ri-edit-line\"></i></button>` +
+                    `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-danger btn-delete-schedule\" data-schedule-id=\"${s.id}\" title=\"Hapus\"><i class=\"ri-delete-bin-line\"></i></button>` +
                     `</div>` +
-                    `<div class=\"dropdown d-sm-none\">` +
+                    `<div class="dropdown d-md-none">` +
                     `<button class=\"btn btn-sm p-0 border-0 bg-transparent\" type=\"button\" data-bs-toggle=\"dropdown\" aria-expanded=\"false\" style=\"box-shadow:none;\">` +
                     `<i class=\"ri-more-2-fill\" style=\"font-weight: bold; font-size: 1.25em;\"></i>` +
                     `</button>` +
@@ -771,32 +773,44 @@ $isKepalaTerapis = true;
       if (tableViewEl) {
         tableViewEl.innerHTML = tableHtml;
         if (canEditSchedules) {
-          // attach listeners to edit/delete buttons rendered inside the modal
-          // edit -> navigate to edit page; delete -> call deleteSchedule
-          tableViewEl.querySelectorAll('.btn-edit-schedule').forEach(b => {
-            b.addEventListener('click', function(e) {
-              const id = this.getAttribute('data-schedule-id');
+          // Use event delegation for edit/delete buttons inside modal table
+          tableViewEl.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.btn-edit-schedule');
+            if (editBtn) {
+              e.preventDefault();
+              const id = editBtn.getAttribute('data-schedule-id');
               if (!id) return;
               const tr = tableViewEl.querySelector(`tr[data-schedule-id="${id}"]`);
               if (!tr) return;
-              // Ambil data dari kolom
               const tds = tr.querySelectorAll('td');
               const tanggal = tds[0].textContent.trim();
               const jam = tds[1].textContent.trim();
               const terapis = tds[2].textContent.trim();
-              // Ganti baris dengan form
+              // Keep terapis column read-only (show as text) and include hidden input to submit value
+              const escapedTerapis = ('' + terapis).replace(/'/g, "&#39;");
               tr.innerHTML = `<td><input type="date" class="form-control form-control-sm" value="${tanggal.split('-').reverse().join('-')}"></td>` +
                 `<td><input type="time" class="form-control form-control-sm" value="${jam}"></td>` +
-                `<td><input type="text" class="form-control form-control-sm" value="${terapis}"></td>` +
+                `<td class="text-muted">${escapedTerapis}<input type="hidden" class="terapis-hidden" value="${escapedTerapis}"></td>` +
                 `<td>` +
-                `<button type="button" class="btn btn-sm btn-success btn-save-schedule" data-schedule-id="${id}"><i class="ri-save-line"></i></button>` +
-                `<button type="button" class="btn btn-sm btn-secondary btn-cancel-edit" data-schedule-id="${id}"><i class="ri-close-line"></i></button>` +
+                `<div class=\"d-none d-md-flex gap-1 align-items-center\">` +
+                `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-success btn-save-schedule me-1\" data-schedule-id=\"${id}\" title=\"Simpan\"><i class=\"ri-save-line\"></i></button>` +
+                `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-secondary btn-cancel-edit\" data-schedule-id=\"${id}\" title=\"Batal\"><i class=\"ri-close-line\"></i></button>` +
+                `</div>` +
+                `<div class=\"dropdown d-md-none\">` +
+                `<button class=\"btn btn-sm p-0 border-0 bg-transparent\" type=\"button\" data-bs-toggle=\"dropdown\" aria-expanded=\"false\" style=\"box-shadow:none;\">` +
+                `<i class=\"ri-more-2-fill\" style=\"font-weight: bold; font-size: 1.25em;\"></i>` +
+                `</button>` +
+                `<ul class=\"dropdown-menu dropdown-menu-end\">` +
+                `<li><a class=\"dropdown-item\" href=\"#\" onclick=\"document.querySelector('button.btn-save-schedule[data-schedule-id=\\'${id}\\']').click();return false;\"><i class='ri-save-line me-1'></i> Simpan</a></li>` +
+                `<li><a class=\"dropdown-item\" href=\"#\" onclick=\"document.querySelector('button.btn-cancel-edit[data-schedule-id=\\'${id}\\']').click();return false;\"><i class='ri-close-line me-1'></i> Batal</a></li>` +
+                `</ul>` +
+                `</div>` +
                 `</td>`;
               // Save handler
               tr.querySelector('.btn-save-schedule').onclick = async function() {
                 const newTanggal = tr.querySelector('input[type="date"]').value;
                 const newJam = tr.querySelector('input[type="time"]').value;
-                const newTerapis = tr.querySelector('input[type="text"]').value;
+                const newTerapis = (tr.querySelector('.terapis-hidden') ? tr.querySelector('.terapis-hidden').value : (tr.querySelector('input[type="text"]') ? tr.querySelector('input[type="text"]').value : ''));
                 const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 try {
                   const res = await fetch(`/terapis/jadwal/${id}`, {
@@ -814,23 +828,38 @@ $isKepalaTerapis = true;
                   });
                   if (!res.ok) throw new Error('Gagal update jadwal');
                   showToast('Jadwal berhasil diubah', 'success');
-                  // Reload modal agar data segar
                   window.reloadTherapyModal();
                 } catch (err) {
                   showToast('Gagal mengubah jadwal', 'danger');
                 }
               };
-              // Cancel handler
+              // Cancel handler: restore table/agenda HTML instead of reloading modal (avoids backdrop/modal race)
               tr.querySelector('.btn-cancel-edit').onclick = function() {
-                window.reloadTherapyModal();
+                try {
+                  // restore previously rendered HTML
+                  if (typeof tableHtml !== 'undefined' && tableViewEl) tableViewEl.innerHTML = tableHtml;
+                  if (typeof agendaHtml !== 'undefined' && agendaViewEl) agendaViewEl.innerHTML = agendaHtml;
+                  // restore view toggle state
+                  const btnTableLocal = document.getElementById('viewTableBtn');
+                  const btnAgendaLocal = document.getElementById('viewAgendaBtn');
+                  if (btnTableLocal && btnAgendaLocal) {
+                    btnTableLocal.classList.add('active');
+                    btnAgendaLocal.classList.remove('active');
+                    tableViewEl.style.display = '';
+                    if (agendaViewEl) agendaViewEl.style.display = 'none';
+                  }
+                } catch (e) {
+                  // fallback: attempt a safe reload of modal content
+                  window.reloadTherapyModal();
+                }
               };
-            });
-          });
-          tableViewEl.querySelectorAll('.btn-delete-schedule').forEach(b => {
-            b.addEventListener('click', function(e) {
-              const id = this.getAttribute('data-schedule-id');
+            }
+            const delBtn = e.target.closest('.btn-delete-schedule');
+            if (delBtn) {
+              e.preventDefault();
+              const id = delBtn.getAttribute('data-schedule-id');
               if (id) deleteSchedule(id);
-            });
+            }
           });
         }
       }
