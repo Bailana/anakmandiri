@@ -11,6 +11,7 @@ use App\Models\Karyawan;
 use App\Models\ProgramKonsultan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\ActivityService;
 
 class PPIController extends Controller
 {
@@ -213,6 +214,14 @@ class PPIController extends Controller
       ]);
     }
 
+    // Log aktivitas ketika user dengan role 'guru' menambahkan PPI
+    $user = Auth::user();
+    if ($user && $user->role === 'guru') {
+      $anak = AnakDidik::find($ppi->anak_didik_id);
+      $desc = 'Membuat PPI untuk anak: ' . ($anak ? $anak->nama : 'ID ' . $ppi->anak_didik_id);
+      ActivityService::logCreate('PPI', $ppi->id, $desc);
+    }
+
     return redirect()->route('ppi.index')->with('success', 'PPI berhasil disimpan');
   }
 
@@ -362,6 +371,15 @@ class PPIController extends Controller
         $it->delete();
       }
       $ppi->delete();
+
+      // Log aktivitas ketika user dengan role 'guru' menghapus PPI
+      $user = Auth::user();
+      if ($user && $user->role === 'guru') {
+        $anak = AnakDidik::find($ppi->anak_didik_id);
+        $desc = 'Menghapus PPI untuk anak: ' . ($anak ? $anak->nama : 'ID ' . $ppi->anak_didik_id);
+        ActivityService::logDelete('PPI', $ppi->id, $desc);
+      }
+
       return response()->json(['success' => true, 'message' => 'PPI berhasil dihapus']);
     } catch (\Exception $e) {
       return response()->json(['success' => false, 'message' => 'Gagal menghapus PPI'], 500);
@@ -421,6 +439,15 @@ class PPIController extends Controller
         ]);
       }
       \DB::commit();
+
+      // Log aktivitas ketika user dengan role 'guru' mengedit PPI
+      $user = Auth::user();
+      if ($user && $user->role === 'guru') {
+        $anak = AnakDidik::find($ppi->anak_didik_id);
+        $desc = 'Mengupdate PPI untuk anak: ' . ($anak ? $anak->nama : 'ID ' . $ppi->anak_didik_id);
+        ActivityService::logUpdate('PPI', $ppi->id, $desc);
+      }
+
       return response()->json(['success' => true, 'message' => 'PPI berhasil diperbarui']);
     } catch (\Exception $e) {
       \DB::rollBack();

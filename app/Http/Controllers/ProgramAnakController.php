@@ -8,6 +8,7 @@ use App\Models\ProgramKonsultan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Services\ActivityService;
 
 class ProgramAnakController extends Controller
 {
@@ -306,6 +307,20 @@ class ProgramAnakController extends Controller
       'keterangan' => $request->input('keterangan'),
     ]);
 
+    // Log aktivitas jika action dilakukan oleh akun konsultan
+    $user = auth()->user();
+    if ($user && $user->role === 'konsultan') {
+      // try to find the newly created program to get its id and name
+      try {
+        $p = \App\Models\ProgramKonsultan::where('konsultan_id', $konsultanId)
+          ->where('nama_program', $request->input('nama_program'))
+          ->orderByDesc('id')
+          ->first();
+        if ($p) ActivityService::logCreate('ProgramKonsultan', $p->id, 'Membuat daftar program: ' . ($p->nama_program ?? ''));
+      } catch (\Exception $e) {
+      }
+    }
+
     return redirect()->back()->with('success', 'Daftar program berhasil ditambahkan');
   }
 
@@ -431,6 +446,12 @@ class ProgramAnakController extends Controller
     // refresh model to ensure latest values
     $program->refresh();
 
+    // Log aktivitas jika action dilakukan oleh akun konsultan
+    $user = auth()->user();
+    if ($user && $user->role === 'konsultan') {
+      ActivityService::logUpdate('ProgramKonsultan', $program->id, 'Mengupdate daftar program: ' . ($program->nama_program ?? ''));
+    }
+
     if ($request->wantsJson() || $request->ajax() || $request->expectsJson()) {
       return response()->json(['success' => true, 'message' => 'Daftar program berhasil diupdate', 'program' => $program]);
     }
@@ -441,7 +462,15 @@ class ProgramAnakController extends Controller
   public function destroyProgramKonsultan($id)
   {
     $program = ProgramKonsultan::findOrFail($id);
+    $programName = $program->nama_program ?? null;
     $program->delete();
+
+    // Log aktivitas jika action dilakukan oleh akun konsultan
+    $user = auth()->user();
+    if ($user && $user->role === 'konsultan') {
+      ActivityService::logDelete('ProgramKonsultan', $id, 'Menghapus daftar program: ' . ($programName ?? ''));
+    }
+
     return redirect()->route('program-anak.daftar-program')->with('success', 'Daftar program berhasil dihapus');
   }
 
@@ -511,6 +540,18 @@ class ProgramAnakController extends Controller
       } catch (\Exception $e) {
       }
 
+      // Log aktivitas jika dibuat oleh akun konsultan
+      try {
+        $user = auth()->user();
+        if ($user && $user->role === 'konsultan') {
+          $anak = AnakDidik::find($created->anak_didik_id);
+          $name = $anak ? trim($anak->nama) : ('ID ' . $created->anak_didik_id);
+          $desc = 'Membuat program (' . $name . ')';
+          ActivityService::logCreate('ProgramAnak', $created->id, $desc);
+        }
+      } catch (\Exception $e) {
+      }
+
       return redirect()->route('program-anak.index')->with('success', 'Rekomendasi psikologi berhasil disimpan');
     }
 
@@ -521,7 +562,10 @@ class ProgramAnakController extends Controller
 
     $items = $request->input('program_items', []);
 
-    \DB::transaction(function () use ($items, $request, $konsultanSpes) {
+    // collect created kode_program values so we can log a single activity after transaction
+    $createdCodes = [];
+
+    \DB::transaction(function () use ($items, $request, $konsultanSpes, &$createdCodes) {
       foreach ($items as $it) {
         // basic sanitation / mapping
         $nama = $it['nama_program'] ?? null;
@@ -553,7 +597,7 @@ class ProgramAnakController extends Controller
           'is_suggested' => $request->input('is_suggested') ? 1 : 0,
         ]);
 
-        // audit: record create for each program item
+        // audit: record create for each program itema
         try {
           \DB::table('program_anak_audits')->insert([
             'program_anak_id' => $programAnak->id,
@@ -566,6 +610,9 @@ class ProgramAnakController extends Controller
           ]);
         } catch (\Exception $e) {
         }
+
+        // collect created kode_program for logging
+        if (!empty($programAnak->kode_program)) $createdCodes[] = trim($programAnak->kode_program);
 
         // If konsultan is pendidikan, also save a copy into program_pendidikan
         if ($konsultanSpes && strpos($konsultanSpes, 'pendidikan') !== false) {
@@ -592,6 +639,23 @@ class ProgramAnakController extends Controller
       }
     });
 
+    // After successful transaction, create one activity log entry (if performed by konsultan)
+    try {
+      $user = auth()->user();
+      if ($user && $user->role === 'konsultan') {
+        $anakId = $request->input('anak_didik_id');
+        $anak = AnakDidik::find($anakId);
+        $name = $anak ? trim($anak->nama) : ('ID ' . $anakId);
+        $codes = array_values(array_unique(array_filter($createdCodes)));
+        $desc = 'Membuat program (' . $name . ')';
+        if (!empty($codes)) {
+          $desc .= ' dengan program (' . implode(', ', $codes) . ')';
+        }
+        ActivityService::logCreate('ProgramAnak', null, $desc);
+      }
+    } catch (\Exception $e) {
+    }
+
     return redirect()->route('program-anak.index')->with('success', 'Program Anak berhasil ditambahkan');
   }
 
@@ -616,13 +680,47 @@ class ProgramAnakController extends Controller
       'rekomendasi' => 'nullable|string',
     ]);
     $program = ProgramAnak::findOrFail($id);
-    $program->update($request->all());
+    $program->update($request->except(['_token', '_method']));
+
+    // Log aktivitas jika diupdate oleh akun konsultan
+    try {
+      $user = auth()->user();
+      if ($user && $user->role === 'konsultan') {
+        $anak = AnakDidik::find($program->anak_didik_id);
+        $name = $anak ? trim($anak->nama) : ('ID ' . $program->anak_didik_id);
+        $code = $program->kode_program ?? null;
+        $desc = 'Mengupdate program (' . $name . ')';
+        if (!empty($code)) {
+          $desc .= ' dengan program (' . $code . ')';
+        }
+        ActivityService::logUpdate('ProgramAnak', $program->id, $desc);
+      }
+    } catch (\Exception $e) {
+    }
+
     return redirect()->route('program-anak.index')->with('success', 'Program Anak berhasil diupdate');
   }
 
   public function destroy($id)
   {
     $program = ProgramAnak::findOrFail($id);
+
+    // prepare description for log before deleting
+    try {
+      $user = auth()->user();
+      if ($user && $user->role === 'konsultan') {
+        $anak = AnakDidik::find($program->anak_didik_id);
+        $name = $anak ? trim($anak->nama) : ('ID ' . $program->anak_didik_id);
+        $code = $program->kode_program ?? null;
+        $desc = 'Menghapus program (' . $name . ')';
+        if (!empty($code)) {
+          $desc .= ' dengan program (' . $code . ')';
+        }
+        ActivityService::logDelete('ProgramAnak', $program->id, $desc);
+      }
+    } catch (\Exception $e) {
+    }
+
     $program->delete();
     return redirect()->route('program-anak.index')->with('success', 'Program Anak berhasil dihapus');
   }
@@ -632,40 +730,24 @@ class ProgramAnakController extends Controller
    */
   public function updateJson(Request $request, $id)
   {
-    // Load program first so we can authorize and adjust validation rules for psikologi entries
     $program = ProgramAnak::findOrFail($id);
 
     // Authorization: allow only admin, the creator, or the owning konsultan
     $user = auth()->user();
-    if (!$user) {
-      return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
-    }
+    if (!$user) return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+
     $allowed = false;
-    if ($user->role === 'admin') {
-      $allowed = true;
-    }
-    // allow original creator
-    if (!$allowed && $program->created_by && intval($program->created_by) === intval($user->id)) {
-      $allowed = true;
-    }
-    // allow konsultan owner when this program maps to a ProgramKonsultan
+    if ($user->role === 'admin') $allowed = true;
+    if (!$allowed && $program->created_by && intval($program->created_by) === intval($user->id)) $allowed = true;
     if (!$allowed && $user->role === 'konsultan' && $program->program_konsultan_id) {
       $konsultanRecId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
-      if (!$konsultanRecId && $user->email) {
-        $konsultanRecId = \App\Models\Konsultan::where('email', $user->email)->value('id');
-      }
-      if (!$konsultanRecId) {
-        $konsultanRecId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
-      }
+      if (!$konsultanRecId && $user->email) $konsultanRecId = \App\Models\Konsultan::where('email', $user->email)->value('id');
+      if (!$konsultanRecId) $konsultanRecId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
       $progK = \App\Models\ProgramKonsultan::find($program->program_konsultan_id);
-      if ($progK && $progK->konsultan_id && intval($progK->konsultan_id) === intval($konsultanRecId)) {
-        $allowed = true;
-      }
+      if ($progK && $progK->konsultan_id && intval($progK->konsultan_id) === intval($konsultanRecId)) $allowed = true;
     }
-    if (!$allowed) {
-      return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
-    }
-    // conditional validation: if this program maps to a ProgramKonsultan, require nama_program; otherwise allow nama_program nullable (psikologi entries)
+    if (!$allowed) return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+
     $rules = [
       'kode_program' => 'nullable|string|max:100',
       'tujuan' => 'nullable|string',
@@ -687,15 +769,12 @@ class ProgramAnakController extends Controller
       if ($request->has($f)) {
         $old = $program->{$f};
         $new = $request->input($f);
-        if ($old != $new) {
-          $changed[$f] = ['old' => $old, 'new' => $new];
-        }
+        if ($old != $new) $changed[$f] = ['old' => $old, 'new' => $new];
         $program->{$f} = $new;
       }
     }
     $program->save();
 
-    // insert audit if any change
     if (!empty($changed)) {
       try {
         \DB::table('program_anak_audits')->insert([
@@ -709,6 +788,18 @@ class ProgramAnakController extends Controller
         ]);
       } catch (\Exception $e) {
       }
+
+      try {
+        if ($user && $user->role === 'konsultan') {
+          $anak = AnakDidik::find($program->anak_didik_id);
+          $name = $anak ? trim($anak->nama) : ('ID ' . $program->anak_didik_id);
+          $code = $program->kode_program ?? null;
+          $desc = 'Mengupdate program (' . $name . ')';
+          if (!empty($code)) $desc .= ' dengan program (' . $code . ')';
+          ActivityService::logUpdate('ProgramAnak', $program->id, $desc);
+        }
+      } catch (\Exception $e) {
+      }
     }
 
     return response()->json(['success' => true, 'message' => 'Program berhasil diupdate', 'program' => $program]);
@@ -720,38 +811,38 @@ class ProgramAnakController extends Controller
   public function destroyJson($id)
   {
     $program = ProgramAnak::findOrFail($id);
-    // Authorization: allow only admin, the creator, or the owning konsultan
     $user = auth()->user();
-    if (!$user) {
-      return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
-    }
+    if (!$user) return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+
     $allowed = false;
-    if ($user->role === 'admin') {
-      $allowed = true;
-    }
-    if (!$allowed && $program->created_by && intval($program->created_by) === intval($user->id)) {
-      $allowed = true;
-    }
+    if ($user->role === 'admin') $allowed = true;
+    if (!$allowed && $program->created_by && intval($program->created_by) === intval($user->id)) $allowed = true;
     if (!$allowed && $user->role === 'konsultan' && $program->program_konsultan_id) {
       $konsultanRecId = \App\Models\Konsultan::where('user_id', $user->id)->value('id');
-      if (!$konsultanRecId && $user->email) {
-        $konsultanRecId = \App\Models\Konsultan::where('email', $user->email)->value('id');
-      }
-      if (!$konsultanRecId) {
-        $konsultanRecId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
-      }
+      if (!$konsultanRecId && $user->email) $konsultanRecId = \App\Models\Konsultan::where('email', $user->email)->value('id');
+      if (!$konsultanRecId) $konsultanRecId = \App\Models\Konsultan::where('nama', $user->name)->value('id');
       $progK = \App\Models\ProgramKonsultan::find($program->program_konsultan_id);
-      if ($progK && $progK->konsultan_id && intval($progK->konsultan_id) === intval($konsultanRecId)) {
-        $allowed = true;
-      }
+      if ($progK && $progK->konsultan_id && intval($progK->konsultan_id) === intval($konsultanRecId)) $allowed = true;
     }
-    if (!$allowed) {
-      return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+    if (!$allowed) return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+
+    try {
+      if ($user && $user->role === 'konsultan') {
+        $anak = AnakDidik::find($program->anak_didik_id);
+        $name = $anak ? trim($anak->nama) : ('ID ' . $program->anak_didik_id);
+        $code = $program->kode_program ?? null;
+        $desc = 'Menghapus program (' . $name . ')';
+        if (!empty($code)) $desc .= ' dengan program (' . $code . ')';
+        ActivityService::logDelete('ProgramAnak', $program->id, $desc);
+      }
+    } catch (\Exception $e) {
     }
 
     $program->delete();
     return response()->json(['success' => true, 'message' => 'Program berhasil dihapus']);
   }
+
+
 
   public function show($id)
   {

@@ -14,6 +14,7 @@ use App\Models\PpiItem;
 use App\Models\Program;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Services\ActivityService;
 
 class AssessmentController extends Controller
 {
@@ -77,7 +78,12 @@ class AssessmentController extends Controller
     // For guru users, only show children assigned to them or those they have approved access for
     if ($user && $user->role === 'guru') {
       $assignedIds = GuruAnakDidik::where('user_id', $user->id)->where('status', 'aktif')->pluck('anak_didik_id')->toArray();
-      $approvedIds = GuruAnakDidikApproval::where('requester_user_id', $user->id)->where('status', 'approved')->pluck('anak_didik_id')->toArray();
+      // support multiple possible approval status values (localized or different conventions)
+      $positiveStatuses = ['approved', 'accepted', 'disetujui', 'approve', 'approved_by_admin', 'accepted_by_admin'];
+      $approvedIds = GuruAnakDidikApproval::where('requester_user_id', $user->id)
+        ->whereIn('status', $positiveStatuses)
+        ->pluck('anak_didik_id')
+        ->toArray();
 
       // also include anak didik where this guru is recorded as guru_fokus (via Karyawan mapping)
       $karyawan = Karyawan::where('nama', $user->name)->first();
@@ -130,7 +136,15 @@ class AssessmentController extends Controller
     // Ensure kemampuan is an array (store empty array if not provided)
     $validated['kemampuan'] = array_values($request->input('kemampuan', []));
 
-    Assessment::create($validated);
+    $assessment = Assessment::create($validated);
+
+    // Log aktivitas ketika user dengan role 'guru' menambahkan penilaian
+    $user = Auth::user();
+    if ($user && $user->role === 'guru') {
+      $anak = AnakDidik::find($validated['anak_didik_id']);
+      $desc = 'Membuat penilaian untuk anak: ' . ($anak ? $anak->nama : 'ID ' . $validated['anak_didik_id']);
+      ActivityService::logCreate('Assessment', $assessment->id, $desc);
+    }
 
     return redirect()->route('assessment.index')->with('success', 'Penilaian berhasil ditambahkan');
   }
