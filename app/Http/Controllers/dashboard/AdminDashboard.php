@@ -69,6 +69,37 @@ class AdminDashboard extends Controller
       ],
     ];
 
+    // Ambil jadwal terapi hari ini (untuk card Sesi Hari Ini)
+    $today = Carbon::today()->toDateString();
+    $jadwalHariIni = \App\Models\GuruAnakDidikSchedule::with(['assignment.anakDidik'])
+      ->whereDate('tanggal_mulai', $today)
+      ->orderBy('jam_mulai')
+      ->get();
+
+    // Hitung jam per terapis (1 jam per jadwal/sesi)
+    $schedules = \App\Models\GuruAnakDidikSchedule::with('assignment')->whereHas('assignment', function ($q) {
+      $q->where('status', 'aktif');
+    })->get();
+    $hoursByTerapis = [];
+    foreach ($schedules as $s) {
+      $name = trim($s->terapis_nama ?? $s->assignment->terapis_nama ?? '');
+      if ($name === '') continue;
+      if (!isset($hoursByTerapis[$name])) $hoursByTerapis[$name] = 0;
+      $hoursByTerapis[$name] += 1; // 1 jam per schedule
+    }
+
+    arsort($hoursByTerapis);
+    $terapisLabels = array_keys($hoursByTerapis);
+    $terapisSeries = array_values($hoursByTerapis);
+
+    // Masukkan data tambahan ke dashboardData
+    $dashboardData['jadwal_hari_ini'] = $jadwalHariIni;
+    $dashboardData['terapisHoursChart'] = [
+      'title' => 'Jam Terapi per Terapis',
+      'labels' => $terapisLabels,
+      'series' => $terapisSeries,
+    ];
+
 
     // Anak Didik registration per month for all years
     $monthlyCounts = AnakDidik::selectRaw('YEAR(tanggal_pendaftaran) as year, MONTH(tanggal_pendaftaran) as month, COUNT(*) as count')

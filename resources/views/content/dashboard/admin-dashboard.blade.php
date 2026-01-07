@@ -106,6 +106,82 @@
   </div>
   @endif
 
+  <!-- Sesi Hari Ini (left) and Jam Terapi per Terapis (right) -->
+  <div class="col-12">
+    <div class="row">
+      <div class="col-lg-4 mb-3 mb-lg-0">
+        <div class="card h-100 sesi-card">
+          <div class="card-header">
+            <h5 class="card-title m-0">⏰ Sesi Hari Ini</h5>
+          </div>
+          <div class="card-body">
+            @php $jadwalList = $dashboardData['jadwal_hari_ini'] ?? []; @endphp
+            <style>
+              .sesi-card .card-body {
+                display: flex;
+                flex-direction: column;
+              }
+
+              .sesi-list-wrapper.scrollable {
+                max-height: 360px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+              }
+            </style>
+            <div class="list-group list-group-flush sesi-list-wrapper {{ count($jadwalList) >= 4 ? 'scrollable' : '' }}">
+              @forelse($jadwalList as $jadwal)
+              <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6 class="mb-1">Pasien: {{ $jadwal->assignment->anakDidik->nama ?? '-' }}</h6>
+                    <p class="text-muted small mb-1">Jam: {{ $jadwal->jam_mulai ?? '-' }}</p>
+                    <p class="text-muted small mb-0">Tipe: {{ $jadwal->jenis_terapi ?? '-' }}</p>
+                  </div>
+                  @php
+                  try {
+                  $now = \Carbon\Carbon::now();
+                  $start = \Carbon\Carbon::parse($jadwal->jam_mulai);
+                  $end = (clone $start)->addHour();
+                  if ($now->between($start, $end)) {
+                  $badgeClass = 'bg-primary';
+                  $badgeText = 'Berlangsung';
+                  } elseif ($now->lt($start)) {
+                  $badgeClass = 'bg-warning';
+                  $badgeText = 'Akan Dimulai';
+                  } else {
+                  $badgeClass = 'bg-success';
+                  $badgeText = 'Selesai';
+                  }
+                  } catch (\Exception $e) {
+                  $badgeClass = 'bg-secondary';
+                  $badgeText = '—';
+                  }
+                  @endphp
+                  <span class="badge {{ $badgeClass }}">{{ $badgeText }}</span>
+                </div>
+              </div>
+              @empty
+              <div class="list-group-item text-center text-muted">Tidak ada sesi terapi hari ini.</div>
+              @endforelse
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="card-title m-0">📊 Jam Terapi per Terapis</h5>
+            <p class="small text-muted mb-0">Jumlah jam (1 jam per anak yang terdaftar)</p>
+          </div>
+          <div class="card-body">
+            <div id="terapisHoursChart" style="min-height:320px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Recent Activity -->
   <div class="col-12">
     <div class="card h-100">
@@ -336,6 +412,79 @@
       const lineChart = new ApexCharts(lineChartElement, lineOptions);
       lineChart.render();
     }
+  });
+</script>
+@endif
+@if(isset($dashboardData['terapisHoursChart']) && count($dashboardData['terapisHoursChart']['labels'])>0)
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const el = document.getElementById('terapisHoursChart');
+    if (!el) return;
+    const lineOptions = {
+      series: [{
+        name: 'Jam Terapi',
+        data: @json($dashboardData['terapisHoursChart']['series'])
+      }],
+      chart: {
+        type: 'line',
+        height: 350,
+        toolbar: {
+          show: true
+        },
+        zoom: {
+          enabled: true
+        }
+      },
+      legend: {
+        show: false
+      },
+      colors: ['#7367f0'],
+      stroke: {
+        curve: 'smooth',
+        width: 3
+      },
+      markers: {
+        size: 5,
+        colors: ['#7367f0'],
+        strokeColors: '#fff',
+        strokeWidth: 2,
+        hover: {
+          size: 7
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: '12px',
+          colors: ["#304758"]
+        }
+      },
+      xaxis: {
+        categories: @json($dashboardData['terapisHoursChart']['labels']),
+        labels: {
+          style: {
+            fontSize: '12px'
+          }
+        }
+      },
+      yaxis: {
+        title: {
+          text: 'Jam'
+        }
+      },
+      grid: {
+        borderColor: '#f1f1f1'
+      },
+      tooltip: {
+        y: {
+          formatter: function(val) {
+            return val + ' jam';
+          }
+        }
+      }
+    };
+    const chart = new ApexCharts(el, lineOptions);
+    chart.render();
   });
 </script>
 @endif

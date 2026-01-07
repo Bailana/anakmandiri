@@ -176,20 +176,28 @@
         @push('scripts')
         <script>
           document.addEventListener('DOMContentLoaded', function() {
+            // Helper to decode HTML entities (e.g. &quot; -> ")
+            function decodeHtmlEntities(str) {
+              if (typeof str !== 'string') return str;
+              const txt = document.createElement('textarea');
+              txt.innerHTML = str;
+              return txt.value;
+            }
+
             // View button
             document.querySelectorAll('.btn-view-program').forEach(function(btn) {
               btn.addEventListener('click', function() {
-                document.getElementById('viewKode').textContent = this.dataset.kode || '-';
-                document.getElementById('viewNama').textContent = this.dataset.nama || '-';
-                document.getElementById('viewTujuan').textContent = this.dataset.tujuan || '-';
-                document.getElementById('viewAktivitas').textContent = this.dataset.aktivitas || '-';
-                document.getElementById('viewKeterangan').textContent = this.dataset.keterangan || '-';
+                document.getElementById('viewKode').textContent = decodeHtmlEntities(this.dataset.kode) || '-';
+                document.getElementById('viewNama').textContent = decodeHtmlEntities(this.dataset.nama) || '-';
+                document.getElementById('viewTujuan').textContent = decodeHtmlEntities(this.dataset.tujuan) || '-';
+                document.getElementById('viewAktivitas').textContent = decodeHtmlEntities(this.dataset.aktivitas) || '-';
+                document.getElementById('viewKeterangan').textContent = decodeHtmlEntities(this.dataset.keterangan) || '-';
 
                 // Populate kategori and konsultan badges; hide if empty or '-'
                 const katEl = document.getElementById('viewKategori');
                 const konsEl = document.getElementById('viewKonsultan');
-                const kat = (this.dataset.kategori || '').trim();
-                const kons = (this.dataset.konsultan || '').trim();
+                const kat = (decodeHtmlEntities(this.dataset.kategori) || '').trim();
+                const kons = (decodeHtmlEntities(this.dataset.konsultan) || '').trim();
                 if (!kat || kat === '-') {
                   katEl.style.display = 'none';
                 } else {
@@ -211,11 +219,11 @@
                 var id = this.dataset.id;
                 var form = document.getElementById('editProgramForm');
                 form.action = '{{ url("program-anak/program-konsultan") }}' + '/' + id;
-                document.getElementById('editKode').value = this.dataset.kode || '';
-                document.getElementById('editNama').value = this.dataset.nama || '';
-                document.getElementById('editTujuan').value = this.dataset.tujuan || '';
-                document.getElementById('editAktivitas').value = this.dataset.aktivitas || '';
-                document.getElementById('editKeterangan').value = this.dataset.keterangan || '';
+                document.getElementById('editKode').value = decodeHtmlEntities(this.dataset.kode) || '';
+                document.getElementById('editNama').value = decodeHtmlEntities(this.dataset.nama) || '';
+                document.getElementById('editTujuan').value = decodeHtmlEntities(this.dataset.tujuan) || '';
+                document.getElementById('editAktivitas').value = decodeHtmlEntities(this.dataset.aktivitas) || '';
+                document.getElementById('editKeterangan').value = decodeHtmlEntities(this.dataset.keterangan) || '';
               });
             });
           });
