@@ -870,6 +870,26 @@ class ProgramAnakController extends Controller
       'created_at' => $program->created_at ? $program->created_at->toDateTimeString() : null,
     ];
 
+    // include keterangan and fallback to master keterangan when available
+    $data['keterangan'] = $program->keterangan ?? null;
+    $masterKeterangan = null;
+    try {
+      if ($program->programKonsultan && isset($program->programKonsultan->keterangan)) {
+        $masterKeterangan = $program->programKonsultan->keterangan;
+      }
+      // fallback: lookup by kode_program if master relation absent
+      if (!$masterKeterangan && $program->kode_program) {
+        $kodeSanitized = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $program->kode_program));
+        if ($kodeSanitized) {
+          $masterRec = ProgramKonsultan::whereRaw("REPLACE(REPLACE(REPLACE(kode_program,'-',''),' ',''),'.','') = ?", [$kodeSanitized])->first();
+          if ($masterRec) $masterKeterangan = $masterRec->keterangan ?? null;
+        }
+      }
+    } catch (\Exception $e) {
+      $masterKeterangan = null;
+    }
+    $data['keterangan_master'] = $masterKeterangan;
+
     return response()->json(['success' => true, 'program' => $data]);
   }
 

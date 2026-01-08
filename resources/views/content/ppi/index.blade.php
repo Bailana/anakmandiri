@@ -590,7 +590,9 @@
               default:
                 badgeClass = 'bg-info';
             }
-            html += `<div class="mb-2"><span class="badge ${badgeClass}">${cat}</span></div>`;
+            // display label override for certain categories (keep underlying value unchanged)
+            const displayLabel = ((cat || '').toLowerCase() === 'perilaku') ? 'Basic Learning' : cat;
+            html += `<div class="mb-2"><span class="badge ${badgeClass}">${displayLabel}</span></div>`;
             html += '<ul class="list-group list-group-flush mb-3">';
             groups[cat].forEach((item, idx) => {
               const num = idx + 1;
@@ -688,12 +690,27 @@
               const sel = (po === selectedLabel || (selectedLabel && po.endsWith(' - ' + selectedLabel))) ? 'selected' : '';
               progOpts += `<option ${sel}>${po}</option>`;
             });
-            // categories
-            const cats = ['Akademik', 'Bina Diri', 'Motorik', 'Perilaku', 'Vokasi'];
+            // categories (value,label) — display 'Perilaku' as 'Basic Learning'
+            const cats = [{
+              value: 'Akademik',
+              label: 'Akademik'
+            }, {
+              value: 'Bina Diri',
+              label: 'Bina Diri'
+            }, {
+              value: 'Motorik',
+              label: 'Motorik'
+            }, {
+              value: 'Perilaku',
+              label: 'Basic Learning'
+            }, {
+              value: 'Vokasi',
+              label: 'Vokasi'
+            }];
             let catOpts = `<option value="">-- Kategori --</option>`;
             cats.forEach(c => {
-              const s = (c === (it.kategori || '')) ? 'selected' : '';
-              catOpts += `<option ${s}>${c}</option>`;
+              const s = (c.value === (it.kategori || '')) ? 'selected' : '';
+              catOpts += `<option value="${c.value}" ${s}>${c.label}</option>`;
             });
 
             formHtml += `<div class="d-flex gap-2 mb-2 align-items-start edit-item-row">
@@ -760,10 +777,25 @@
       programs.forEach(p => {
         progOpts += `<option>${p}</option>`;
       });
-      const cats = ['Akademik', 'Bina Diri', 'Motorik', 'Perilaku', 'Vokasi'];
+      const cats = [{
+        value: 'Akademik',
+        label: 'Akademik'
+      }, {
+        value: 'Bina Diri',
+        label: 'Bina Diri'
+      }, {
+        value: 'Motorik',
+        label: 'Motorik'
+      }, {
+        value: 'Perilaku',
+        label: 'Basic Learning'
+      }, {
+        value: 'Vokasi',
+        label: 'Vokasi'
+      }];
       let catOpts = `<option value="">-- Kategori --</option>`;
       cats.forEach(c => {
-        catOpts += `<option>${c}</option>`;
+        catOpts += `<option value="${c.value}">${c.label}</option>`;
       });
       row.innerHTML =
         `<input type="hidden" name="item_id[]" value=""><select name="nama_program[]" class="form-select">${progOpts}</select><select name="kategori[]" class="form-select">${catOpts}</select><button type="button" class="btn btn-outline-danger btn-icon btn-sm" onclick="this.closest('.edit-item-row').remove()" aria-label="Hapus program"><i class='ri-delete-bin-line'></i></button>`;

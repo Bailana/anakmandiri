@@ -77,7 +77,7 @@
           case 'motorik':
             return 'Motorik';
           case 'perilaku':
-            return 'Perilaku';
+            return 'Basic Learning';
           case 'vokasi':
             return 'Vokasi';
           default:
@@ -367,15 +367,7 @@
         <input type="text" name="search" class="form-control" placeholder="Cari nama anak atau NIS..." value="{{ request('search') }}">
       </div>
 
-      <!-- Filter Kategori -->
-      <select name="kategori" class="form-select" style="max-width: 200px;">
-        <option value="">Kategori</option>
-        <option value="bina_diri" {{ request('kategori') === 'bina_diri' ? 'selected' : '' }}>Bina Diri</option>
-        <option value="akademik" {{ request('kategori') === 'akademik' ? 'selected' : '' }}>Akademik</option>
-        <option value="motorik" {{ request('kategori') === 'motorik' ? 'selected' : '' }}>Motorik</option>
-        <option value="perilaku" {{ request('kategori') === 'perilaku' ? 'selected' : '' }}>Perilaku</option>
-        <option value="vokasi" {{ request('kategori') === 'vokasi' ? 'selected' : '' }}>Vokasi</option>
-      </select>
+      <!-- Kategori filter removed per request -->
 
       <!-- Action Buttons -->
       <button type="submit" class="btn btn-outline-primary" title="Cari">
@@ -786,11 +778,7 @@
         </div>
 
         <div class="row mb-3">
-          <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">Kategori</p>
-            <p class="fw-medium" id="detailKategori"></p>
-          </div>
-          <div class="col-md-6">
+          <div class="col-12">
             <p class="text-body-secondary text-sm mb-1">Tanggal Penilaian</p>
             <p class="fw-medium" id="detailTanggal"></p>
           </div>
@@ -830,7 +818,6 @@
         const assessment = data.data;
         document.getElementById('detailAnakDidik').textContent = assessment.anak_didik?.nama || '-';
         document.getElementById('detailKonsultan').textContent = assessment.konsultan?.nama || '-';
-        document.getElementById('detailKategori').textContent = formatKategori(assessment.kategori);
         document.getElementById('detailTanggal').textContent = assessment.tanggal_assessment ? formatDate(assessment.tanggal_assessment) : '-';
         document.getElementById('detailHasil').textContent = assessment.hasil_penilaian || '-';
         document.getElementById('detailRekomendasi').textContent = assessment.rekomendasi || '-';
@@ -870,16 +857,7 @@
     return new Date(dateStr).toLocaleDateString('id-ID', options);
   }
 
-  function formatKategori(kategori) {
-    const labels = {
-      'bina_diri': 'Bina Diri',
-      'akademik': 'Akademik',
-      'motorik': 'Motorik',
-      'perilaku': 'Perilaku',
-      'vokasi': 'Vokasi'
-    };
-    return labels[kategori] || kategori;
-  }
+  // formatKategori removed; kategori feature hidden from this view
 </script>
 <!-- Chart-related scripts removed to declutter view and logic per request -->
 @endsection

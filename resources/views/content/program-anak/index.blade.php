@@ -331,36 +331,49 @@
           konsultanId: konsultanId,
           dateKey: null
         };
-        // determine if any row is editable by current user so we can show/hide the Aksi column entirely
+        // determine view/edit permissions for current user
         let canEditAny = false;
+        let canViewAny = false;
         try {
           data.programs.forEach(p => {
             let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
             if (window.currentUser) {
-              if (window.currentUser.role === 'admin') canEditAny = true;
-              else if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEditAny = true;
+              // konsultan owners may edit their own master items
+              if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEditAny = true;
+              // admin, guru, terapis may only view
+              if (['admin', 'guru', 'terapis'].includes(String(window.currentUser.role))) canViewAny = true;
             }
           });
         } catch (e) {}
         let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + (canEditAny ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny || canViewAny) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
         data.programs.forEach(p => {
           const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
-          // determine if current user may edit/delete this program
+          // determine if current user may edit/delete or only view this program
           let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
           let canEdit = false;
+          let canView = false;
           if (window.currentUser) {
-            if (window.currentUser.role === 'admin') canEdit = true;
-            else if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
+            if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
+            if (['admin', 'guru', 'terapis'].includes(String(window.currentUser.role))) canView = true;
           }
-          const actionsHtml = canEdit ? `<div class="d-flex gap-1"><button class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button></div>` : '';
+          // build actions: view for viewers, view+edit+delete for owner konsultan
+          let actionsParts = [];
+          if (canView || canEdit) {
+            actionsParts.push(`<button type="button" class="btn btn-sm btn-icon btn-outline-info" title="Lihat" onclick="window.showDetailProgram(${p.id})"><i class="ri-eye-line"></i></button>`);
+          }
+          if (canEdit) {
+            actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button>`);
+            actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>`);
+          }
+          const actionsHtml = actionsParts.length ? `<div class="d-flex gap-1 pa-actions">${actionsParts.join('')}</div>` : '';
           html += `<tr>
             <td>${p.kode_program || '-'}</td>
             <td>${p.nama_program || '-'}</td>
             <td>${p.tujuan || '-'}</td>
             <td>${p.aktivitas || '-'}</td>
             <td>${konsultanName}</td>`;
-          if (canEditAny) html += `<td>${actionsHtml}</td>`;
+          if (canEditAny || canViewAny) html += `<td>${actionsHtml}</td>`;
           html += `</tr>`;
         });
         html += '</tbody></table></div>';
@@ -369,7 +382,7 @@
         try {
           const latestEl = document.getElementById('groupLatestKeteranganText');
           if (latestEl) {
-            const latest = (data.programs[0] && (data.programs[0].keterangan || data.programs[0].keterangan === '')) ? (data.programs[0].keterangan || '-') : '-';
+            const latest = (data.programs[0] && (data.programs[0].keterangan_master || data.programs[0].keterangan || data.programs[0].keterangan === '')) ? (data.programs[0].keterangan_master || data.programs[0].keterangan || '-') : '-';
             latestEl.textContent = latest || '-';
           }
         } catch (e) {}
@@ -453,33 +466,45 @@
             toggleEl.disabled = !(isAdmin || isOwnerKonsultan);
           }
         } catch (e) {}
-        // determine if any row is editable by current user so we can show/hide the Aksi column entirely
+        // determine view/edit permissions for current user
         let canEditAny2 = false;
+        let canViewAny2 = false;
         try {
           data.programs.forEach(p => {
             let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
             if (window.currentUser) {
               if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEditAny2 = true;
+              if (['admin', 'guru', 'terapis'].includes(String(window.currentUser.role))) canViewAny2 = true;
             }
           });
         } catch (e) {}
         let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + (canEditAny2 ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny2 || canViewAny2) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
         data.programs.forEach(p => {
           const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
           let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
           let canEdit = false;
+          let canView = false;
           if (window.currentUser) {
             if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
+            if (['admin', 'guru', 'terapis'].includes(String(window.currentUser.role))) canView = true;
           }
-          const actionsHtml = canEdit ? `<div class="d-flex gap-1"><button class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button></div>` : '';
+          let actionsParts = [];
+          if (canView || canEdit) {
+            actionsParts.push(`<button type="button" class="btn btn-sm btn-icon btn-outline-info" title="Lihat" onclick="window.showDetailProgram(${p.id})"><i class="ri-eye-line"></i></button>`);
+          }
+          if (canEdit) {
+            actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button>`);
+            actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>`);
+          }
+          const actionsHtml = actionsParts.length ? `<div class="d-flex gap-1 pa-actions">${actionsParts.join('')}</div>` : '';
           html += `<tr>
             <td>${p.kode_program || '-'}</td>
             <td>${p.nama_program || '-'}</td>
             <td>${p.tujuan || '-'}</td>
             <td>${p.aktivitas || '-'}</td>
             <td>${konsultanName}</td>`;
-          if (canEditAny2) html += `<td>${actionsHtml}</td>`;
+          if (canEditAny2 || canViewAny2) html += `<td>${actionsHtml}</td>`;
           html += `</tr>`;
         });
         html += '</tbody></table></div>';
@@ -487,7 +512,7 @@
         try {
           const latestEl = document.getElementById('groupLatestKeteranganText');
           if (latestEl) {
-            const latest = (data.programs[0] && (data.programs[0].keterangan || data.programs[0].keterangan === '')) ? (data.programs[0].keterangan || '-') : '-';
+            const latest = (data.programs[0] && (data.programs[0].keterangan_master || data.programs[0].keterangan || data.programs[0].keterangan === '')) ? (data.programs[0].keterangan_master || data.programs[0].keterangan || '-') : '-';
             latestEl.textContent = latest || '-';
           }
         } catch (e) {}
@@ -1088,7 +1113,7 @@
   }
 
   // Attach cleanup on modal hidden events to ensure UI is interactive after closing
-  ['riwayatObservasiModal', 'programGroupModal', 'programAllModal', 'programEditModal', 'programDetailModal', 'modalAddProgramMaster', 'programConfirmModal'].forEach(id => {
+  ['riwayatObservasiModal', 'programGroupModal', 'programAllModal', 'programEditModal', 'modalViewProgram', 'modalAddProgramMaster', 'programConfirmModal'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('hidden.bs.modal', cleanupModalBackdrops);
   });
@@ -1650,60 +1675,113 @@
       });
   }
 </script>
-<!-- Modal: Tambah Daftar Program -->
-<!-- Modal: Detail Program Anak -->
-<div class="modal fade" id="programDetailModal" tabindex="-1" aria-hidden="true">
+<!-- Modal: Detail Program (reuse daftar-program layout/styles) -->
+<style>
+  /* Scoped modal styles (copied from daftar-program) */
+  #modalViewProgram .pv-badge-gradient {
+    background: linear-gradient(90deg, #6f42c1, #7b61ff);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    display: inline-block;
+  }
+
+  #modalViewProgram .pv-meta-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.375rem;
+    display: inline-block;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  #modalViewProgram .d-flex .flex-grow-1 {
+    min-width: 0;
+  }
+
+  #modalViewProgram .pv-left {
+    background: #fafafa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+
+  #modalViewProgram .pv-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f0f4ff, #e8eefc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #3b5bdb
+  }
+
+  @media (max-width:576px) {
+    #modalViewProgram .pv-meta-badge {
+      max-width: 60%;
+      font-size: .9rem
+    }
+
+    #modalViewProgram .pv-left {
+      padding: .75rem
+    }
+
+    #modalViewProgram .pv-badge-gradient {
+      padding: .25rem .45rem
+    }
+  }
+</style>
+<div class="modal fade" id="modalViewProgram" tabindex="-1" aria-labelledby="modalViewProgramLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Detail Program</h5>
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="modalViewProgramLabel">Detail Program</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">Nama Program</p>
-            <p class="fw-medium" id="detailNamaProgram">-</p>
+        <div class="d-flex gap-3 mb-3">
+          <div class="pv-left d-flex gap-3 align-items-center">
+            <div class="pv-icon"><i class="ri-archive-line"></i></div>
+            <div>
+              <div class="text-muted small">Kode Program</div>
+              <div id="viewKode" class="pv-badge-gradient">-</div>
+            </div>
           </div>
-          <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">Kode Program</p>
-            <p class="fw-medium" id="detailKodeProgram">-</p>
-          </div>
-        </div>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">Anak Didik</p>
-            <p class="fw-medium" id="detailAnakDidik">-</p>
-          </div>
-          <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">Konsultan</p>
-            <p class="fw-medium" id="detailKonsultan">-</p>
+          <div class="flex-grow-1">
+            <h4 id="viewNama" class="mb-1 fw-bold">-</h4>
+            <div class="d-flex gap-2 align-items-center mb-2">
+              <span id="viewKategori" class="pv-meta-badge badge bg-light text-muted">-</span>
+              <span id="viewKonsultan" class="pv-meta-badge badge bg-warning text-dark">-</span>
+            </div>
           </div>
         </div>
-        <div class="row mb-3">
-          <div class="col-12">
-            <p class="text-body-secondary text-sm mb-1">Tujuan</p>
-            <p id="detailTujuan">-</p>
+
+        <div class="row">
+          <div class="col-md-4">
+            <div class="mb-3">
+              <div class="text-muted small mb-1">Tujuan</div>
+              <div id="viewTujuan" class="text-body-secondary">-</div>
+            </div>
           </div>
-        </div>
-        <div class="row mb-3">
-          <div class="col-12">
-            <p class="text-body-secondary text-sm mb-1">Aktivitas</p>
-            <p id="detailAktivitas">-</p>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <div class="text-muted small mb-1">Aktivitas</div>
+              <div id="viewAktivitas" class="text-body-secondary">-</div>
+            </div>
           </div>
-        </div>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">Periode</p>
-            <p id="detailPeriode">-</p>
-          </div>
-          <div class="col-md-6">
-            <p class="text-body-secondary text-sm mb-1">Dibuat</p>
-            <p id="detailCreatedAt">-</p>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <div class="text-muted small mb-1">Keterangan</div>
+              <div id="viewKeterangan" class="text-body-secondary">-</div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer border-0">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
       </div>
     </div>
@@ -1712,9 +1790,17 @@
 
 <script>
   window.showDetailProgram = function(id) {
-    const modalEl = document.getElementById('programDetailModal');
+    const modalEl = document.getElementById('modalViewProgram');
     const modal = new bootstrap.Modal(modalEl);
     hideRiwayatBeforeShow(modalEl);
+
+    function decodeHtmlEntities(str) {
+      if (typeof str !== 'string') return str;
+      const txt = document.createElement('textarea');
+      txt.innerHTML = str;
+      return txt.value;
+    }
+
     fetch('/program-anak/' + id + '/json')
       .then(res => res.json())
       .then(data => {
@@ -1722,16 +1808,31 @@
           alert('Gagal mengambil detail program');
           return;
         }
-        const p = data.program;
-        document.getElementById('detailNamaProgram').textContent = p.nama_program || '-';
-        document.getElementById('detailKodeProgram').textContent = p.kode_program || '-';
-        document.getElementById('detailAnakDidik').textContent = p.anak ? p.anak.nama : '-';
-        document.getElementById('detailKonsultan').textContent = p.konsultan ? p.konsultan.nama : '-';
-        document.getElementById('detailTujuan').textContent = p.tujuan || '-';
-        document.getElementById('detailAktivitas').textContent = p.aktivitas || '-';
-        document.getElementById('detailPeriode').textContent = (p.periode_mulai ? p.periode_mulai : '-') + ' — ' + (
-          p.periode_selesai ? p.periode_selesai : '-');
-        document.getElementById('detailCreatedAt').textContent = p.created_at || '-';
+        const p = data.program || {};
+        document.getElementById('viewKode').textContent = decodeHtmlEntities(p.kode_program || '-') || '-';
+        document.getElementById('viewNama').textContent = decodeHtmlEntities(p.nama_program || '-') || '-';
+        const keterangan = p.keterangan_master || p.keterangan || '-';
+        document.getElementById('viewKeterangan').textContent = decodeHtmlEntities(keterangan) || '-';
+        document.getElementById('viewTujuan').textContent = decodeHtmlEntities(p.tujuan || '-') || '-';
+        document.getElementById('viewAktivitas').textContent = decodeHtmlEntities(p.aktivitas || '-') || '-';
+
+        const katEl = document.getElementById('viewKategori');
+        const konsEl = document.getElementById('viewKonsultan');
+        const kat = decodeHtmlEntities(p.kategori || p.kategori_program || '') || '';
+        const kons = decodeHtmlEntities((p.konsultan && (p.konsultan.nama || p.konsultan.spesialisasi)) || p.konsultan_nama || '') || '';
+        if (!kat || kat.trim() === '-') {
+          katEl.style.display = 'none';
+        } else {
+          katEl.style.display = '';
+          katEl.textContent = kat;
+        }
+        if (!kons || kons.trim() === '-') {
+          konsEl.style.display = 'none';
+        } else {
+          konsEl.style.display = '';
+          konsEl.textContent = kons;
+        }
+
         modal.show();
       })
       .catch(() => alert('Gagal mengambil detail program'));

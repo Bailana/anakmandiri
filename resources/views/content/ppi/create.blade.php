@@ -64,7 +64,7 @@
                           <option value="Akademik">Akademik</option>
                           <option value="Bina Diri">Bina Diri</option>
                           <option value="Motorik">Motorik</option>
-                          <option value="Perilaku">Perilaku</option>
+                          <option value="Perilaku">Basic Learning</option>
                           <option value="Vokasi">Vokasi</option>
                         </select>
                       </td>
@@ -247,7 +247,7 @@
           <option value="Akademik">Akademik</option>
           <option value="Bina Diri">Bina Diri</option>
           <option value="Motorik">Motorik</option>
-          <option value="Perilaku">Perilaku</option>
+          <option value="Perilaku">Basic Learning</option>
           <option value="Vokasi">Vokasi</option>
         </select>
       </td>
