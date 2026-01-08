@@ -20,7 +20,7 @@
         <div class="d-flex align-items-center gap-3">
           <div class="avatar avatar-xl">
             @if(Auth::user()->avatar)
-            <img src="{{ asset('assets/img/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="rounded-circle" />
+            <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}" class="rounded-circle" />
             @else
             <img src="{{ asset('assets/img/avatars/1.svg') }}" alt="Default Avatar" class="rounded-circle" />
             @endif
