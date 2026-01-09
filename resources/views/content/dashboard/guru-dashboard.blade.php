@@ -103,7 +103,7 @@
                 <option>Bina Diri</option>
                 <option>Akademik</option>
                 <option>Motorik</option>
-                <option>Perilaku</option>
+                <option>Basic Learning</option>
                 <option>Vokasi</option>
               </select>
             </div>
@@ -143,26 +143,70 @@
         selectProgram.innerHTML = '<option value="">Pilih Program</option>';
       }
 
-      selectAnak.addEventListener('change', function() {
+      // Load programs for selected anak + kategori (populate selectProgram)
+      function loadProgramsForSelection() {
         resetProgramOptions();
-        const anakId = this.value;
-        if (!anakId) return;
-        fetch('{{ url('dashboard-guru/programs-for-anak') }}' + '/' + encodeURIComponent(anakId))
+        const anakId = selectAnak.value;
+        const kategori = selectKategori.value;
+        if (!anakId || !kategori) {
+          tryRenderChart();
+          return;
+        }
+        // Map displayed kategori labels back to API keys expected by backend
+        const kategoriMap = {
+          'Bina Diri': 'bina_diri',
+          'Akademik': 'akademik',
+          'Motorik': 'motorik',
+          'Basic Learning': 'perilaku',
+          'Perilaku': 'perilaku',
+          'Vokasi': 'vokasi'
+        };
+        const kategoriKey = kategoriMap[kategori] || kategori;
+        // Use assessment controller PPI programs endpoint to get programs filtered by kategori key
+        const url = '/assessment/ppi-programs?anak_didik_id=' + encodeURIComponent(anakId) + '&kategori=' + encodeURIComponent(kategoriKey);
+        fetch(url, {
+            credentials: 'same-origin'
+          })
           .then(r => r.json())
           .then(json => {
-            if (json.success && Array.isArray(json.programs)) {
+            if (json && json.success && Array.isArray(json.programs) && json.programs.length) {
               json.programs.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.id;
-                opt.textContent = p.nama_program;
+                opt.textContent = p.nama_program || p.nama || '';
                 selectProgram.appendChild(opt);
               });
+            } else {
+              // show single disabled hint option when no programs available
+              const opt = document.createElement('option');
+              opt.value = '';
+              opt.disabled = true;
+              opt.selected = true;
+              opt.textContent = 'Tidak ada program pada kategori ini';
+              selectProgram.appendChild(opt);
             }
-          });
-        tryRenderChart();
+          })
+          .catch(() => {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.disabled = true;
+            opt.selected = true;
+            opt.textContent = 'Gagal memuat program';
+            selectProgram.appendChild(opt);
+          })
+          .finally(() => tryRenderChart());
+      }
+
+      selectAnak.addEventListener('change', function() {
+        loadProgramsForSelection();
       });
 
-      [selectKategori, selectProgram].forEach(el => el.addEventListener('change', tryRenderChart));
+      selectKategori.addEventListener('change', function() {
+        loadProgramsForSelection();
+      });
+
+      // program selection triggers chart render
+      selectProgram.addEventListener('change', tryRenderChart);
 
       function tryRenderChart() {
         const anakId = selectAnak.value;
@@ -189,9 +233,20 @@
         chartDiv.style.display = 'block';
         chartDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
 
-        const url = new URL('{{ route('dashboard-guru.chart-data') }}', window.location.origin);
+        // correct route helper: dashboard-guru.chart-data
+        const url = new URL('{{ route('dashboard-guru.chart-data') }}');
         url.searchParams.set('anak_id', anakId);
-        url.searchParams.set('kategori', kategori);
+        // map displayed kategori label to backend key
+        const kategoriMapForChart = {
+          'Bina Diri': 'bina_diri',
+          'Akademik': 'akademik',
+          'Motorik': 'motorik',
+          'Basic Learning': 'perilaku',
+          'Perilaku': 'perilaku',
+          'Vokasi': 'vokasi'
+        };
+        const kategoriKeyForChart = kategoriMapForChart[kategori] || kategori;
+        url.searchParams.set('kategori', kategoriKeyForChart);
         url.searchParams.set('program_id', programId);
 
         fetch(url.toString()).then(r => r.json()).then(json => {
@@ -199,11 +254,48 @@
             chartDiv.innerHTML = '<div class="text-center text-danger">Tidak ada data penilaian.</div>';
             return;
           }
-          const labels = json.labels || [];
-          const data = json.data || [];
+          let labels = json.labels || [];
+          let data = Array.isArray(json.data) ? json.data.slice() : [];
           if (!labels.length) {
             chartDiv.innerHTML = '<div class="text-center text-muted">Tidak ada data penilaian.</div>';
             return;
+          }
+
+          // If backend returned ISO date keys (YYYY-MM-DD), expand to a full daily range
+          // and fill missing days with zero so days with 0 scores are still displayed.
+          try {
+            const isoRe = /^\d{4}-\d{2}-\d{2}$/;
+            const allIso = labels.every(l => isoRe.test(String(l)));
+            if (allIso && labels.length) {
+              // build map from ISO date -> value
+              const valMap = {};
+              labels.forEach((k, i) => {
+                valMap[String(k)] = data[i];
+              });
+
+              // compute min/max dates from the provided labels
+              const parsed = labels.map(l => new Date(l));
+              const minTs = Math.min.apply(null, parsed.map(d => d.getTime()));
+              const maxTs = Math.max.apply(null, parsed.map(d => d.getTime()));
+              const minDate = new Date(minTs);
+              const maxDate = new Date(maxTs);
+
+              const outLabels = [];
+              const outData = [];
+              for (let dt = new Date(minDate); dt <= maxDate; dt.setDate(dt.getDate() + 1)) {
+                const key = dt.toISOString().slice(0, 10);
+                outLabels.push(new Date(key).toLocaleDateString('id-ID', {
+                  day: '2-digit',
+                  month: 'short'
+                }));
+                const v = Object.prototype.hasOwnProperty.call(valMap, key) ? valMap[key] : 0;
+                outData.push((v === null || typeof v === 'undefined' || v === '') ? 0 : Number(v));
+              }
+              labels = outLabels;
+              data = outData;
+            }
+          } catch (e) {
+            console.debug('Date expansion skipped', e);
           }
 
           const options = {
@@ -212,23 +304,63 @@
               data: data
             }],
             chart: {
-              type: 'bar',
-              height: 350
+              type: 'line',
+              height: 320,
+              parentHeightOffset: 0,
+              toolbar: {
+                show: true
+              },
+              zoom: {
+                enabled: true
+              }
             },
-            xaxis: {
-              categories: labels
+            stroke: {
+              curve: 'smooth',
+              width: 3
+            },
+            markers: {
+              size: 5
             },
             dataLabels: {
-              enabled: false
+              enabled: true
             },
-            colors: ['#28c76f']
+            legend: {
+              show: false
+            },
+            grid: {
+              borderColor: '#f1f5f9'
+            },
+            xaxis: {
+              categories: labels,
+              labels: {
+                rotate: -45
+              }
+            },
+            yaxis: {
+              min: 0,
+              max: 4,
+              tickAmount: 4
+            },
+            colors: ['#10b981'],
+            tooltip: {
+              y: {
+                formatter: function(val) {
+                  return val;
+                }
+              }
+            }
           };
 
           if (guruChart) {
             try {
               guruChart.destroy();
             } catch (e) {}
+            guruChart = null;
           }
+          // clear any loading placeholder added earlier
+          try {
+            chartElement.innerHTML = '';
+          } catch (e) {}
           guruChart = new ApexCharts(chartElement, options);
           guruChart.render();
         }).catch(() => {
