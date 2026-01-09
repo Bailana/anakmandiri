@@ -1,3 +1,12 @@
+@extends('layouts/contentNavbarLayout')
+
+@section('title', 'Penilaian Anak')
+
+@section('page-style')
+@vite(['resources/assets/vendor/scss/pages/page-account-settings.scss'])
+@endsection
+
+@section('content')
 <!-- Modal Riwayat Penilaian -->
 <div class="modal fade" id="riwayatObservasiModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -317,15 +326,7 @@
   }
 </script>
 @endpush
-@extends('layouts/contentNavbarLayout')
 
-@section('title', 'Penilaian Anak')
-
-@section('page-style')
-@vite(['resources/assets/vendor/scss/pages/page-account-settings.scss'])
-@endsection
-
-@section('content')
 <div class="row">
   <div class="col-12">
     <div class="card mb-4">
@@ -360,7 +361,7 @@
 
 <!-- Search & Filter -->
 <div class="row">
-  <div class="col-12">
+  <div class="col-12 mb-4">
     <form method="GET" action="{{ route('assessment.index') }}" class="d-flex gap-2 align-items-end flex-wrap">
       <!-- Search Field -->
       <div class="flex-grow-1" style="min-width: 200px;">

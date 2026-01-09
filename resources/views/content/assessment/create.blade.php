@@ -46,7 +46,7 @@
                 <option value="bina_diri" {{ old('kategori') === 'bina_diri' ? 'selected' : '' }}>Bina Diri</option>
                 <option value="akademik" {{ old('kategori') === 'akademik' ? 'selected' : '' }}>Akademik</option>
                 <option value="motorik" {{ old('kategori') === 'motorik' ? 'selected' : '' }}>Motorik</option>
-                <option value="perilaku" {{ old('kategori') === 'perilaku' ? 'selected' : '' }}>Perilaku</option>
+                <option value="perilaku" {{ old('kategori') === 'perilaku' ? 'selected' : '' }}>Basic Learning</option>
                 <option value="vokasi" {{ old('kategori') === 'vokasi' ? 'selected' : '' }}>Vokasi</option>
               </select>
               @error('kategori')

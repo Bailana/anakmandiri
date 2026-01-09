@@ -72,7 +72,7 @@
                       <select name="program_items[0][kode_program]" class="form-select kode-select"></select>
                       <input type="hidden" name="program_items[0][program_konsultan_id]" class="program-konsultan-id">
                     </td>
-                    <td><input type="text" name="program_items[0][nama_program]" class="form-control nama-input" readonly required></td>
+                    <td><input type="text" name="program_items[0][nama_program]" class="form-control nama-input" required placeholder="Ketik nama untuk mencari..."></td>
                     <td><textarea name="program_items[0][tujuan]" class="form-control tujuan-input" rows="1" readonly required></textarea></td>
                     <td><textarea name="program_items[0][aktivitas]" class="form-control aktivitas-input" rows="1" readonly required></textarea></td>
                     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
@@ -191,7 +191,7 @@
     const tr = document.createElement('tr');
     tr.innerHTML = `
     <td>${buildKodeSelectHtml(barisIdx)}<input type="hidden" name="program_items[${barisIdx}][program_konsultan_id]" class="program-konsultan-id"></td>
-    <td><input type="text" name="program_items[${barisIdx}][nama_program]" class="form-control nama-input" readonly required></td>
+    <td><input type="text" name="program_items[${barisIdx}][nama_program]" class="form-control nama-input" required placeholder="Ketik nama untuk mencari..."></td>
     <td><textarea name="program_items[${barisIdx}][tujuan]" class="form-control tujuan-input" rows="1" readonly required></textarea></td>
     <td><textarea name="program_items[${barisIdx}][aktivitas]" class="form-control aktivitas-input" rows="1" readonly required></textarea></td>
     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
@@ -239,6 +239,83 @@
       if (aktivitasInput) aktivitasInput.value = aktivitas;
       if (pkInput) pkInput.value = pid;
     }
+  });
+
+  // allow ArrowDown from nama-input to focus kode-select; Enter will perform search/select
+  document.querySelector('#programItemsTable').addEventListener('keydown', function(e) {
+    const el = e.target;
+    if (!el || !el.classList.contains('nama-input')) return;
+    // ArrowDown: focus kode select
+    if (e.key === 'ArrowDown') {
+      const tr = el.closest('tr');
+      if (!tr) return;
+      const kodeSel = tr.querySelector('.kode-select');
+      if (kodeSel) kodeSel.focus();
+      return;
+    }
+    // Enter: perform selection based on current input value
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const q = (el.value || '').trim().toLowerCase();
+      const tr = el.closest('tr');
+      if (!tr) return;
+      const kodeSel = tr.querySelector('.kode-select');
+      if (!kodeSel) return;
+      if (!q) {
+        kodeSel.selectedIndex = 0;
+        kodeSel.dispatchEvent(new Event('change', {
+          bubbles: true
+        }));
+        return;
+      }
+      let matchIndex = -1;
+      for (let i = 1; i < kodeSel.options.length; i++) {
+        const opt = kodeSel.options[i];
+        const name = (opt.getAttribute('data-nama') || opt.text || '').toLowerCase();
+        if (name.indexOf(q) === 0) {
+          matchIndex = i;
+          break;
+        }
+      }
+      if (matchIndex === -1) {
+        for (let i = 1; i < kodeSel.options.length; i++) {
+          const opt = kodeSel.options[i];
+          const name = (opt.getAttribute('data-nama') || opt.text || '').toLowerCase();
+          if (name.indexOf(q) !== -1) {
+            matchIndex = i;
+            break;
+          }
+        }
+      }
+      if (matchIndex !== -1) {
+        kodeSel.selectedIndex = matchIndex;
+        kodeSel.dispatchEvent(new Event('change', {
+          bubbles: true
+        }));
+      } else {
+        // show inline not-found message
+        try {
+          let noEl = tr.querySelector('.nama-no-match');
+          if (!noEl) {
+            noEl = document.createElement('div');
+            noEl.className = 'text-danger small nama-no-match mt-1';
+            noEl.textContent = 'Program tidak ditemukan';
+            const nameInput = tr.querySelector('.nama-input');
+            if (nameInput && nameInput.parentNode) nameInput.parentNode.appendChild(noEl);
+          }
+        } catch (e) {}
+      }
+    }
+  });
+
+  // clear not-found message when user types again in nama-input
+  document.querySelector('#programItemsTable').addEventListener('input', function(e) {
+    const el = e.target;
+    if (!el || !el.classList.contains('nama-input')) return;
+    const tr = el.closest('tr');
+    if (!tr) return;
+    const noEl = tr.querySelector('.nama-no-match');
+    if (noEl) noEl.remove();
   });
 
   // update kode-select options when konsultan changes
