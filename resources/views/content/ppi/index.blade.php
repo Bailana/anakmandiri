@@ -857,6 +857,16 @@
           if (lastBtn) loadRiwayatPpi(lastBtn);
           // show popup toast (toastr preferred, otherwise Bootstrap toast)
           showPopupToast(res.message || 'PPI berhasil diperbarui', 'success');
+          // close edit modal if open
+          try {
+            const modalEl = document.getElementById('editPpiModal');
+            if (modalEl) {
+              const inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+              if (inst && typeof inst.hide === 'function') inst.hide();
+            }
+          } catch (e) {
+            console.debug('Failed to hide editPpiModal', e);
+          }
         } else {
           showPopupToast(res.message || 'Gagal menyimpan perubahan', 'error');
         }

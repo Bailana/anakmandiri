@@ -506,17 +506,8 @@
       </div>
       <div class="modal-body">
         <div id="programChartContainer" style="min-height:240px;">
-          <div id="programChartLegend" class="mb-2 d-flex gap-3 align-items-center justify-content-center w-100">
-            <div class="d-flex align-items-center gap-2">
-              <span style="display:inline-block;width:14px;height:14px;background:#10b981;border-radius:3px;border:1px solid rgba(0,0,0,0.05);"></span>
-              <span class="small text-body-secondary">Ada penilaian</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <span style="display:inline-block;width:14px;height:14px;background:#ef4444;border-radius:3px;border:1px solid rgba(0,0,0,0.05);"></span>
-              <span class="small text-body-secondary">Tidak ada penilaian</span>
-            </div>
-          </div>
-          <canvas id="programChartCanvas" style="width:100%;height:320px" height="320"></canvas>
+          <!-- Legend removed as requested -->
+          <div id="programApexChart" style="width:100%;min-height:320px"></div>
         </div>
       </div>
     </div>
@@ -538,26 +529,19 @@
   }
 
   async function renderProgramChart(anakId, programIdOrName) {
-    const canvas = document.getElementById('programChartCanvas');
+    const chartEl = document.getElementById('programApexChart');
     const titleEl = document.getElementById('programChartTitle');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    if (!chartEl) return;
 
     try {
-      await _loadScript('https://cdn.jsdelivr.net/npm/chart.js');
-      await _loadScript('https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2');
+      await _loadScript('https://cdn.jsdelivr.net/npm/apexcharts');
     } catch (e) {
-      console.error('Failed loading chart scripts', e);
-      if (titleEl) titleEl.textContent = 'Gagal memuat Chart.js';
+      console.error('Failed loading ApexCharts', e);
+      if (titleEl) titleEl.textContent = 'Gagal memuat grafik.';
       return;
     }
 
-    // register datalabels if available
-    try {
-      if (window.Chart && window.ChartDataLabels) Chart.register(ChartDataLabels);
-    } catch (e) {}
-
-    // fetch program history
+    // fetch program history and build daily series
     try {
       const res = await fetch(`/assessment/${anakId}/program-history`, {
         credentials: 'same-origin'
@@ -579,15 +563,17 @@
       }
       if (titleEl) titleEl.textContent = prog.nama_program || 'Grafik Program';
 
-      // prepare daily buckets between min and max date from datapoints
       const dps = Array.isArray(prog.datapoints) ? prog.datapoints : [];
       if (!dps.length) {
         if (titleEl) titleEl.textContent = prog.nama_program + ' — (Belum ada penilaian)';
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // clear previous chart if any
+        try {
+          if (window._programApexChartInstance && typeof window._programApexChartInstance.destroy === 'function') window._programApexChartInstance.destroy();
+        } catch (e) {}
         return;
       }
 
-      // find min and max date among datapoints
+      // find min/max dates
       let minDate = null,
         maxDate = null;
       dps.forEach(d => {
@@ -599,11 +585,10 @@
       });
       if (!minDate || !maxDate) {
         if (titleEl) titleEl.textContent = prog.nama_program + ' — (Belum ada penilaian)';
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         return;
       }
 
-      // build map date(yyyy-mm-dd) -> aggregated avg score
+      // aggregate per day
       const dayMap = {};
       dps.forEach(d => {
         if (!d || !d.tanggal) return;
@@ -621,118 +606,195 @@
         }
       });
 
-      // generate labels & data for each day in range
       const labels = [];
-      const data = [];
-      const pointBg = [];
-      const pointBorder = [];
-      const dateList = [];
+      const seriesData = [];
       for (let dt = new Date(minDate); dt <= maxDate; dt.setDate(dt.getDate() + 1)) {
         const key = dt.toISOString().slice(0, 10);
-        dateList.push(new Date(dt));
         labels.push(new Date(key).toLocaleDateString('id-ID', {
           day: '2-digit',
           month: 'short'
         }));
         if (dayMap[key] && dayMap[key].count) {
           const avg = Math.round((dayMap[key].sum / dayMap[key].count) * 100) / 100;
-          data.push(avg);
-          pointBg.push('#10b981');
-          pointBorder.push('#10b981');
+          seriesData.push(avg);
         } else {
-          // mark missing days as 0 and color red
-          data.push(0);
-          pointBg.push('#ef4444');
-          pointBorder.push('#ef4444');
+          seriesData.push(0);
         }
       }
 
-      if (window._programChartInstance && typeof window._programChartInstance.destroy === 'function') {
-        try {
-          window._programChartInstance.destroy();
-        } catch (e) {}
-        window._programChartInstance = null;
-      }
+      // destroy previous instance
+      try {
+        if (window._programApexChartInstance && typeof window._programApexChartInstance.destroy === 'function') {
+          window._programApexChartInstance.destroy();
+        }
+      } catch (e) {}
 
-      window._programChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: prog.nama_program,
-            data: data,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16,185,129,0.06)',
-            tension: 0.2,
-            pointRadius: 6,
-            pointBackgroundColor: pointBg,
-            pointBorderColor: pointBorder,
-            pointStyle: 'circle'
-          }]
-        },
-        options: {
-          // render at fixed canvas size to avoid Chart.js triggering continuous resizes
-          responsive: false,
-          maintainAspectRatio: false,
-          animation: false,
-          scales: {
-            x: {
-              grid: {
-                color: '#f8fafc'
-              }
-            },
-            y: {
-              grid: {
-                color: '#f1f5f9'
-              },
-              suggestedMin: 0,
-              suggestedMax: 4,
-              ticks: {
-                stepSize: 1
-              }
-            }
+      const chartEl = document.getElementById('programApexChart');
+      if (!chartEl) return;
+
+      const options = {
+        series: [{
+          name: prog.nama_program || 'Program',
+          data: seriesData
+        }],
+        chart: {
+          type: 'line',
+          height: 320,
+          toolbar: {
+            show: true
           },
-          plugins: {
-            legend: {
-              display: false
-            },
-            datalabels: {
-              display: true,
-              align: 'top',
-              anchor: 'end',
-              backgroundColor: '#fff',
-              borderRadius: 4,
-              color: '#111',
-              font: {
-                size: 11
-              },
-              formatter: function(v, ctxLabel) {
-                // show value for scored days, show '-' for missing (value 0 treated as missing)
-                return (v && v !== 0) ? v : (v === 0 ? '' : v);
-              }
+          zoom: {
+            enabled: true
+          }
+        },
+        stroke: {
+          curve: 'smooth',
+          width: 3
+        },
+        markers: {
+          size: 5
+        },
+        colors: ['#10b981'],
+        dataLabels: {
+          enabled: true
+        },
+        xaxis: {
+          categories: labels,
+          labels: {
+            rotate: -45
+          }
+        },
+        yaxis: {
+          min: 0,
+          max: 4,
+          tickAmount: 4
+        },
+        grid: {
+          borderColor: '#f1f5f9'
+        },
+        tooltip: {
+          y: {
+            formatter: function(val) {
+              return val;
             }
           }
         }
-      });
-      // ensure chart uses canvas pixel size correctly
-      try {
-        window._programChartInstance.resize();
-      } catch (e) {}
+      };
+
+      window._programApexChartInstance = new ApexCharts(chartEl, options);
+      window._programApexChartInstance.render();
 
     } catch (err) {
       console.error('renderProgramChart failed', err);
       if (titleEl) titleEl.textContent = 'Gagal memuat grafik.';
     }
+
   }
 
-  // override selectProgramAndClose to show chart modal
-  window.selectProgramAndClose = function(anakId, programId) {
+  // small helper to show Bootstrap toasts programmatically
+  function showBootstrapToast(message, opts = {}) {
     try {
-      const modalEl = document.getElementById('riwayatObservasiModal');
-      const inst = bootstrap.Modal.getInstance(modalEl);
-      if (inst) inst.hide();
-    } catch (e) {}
+      const containerId = 'bootstrap-toast-container';
+      let container = document.getElementById(containerId);
+      if (!container) {
+        container = document.createElement('div');
+        container.id = containerId;
+        container.style.position = 'fixed';
+        container.style.zIndex = 10800;
+        container.style.top = '1rem';
+        container.style.right = '1rem';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '0.5rem';
+        container.style.pointerEvents = 'none';
+        document.body.appendChild(container);
+      }
+
+      const variant = opts.variant || 'primary';
+      const delay = typeof opts.delay === 'number' ? opts.delay : 4000;
+
+      const toastEl = document.createElement('div');
+      toastEl.className = 'toast align-items-center border-0';
+      toastEl.setAttribute('role', 'alert');
+      toastEl.setAttribute('aria-live', 'assertive');
+      toastEl.setAttribute('aria-atomic', 'true');
+      toastEl.style.pointerEvents = 'auto';
+      toastEl.setAttribute('data-bs-autohide', String(opts.autohide === false ? 'false' : 'true'));
+      toastEl.setAttribute('data-bs-delay', String(delay));
+
+      // variant classes
+      let variantClass = 'bg-primary text-white';
+      if (variant === 'warning') variantClass = 'bg-warning text-dark';
+      else if (variant === 'success') variantClass = 'bg-success text-white';
+      else if (variant === 'danger') variantClass = 'bg-danger text-white';
+      else if (variant === 'info') variantClass = 'bg-info text-dark';
+
+      toastEl.innerHTML = `
+        <div class="d-flex ${variantClass}">
+          <div class="toast-body">${String(message)}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>`;
+
+      container.appendChild(toastEl);
+      const b = new bootstrap.Toast(toastEl);
+      b.show();
+      toastEl.addEventListener('hidden.bs.toast', function() {
+        try {
+          toastEl.remove();
+        } catch (e) {}
+        if (container && !container.querySelector('.toast')) {
+          try {
+            container.remove();
+          } catch (e) {}
+        }
+      });
+      return b;
+    } catch (err) {
+      console.debug('showBootstrapToast failed', err);
+      return null;
+    }
+  }
+
+
+
+  // override selectProgramAndClose to show chart modal (but only if there are datapoints)
+  window.selectProgramAndClose = async function(anakId, programId) {
+    // Pre-check: fetch program history and ensure the selected program has datapoints
     try {
+      const res = await fetch(`/assessment/${anakId}/program-history`, {
+        credentials: 'same-origin'
+      });
+      if (res && res.ok) {
+        const json = await res.json().catch(() => null);
+        const programs = json && Array.isArray(json.programs) ? json.programs : [];
+        const prog = programs.find(p => String(p.id) === String(programId) || p.nama_program === programId);
+        if (!prog || !Array.isArray(prog.datapoints) || prog.datapoints.length === 0) {
+          // show Bootstrap toast (fallback for toastr/alert)
+          if (typeof showBootstrapToast === 'function') {
+            showBootstrapToast('Belum ada penilaian pada program ini.', {
+              variant: 'warning',
+              delay: 3500
+            });
+          } else if (window.toastr && typeof window.toastr.info === 'function') {
+            window.toastr.info('Belum ada penilaian pada program ini.');
+          } else {
+            alert('Belum ada penilaian pada program ini.');
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      console.debug('program-history pre-check failed', e);
+      // On error, continue to show modal so the existing chart error handling can run
+    }
+    try {
+      // hide the riwayat modal now that we're proceeding to show the chart
+      try {
+        const modalEl = document.getElementById('riwayatObservasiModal');
+        const inst = bootstrap.Modal.getInstance(modalEl);
+        if (inst) inst.hide();
+      } catch (e) {}
+
       const chartModalEl = document.getElementById('programChartModal');
       const chartModal = new bootstrap.Modal(chartModalEl);
       // render chart after modal is fully shown to ensure correct sizing
@@ -744,7 +806,19 @@
         }
         chartModalEl.removeEventListener('shown.bs.modal', onShown);
       };
+      // when the chart modal is closed, reopen the riwayat modal
+      const onHidden = function() {
+        try {
+          const riwayatEl = document.getElementById('riwayatObservasiModal');
+          if (riwayatEl) {
+            const riwayatModal = new bootstrap.Modal(riwayatEl);
+            riwayatModal.show();
+          }
+        } catch (e) {}
+        chartModalEl.removeEventListener('hidden.bs.modal', onHidden);
+      };
       chartModalEl.addEventListener('shown.bs.modal', onShown);
+      chartModalEl.addEventListener('hidden.bs.modal', onHidden);
       chartModal.show();
     } catch (e) {
       console.error(e);
