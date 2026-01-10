@@ -101,62 +101,26 @@ class AdminDashboard extends Controller
     ];
 
 
-    // Anak Didik registration per month for all years
-    $monthlyCounts = AnakDidik::selectRaw('YEAR(tanggal_pendaftaran) as year, MONTH(tanggal_pendaftaran) as month, COUNT(*) as count')
-      ->groupBy('year', 'month')
+    // Anak Didik registration per year (hitung jumlah pendaftaran per tahun)
+    $yearlyCounts = AnakDidik::selectRaw('YEAR(tanggal_pendaftaran) as year, COUNT(*) as count')
+      ->groupBy('year')
       ->orderBy('year')
-      ->orderBy('month')
       ->get();
 
-    $months = [
-      1 => 'Jan',
-      2 => 'Feb',
-      3 => 'Mar',
-      4 => 'Apr',
-      5 => 'Mei',
-      6 => 'Jun',
-      7 => 'Jul',
-      8 => 'Agu',
-      9 => 'Sep',
-      10 => 'Okt',
-      11 => 'Nov',
-      12 => 'Des'
-    ];
-    $categories = array_values($months);
+    $categories = $yearlyCounts->pluck('year')->map(function ($y) {
+      return (string) $y;
+    })->toArray();
 
-    // Get all years present in the data
-    $years = $monthlyCounts->pluck('year')->unique()->sort()->values();
-    $series = [];
-    foreach ($years as $year) {
-      $data = [];
-      for ($i = 1; $i <= 12; $i++) {
-        $count = $monthlyCounts->first(function ($item) use ($year, $i) {
-          return $item->year == $year && $item->month == $i;
-        });
-        $data[] = $count ? $count->count : 0;
-      }
-      $series[] = [
-        'name' => (string)$year,
-        'data' => $data
-      ];
-    }
-
-
-    // Calculate total Anak Didik registered per month (all years combined)
-    $totalPerMonth = [];
-    for ($i = 1; $i <= 12; $i++) {
-      $totalPerMonth[$i] = $monthlyCounts->where('month', $i)->sum('count');
-    }
-
-    // Add total as a new series (first in the list)
-    array_unshift($series, [
-      'name' => 'Total per Bulan',
-      'data' => array_values($totalPerMonth)
-    ]);
+    $dataPerYear = $yearlyCounts->pluck('count')->toArray();
 
     $dashboardData['lineChartData'] = [
-      'title' => 'Pendaftaran Anak Didik Tiap Bulan',
-      'series' => $series,
+      'title' => 'Pendaftaran Anak Didik Tahunan',
+      'series' => [
+        [
+          'name' => 'Jumlah Anak Didik',
+          'data' => $dataPerYear
+        ]
+      ],
       'categories' => $categories
     ];
 

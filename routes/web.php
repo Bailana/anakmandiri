@@ -205,6 +205,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('guru-anak/approvals/{id}', [App\Http\Controllers\GuruAnakDidikController::class, 'destroyApproval'])->name('guru-anak.approvals.destroy');
   });
 
+  // Admin-only endpoint for toggling PPI item active flag
+  Route::middleware(['auth', 'role:admin'])->post('ppi/item/{id}/aktif', [App\Http\Controllers\PPIController::class, 'setItemAktif'])->name('ppi.item.aktif');
+
   // Notification routes for in-site notifications (pindahkan ke luar group agar tidak terbatasi role)
   Route::middleware(['auth'])->group(function () {
     Route::post('notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.mark-read');

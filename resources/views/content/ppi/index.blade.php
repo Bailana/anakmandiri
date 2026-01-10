@@ -269,6 +269,10 @@
       el.addEventListener('hidden.bs.toast', () => el.remove());
     }
 
+    // Expose current user role and approve flag globally for admin-only UI
+    window.CURRENT_USER_ROLE = @json(optional(Auth::user())->role);
+    window.CAN_APPROVE_PPI = @json($canApprovePPI ?? false);
+
     document.querySelectorAll('.btn-request-access').forEach(btn => {
       btn.addEventListener('click', function() {
         const anakId = this.dataset.id;
@@ -598,8 +602,22 @@
               const num = idx + 1;
               const progName = (item.program_konsultan && item.program_konsultan.nama_program) ? item
                 .program_konsultan.nama_program : (item.nama_program || '—');
+              // determine aktif checked state (support 1/0, true/false, '1')
+              const wajibChecked = (item.aktif == 1 || item.aktif === true || item.aktif === '1') ? 'checked' : '';
+              let adminToggleHtml = '';
+              if (window.CURRENT_USER_ROLE === 'admin') {
+                adminToggleHtml = `<div class="form-check form-switch d-inline-block ms-2"><input class="form-check-input ppi-wajib-toggle" type="checkbox" data-item-id="${item.id}" ${wajibChecked}><label class="form-check-label small ms-1">Wajib</label></div>`;
+              }
+              // for guru users (guru fokus), show a read-only red "Wajib" badge when aktif
+              let guruBadgeHtml = '';
+              if (window.CURRENT_USER_ROLE === 'guru' && (item.aktif == 1 || item.aktif === true || item.aktif === '1')) {
+                guruBadgeHtml = `<span class="d-inline-block rounded-circle bg-success" title="Wajib" role="img" aria-label="Wajib" style="width:16px;height:16px;vertical-align:middle;"></span>`;
+              }
+
+              const rightHtml = adminToggleHtml || guruBadgeHtml || '';
+
               html += `<li class="list-group-item">`;
-              html += `<div><strong>${num}. ${progName}</strong></div>`;
+              html += `<div class="d-flex justify-content-between align-items-start"><div><strong>${num}. ${progName}</strong></div><div>${rightHtml}</div></div>`;
               if (item.notes) html += `<div class="small text-muted mt-1">${item.notes}</div>`;
               html += `</li>`;
             });
@@ -875,6 +893,36 @@
         showPopupToast('Terjadi kesalahan jaringan', 'error');
       });
     }
+    // handle wajib toggle changes (admin only)
+    document.addEventListener('change', function(e) {
+      const el = e.target;
+      if (el && el.classList && el.classList.contains('ppi-wajib-toggle')) {
+        const itemId = el.dataset.itemId;
+        const newState = el.checked ? 1 : 0;
+        const token = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+        fetch('/ppi/item/' + itemId + '/aktif', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            aktif: newState
+          })
+        }).then(r => r.json()).then(j => {
+          if (!j || !j.success) {
+            showPopupToast(j && j.message ? j.message : 'Gagal memperbarui status aktif', 'error');
+            el.checked = !el.checked;
+          } else {
+            showPopupToast(j.message || 'Status aktif diperbarui', 'success');
+          }
+        }).catch(() => {
+          showPopupToast('Terjadi kesalahan jaringan', 'error');
+          el.checked = !el.checked;
+        });
+      }
+    });
   });
 </script>
 @endpush

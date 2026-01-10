@@ -392,6 +392,7 @@
               <th>No</th>
               <th>Anak Didik</th>
               <th>Guru Fokus</th>
+              <th>Wajib Nilai</th>
               <th>Aksi</th>
             </tr>
           </thead>
@@ -419,6 +420,9 @@
                 {{ $guruFokus }}
               </td>
               <td>
+                {{ $wajibDoneToday[$assessment->anakDidik->id ?? 0] ?? 0 }}/{{ $wajibTotals[$assessment->anakDidik->id ?? 0] ?? 0 }}
+              </td>
+              <td>
                 <div class="d-flex gap-2 align-items-center">
                   <button
                     type="button"
@@ -434,7 +438,7 @@
             </tr>
             @empty
             <tr>
-              <td colspan="4" class="text-center py-5">
+              <td colspan="5" class="text-center py-5">
                 <div class="mb-3">
                   <i class="ri-search-line" style="font-size: 3rem; color: #ccc;"></i>
                 </div>

@@ -15,7 +15,8 @@ class PpiItem extends Model
     'ppi_id',
     'nama_program',
     'kategori',
-    'program_konsultan_id'
+    'program_konsultan_id',
+    'aktif'
   ];
 
   public function programKonsultan()

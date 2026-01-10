@@ -289,7 +289,8 @@ class PPIController extends Controller
           return [
             'id' => $it->id,
             'nama_program' => $it->nama_program,
-            'kategori' => $it->kategori
+            'kategori' => $it->kategori,
+            'aktif' => $it->aktif ?? 0
           ];
         })->toArray(),
         'status' => $p->status ?? null,
@@ -322,6 +323,7 @@ class PPIController extends Controller
         'notes' => $item->notes ?? null,
         'nama_program' => $item->nama_program ?? null,
         'kategori' => $item->kategori ?? null,
+        'aktif' => $item->aktif ?? 0,
         'program_konsultan' => $pk ? [
           'id' => $pk->id,
           'kode_program' => $pk->kode_program ?? null,
@@ -334,6 +336,34 @@ class PPIController extends Controller
     }
 
     return response()->json($data);
+  }
+
+  /**
+   * Set 'aktif' flag on a PpiItem (admin only)
+   */
+  public function setItemAktif(Request $request, $id)
+  {
+    $user = Auth::user();
+    if (!$user || $user->role !== 'admin') {
+      return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+    }
+
+    $ppiItem = PpiItem::find($id);
+    if (!$ppiItem) {
+      return response()->json(['success' => false, 'message' => 'Item tidak ditemukan'], 404);
+    }
+
+    $aktif = $request->input('aktif');
+    // accept various forms: true/false, 1/0, '1'/'0'
+    $set = ($aktif === true || $aktif === '1' || $aktif === 1 || $aktif === 'true' || $aktif === 'on') ? 1 : 0;
+
+    try {
+      $ppiItem->aktif = $set;
+      $ppiItem->save();
+      return response()->json(['success' => true, 'message' => 'Status program diperbarui', 'aktif' => $set]);
+    } catch (\Exception $e) {
+      return response()->json(['success' => false, 'message' => 'Gagal menyimpan perubahan'], 500);
+    }
   }
 
 

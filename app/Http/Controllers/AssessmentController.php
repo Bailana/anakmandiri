@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\PpiItem;
 use App\Models\Program;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Schema;
 use App\Services\ActivityService;
 
@@ -61,9 +62,59 @@ class AssessmentController extends Controller
 
     $assessments = $query->paginate(10)->appends($request->query());
 
+    // Prepare wajib counts: total mandatory programs per anak and how many were assessed today
+    $anakIds = $assessments->pluck('anak_didik_id')->unique()->filter()->values()->all();
+    $wajibTotals = [];
+    $wajibDoneToday = [];
+    foreach ($anakIds as $anakId) {
+      // get active PPI items for this anak
+      $items = PpiItem::whereHas('ppi', function ($q) use ($anakId) {
+        $q->where('anak_didik_id', $anakId);
+      })->where('aktif', 1)->get();
+
+      $names = $items->pluck('nama_program')->map(function ($n) {
+        return trim(strtolower($n ?? ''));
+      })->filter()->unique()->values()->all();
+
+      $total = count($names);
+      $wajibTotals[$anakId] = $total;
+      $done = 0;
+      if ($total > 0) {
+        // find Program ids that match these names (case-insensitive)
+        $programs = Program::where(function ($q) use ($names) {
+          foreach ($names as $n) {
+            $q->orWhereRaw('LOWER(nama_program) = ?', [$n]);
+          }
+        })->pluck('id')->toArray();
+
+        if (!empty($programs)) {
+          $done = \App\Models\Assessment::where('anak_didik_id', $anakId)
+            ->whereDate('tanggal_assessment', Carbon::today())
+            ->whereIn('program_id', $programs)
+            ->count();
+        } else {
+          // no matching Program records; fallback: try to count assessments whose hasil_penilaian or aktivitas mention the program name
+          $doneCount = 0;
+          foreach ($names as $nm) {
+            $c = \App\Models\Assessment::where('anak_didik_id', $anakId)
+              ->whereDate('tanggal_assessment', Carbon::today())
+              ->where(function ($q) use ($nm) {
+                $q->whereRaw('LOWER(COALESCE(hasil_penilaian, "")) LIKE ?', ["%{$nm}%"])
+                  ->orWhereRaw('LOWER(COALESCE(aktivitas, "")) LIKE ?', ["%{$nm}%"]);
+              })->count();
+            if ($c) $doneCount++;
+          }
+          $done = $doneCount;
+        }
+      }
+      $wajibDoneToday[$anakId] = $done;
+    }
+
     $data = [
       'title' => 'Penilaian Anak',
       'assessments' => $assessments,
+      'wajibTotals' => $wajibTotals,
+      'wajibDoneToday' => $wajibDoneToday,
     ];
 
     return view('content.assessment.index', $data);
