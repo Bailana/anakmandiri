@@ -146,6 +146,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('program', 'App\Http\Controllers\ProgramController');
     Route::post('program/{id}/approve', [App\Http\Controllers\ProgramController::class, 'approve'])->name('program.approve');
     Route::resource('pengguna', 'App\Http\Controllers\PenggunaController');
+    // Kedisiplinan - tampilan index untuk admin
+    Route::get('kedisiplinan', [App\Http\Controllers\KedisiplinanController::class, 'index'])->name('kedisiplinan.index');
+    Route::get('kedisiplinan/{guru}/riwayat', [App\Http\Controllers\KedisiplinanController::class, 'riwayat'])->name('kedisiplinan.riwayat');
   });
   // Allow konsultan, terapis, admin, and guru to view program index/show (read-only for guru)
   Route::middleware(['auth', 'role:admin,konsultan,terapis,guru'])->group(function () {

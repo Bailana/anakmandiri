@@ -9,6 +9,7 @@ class Assessment extends Model
   protected $fillable = [
     'anak_didik_id',
     'konsultan_id',
+    'user_id',
     'program_id',
     'kategori',
     'perkembangan',
@@ -28,6 +29,11 @@ class Assessment extends Model
   public function anakDidik()
   {
     return $this->belongsTo(AnakDidik::class);
+  }
+
+  public function user()
+  {
+    return $this->belongsTo(\App\Models\User::class, 'user_id');
   }
 
   public function konsultan()

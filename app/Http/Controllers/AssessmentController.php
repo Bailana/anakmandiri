@@ -187,10 +187,15 @@ class AssessmentController extends Controller
     // Ensure kemampuan is an array (store empty array if not provided)
     $validated['kemampuan'] = array_values($request->input('kemampuan', []));
 
+    // attach current user id when available so we know who created the assessment
+    $user = Auth::user();
+    if ($user) {
+      $validated['user_id'] = $user->id;
+    }
+
     $assessment = Assessment::create($validated);
 
     // Log aktivitas ketika user dengan role 'guru' menambahkan penilaian
-    $user = Auth::user();
     if ($user && $user->role === 'guru') {
       $anak = AnakDidik::find($validated['anak_didik_id']);
       $desc = 'Membuat penilaian untuk anak: ' . ($anak ? $anak->nama : 'ID ' . $validated['anak_didik_id']);

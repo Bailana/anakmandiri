@@ -126,6 +126,24 @@
         "admin",
         "guru"
       ]
+    },
+    {
+      "url": "kedisiplinan",
+      "name": "Kedisiplinan",
+      "icon": "menu-icon icon-base ri ri-file-list-3-line",
+      "slug": "kedisiplinan.index",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "url": "activity-logs",
+      "name": "Log Aktivitas",
+      "icon": "menu-icon icon-base ri ri-list-unordered",
+      "slug": "activity.logs",
+      "roles": [
+        "admin"
+      ]
     }
   ]
 }
