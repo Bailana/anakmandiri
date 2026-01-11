@@ -179,7 +179,7 @@
                           $scoreClass = $scoreVal > 0 ? 'bg-success' : ($scoreVal < 0 ? 'bg-danger' : 'bg-secondary' );
                             @endphp
                             <div class="d-none d-md-block">
-                            <div class="small text-muted">Tepat Waktu: {{ $r->on_time_count ?? 0 }} · Terlambat: {{ $r->late_count ?? 0 }} · Rata-rata Waktu: {{ $r->avg_time ? $r->avg_time . ' WIB' : '-' }} · Skor: <span class="badge {{ $scoreClass }}">{{ $scoreVal }}</span></div>
+                            <div class="small text-muted">Tepat Waktu: {{ $r->on_time_count ?? 0 }} &middot; Terlambat: {{ $r->late_count ?? 0 }} &middot; Rata-rata Waktu: {{ $r->avg_time ? $r->avg_time . ' WIB' : '-' }} &middot; Skor: <span class="badge {{ $scoreClass }}">{{ $scoreVal }}</span></div>
                         </div>
                         <div class="d-block d-md-none">
                           <div class="small text-muted mb-1">Tepat Waktu: {{ $r->on_time_count ?? 0 }}</div>
