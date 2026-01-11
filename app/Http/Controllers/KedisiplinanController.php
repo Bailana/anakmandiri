@@ -15,7 +15,22 @@ class KedisiplinanController extends Controller
 {
   public function index(Request $request)
   {
-    $deadline = Carbon::today()->setTime(17, 0, 0);
+    // determine target range: default = today, optional ?month=YYYY-MM to evaluate whole month
+    $month = $request->query('month');
+    $useRange = false;
+    if ($month) {
+      try {
+        $rangeStart = Carbon::parse($month . '-01')->startOfMonth();
+        $rangeEnd = $rangeStart->copy()->endOfMonth();
+        $useRange = true;
+      } catch (\Exception $e) {
+        $rangeStart = Carbon::today();
+        $rangeEnd = Carbon::today();
+      }
+    } else {
+      $rangeStart = Carbon::today();
+      $rangeEnd = Carbon::today();
+    }
 
     // Group anak didik by guru_fokus_id
     $anakDidiks = AnakDidik::whereNotNull('guru_fokus_id')->with('guruFokus')->get();
@@ -47,19 +62,24 @@ class KedisiplinanController extends Controller
       $names = array_keys($namesSet);
       $totalWajib = count($names);
 
-      // fetch assessments whose assessment date (`tanggal_assessment`) is today for these anakIds
-      // but keep `created_at` for determining the time of the assessment (on-time vs late)
+      // fetch assessments within target range for these anakIds
+      // keep `created_at` for determining the time of the assessment (on-time vs late)
       $assessmentsToday = [];
       if (!empty($anakIds)) {
-        $assessmentsToday = Assessment::with(['program', 'user', 'konsultan'])
-          ->whereIn('anak_didik_id', $anakIds)
-          ->whereDate('tanggal_assessment', Carbon::today())
-          ->get();
+        $qry = Assessment::with(['program', 'user', 'konsultan'])->whereIn('anak_didik_id', $anakIds);
+        if ($useRange) {
+          $qry->whereBetween('tanggal_assessment', [$rangeStart->toDateString(), $rangeEnd->toDateString()]);
+        } else {
+          $qry->whereDate('tanggal_assessment', $rangeStart->toDateString());
+        }
+        $assessmentsToday = $qry->get();
       }
 
       // determine which wajib names have been assessed today and earliest time
       $matchedNames = [];
       $earliest = [];
+      // also build per-anak map of earliest assessment per program name
+      $byAnak = [];
       foreach ($assessmentsToday as $a) {
         $matchedName = null;
         if ($a->program && $a->program->nama_program) {
@@ -81,6 +101,13 @@ class KedisiplinanController extends Controller
             $earliest[$matchedName] = $t;
           }
           $matchedNames[$matchedName] = true;
+          $aid = $a->anak_didik_id ?? $a->anakDidik->id ?? null;
+          if ($aid) {
+            if (!isset($byAnak[$aid])) $byAnak[$aid] = [];
+            if (!isset($byAnak[$aid][$matchedName]) || Carbon::parse($a->created_at)->lessThan(Carbon::parse($byAnak[$aid][$matchedName]->created_at))) {
+              $byAnak[$aid][$matchedName] = $a;
+            }
+          }
         }
       }
 
@@ -90,8 +117,45 @@ class KedisiplinanController extends Controller
       $onTimeCount = 0;
       $lateCount = 0;
       foreach ($earliest as $name => $time) {
-        if ($time->lessThanOrEqualTo($deadline)) $onTimeCount++;
+        $deadlineFor = $time->copy()->setTime(17, 0, 0);
+        if ($time->lessThanOrEqualTo($deadlineFor)) $onTimeCount++;
         else $lateCount++;
+      }
+
+      // compute per-anak breakdown (for ranking details)
+      $perAnak = [];
+      foreach ($anakList as $anak) {
+        $aid = $anak->id;
+        // fetch wajib program names for this anak
+        $ppiItemsForAnak = PpiItem::whereHas('ppi', function ($q) use ($aid) {
+          $q->where('anak_didik_id', $aid);
+        })->where('aktif', 1)->get();
+        $namesSetAnak = [];
+        foreach ($ppiItemsForAnak as $it) {
+          $n = trim(strtolower($it->nama_program ?? ''));
+          if ($n !== '') $namesSetAnak[$n] = true;
+        }
+        $namesAnak = array_keys($namesSetAnak);
+        $totalWajibAnak = count($namesAnak);
+        $assessedAnak = 0;
+        $onTimeAnak = 0;
+        foreach ($namesAnak as $nm) {
+          if (isset($byAnak[$aid][$nm])) {
+            $assessedAnak++;
+            $t = Carbon::parse($byAnak[$aid][$nm]->created_at);
+            $deadlineForAnak = $t->copy()->setTime(17, 0, 0);
+            if ($t->lessThanOrEqualTo($deadlineForAnak)) $onTimeAnak++;
+          }
+        }
+        $percent = $totalWajibAnak > 0 ? round($onTimeAnak / $totalWajibAnak * 100, 1) : 0;
+        $perAnak[] = (object) [
+          'anak_id' => $aid,
+          'anak_nama' => $anak->nama ?? null,
+          'total_wajib' => $totalWajibAnak,
+          'assessed_count' => $assessedAnak,
+          'on_time_count' => $onTimeAnak,
+          'percent_on_time' => $percent,
+        ];
       }
 
       $status = 'Belum Dinilai';
@@ -102,7 +166,10 @@ class KedisiplinanController extends Controller
         'guru' => $guru,
         'total_wajib' => $totalWajib,
         'assessed_count' => $doneCount,
+        'on_time_count' => $onTimeCount,
+        'late_count' => $lateCount,
         'status' => $status,
+        'per_anak' => $perAnak,
       ];
     }
 
