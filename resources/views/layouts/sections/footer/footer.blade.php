@@ -7,7 +7,7 @@ $containerFooter = !empty($containerNav) ? $containerNav : 'container-fluid';
     <div class="{{ $containerFooter }}">
         <div class="footer-container d-flex align-items-center justify-content-between py-4 flex-md-row flex-column">
             <div class="text-body">
-                © 2026 R&B Dev. All Rights Reserved.
+                Copyright © 2026 R&B Dev. All Rights Reserved.
             </div>
             <!-- Right-side footer links removed per design request -->
         </div>

@@ -1,3 +1,4 @@
+{{-- Encoding: UTF-8 (saved by conversion) --}}
 @extends('layouts/contentNavbarLayout')
 
 @section('title', 'Kedisiplinan')
@@ -136,7 +137,7 @@
                 </div>
                 <input type="hidden" name="tab" value="peringkat">
                 <div class="d-flex gap-2 flex-shrink-0">
-                  <button class="btn btn-sm btn-primary w-100 w-md-auto" type="submit" aria-label="Tampilkan">
+                  <button class="btn btn-sm btn-outline-primary w-100 w-md-auto" type="submit" aria-label="Tampilkan">
                     <i class="ri-search-line d-inline d-md-none" aria-hidden="true"></i>
                     <span class="d-none d-md-inline"><i class="ri-search-line me-2"></i>Tampilkan</span>
                   </button>
@@ -149,142 +150,238 @@
               </form>
 
               @php
-              $ranked = collect($rows ?? [])->sortByDesc('on_time_count')->values();
-              $rankedFiltered = $ranked->filter(function($r){ return isset($r->on_time_count) && $r->on_time_count > 0;
-              })->values();
-              @endphp
+              $ranked = collect($rows_for_month ?? [])->sort(function($a, $b) {
+              $sa = $a->score ?? 0; $sb = $b->score ?? 0;
+              if ($sa === $sb) {
+              $aa = $a->avg_time_seconds ?? null; $ab = $b->avg_time_seconds ?? null;
+              // if both have avg time, earlier (smaller seconds) ranks higher
+              if (!is_null($aa) && !is_null($ab)) return $aa <=> $ab;
+                // if one has avg time and the other doesn't, prefer the one with avg time
+                if (!is_null($aa) && is_null($ab)) return -1;
+                if (is_null($aa) && !is_null($ab)) return 1;
+                return 0;
+                }
+                return $sb <=> $sa;
+                  })->values();
+                  @endphp
 
-              @if($rankedFiltered->isEmpty())
-              <div class="text-body-secondary">Belum ada data peringkat.</div>
-              @else
-              <div class="list-group">
-                @foreach($rankedFiltered as $i => $r)
-                <div class="list-group-item">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                      <h6 class="mb-0">{{ $i + 1 }}. {{ $r->guru ? $r->guru->nama : '-' }}</h6>
-                      <div class="small text-muted">Tepat Waktu: {{ $r->on_time_count ?? 0 }} · Total Wajib:
-                        {{ $r->total_wajib ?? 0 }}</div>
+                  @if($ranked->isEmpty())
+                  <div class="text-body-secondary">Belum ada data peringkat.</div>
+                  @else
+                  <div class="list-group">
+                    @foreach($ranked as $i => $r)
+                    <div class="list-group-item">
+                      <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                          <h6 class="mb-0">{{ $i + 1 }}. {{ $r->guru ? $r->guru->nama : '-' }}</h6>
+                          @php
+                          $scoreVal = $r->score ?? 0;
+                          $scoreClass = $scoreVal > 0 ? 'bg-success' : ($scoreVal < 0 ? 'bg-danger' : 'bg-secondary' );
+                            @endphp
+                            <div class="d-none d-md-block">
+                            <div class="small text-muted">Tepat Waktu: {{ $r->on_time_count ?? 0 }} · Terlambat: {{ $r->late_count ?? 0 }} · Rata-rata Waktu: {{ $r->avg_time ? $r->avg_time . ' WIB' : '-' }} · Skor: <span class="badge {{ $scoreClass }}">{{ $scoreVal }}</span></div>
+                        </div>
+                        <div class="d-block d-md-none">
+                          <div class="small text-muted mb-1">Tepat Waktu: {{ $r->on_time_count ?? 0 }}</div>
+                          <div class="small text-muted mb-1">Terlambat: {{ $r->late_count ?? 0 }}</div>
+                          <div class="small text-muted mb-1">Rata-rata Waktu: {{ $r->avg_time ? $r->avg_time . ' WIB' : '-' }}</div>
+                          <div class="small text-muted">Skor: <span class="badge {{ $scoreClass }}">{{ $scoreVal }}</span></div>
+                        </div>
+                      </div>
+                      <div>
+                        <button class="btn btn-sm btn-icon btn-outline-info" data-bs-toggle="collapse"
+                          data-bs-target="#guruDetail{{ $i }}" aria-expanded="false" aria-label="Lihat Rincian">
+                          <i class="ri-eye-line" aria-hidden="true"></i>
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse"
-                        data-bs-target="#guruDetail{{ $i }}" aria-expanded="false" aria-label="Lihat Rincian">
-                        <i class="ri-eye-line d-inline d-md-none" aria-hidden="true"></i>
-                        <span class="d-none d-md-inline"><i class="ri-eye-line me-2"></i>Lihat Rincian</span>
-                      </button>
+
+                    <div class="collapse mt-3" id="guruDetail{{ $i }}">
+                      <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr class="table-light">
+                              <th style="width:40px">#</th>
+                              <th>Anak</th>
+                              <th style="width:110px">Wajib</th>
+                              <th style="width:120px">Tepat Waktu</th>
+                              <th style="width:120px">Dinilai</th>
+                              <th style="width:90px">% Tepat</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @foreach($r->per_anak as $j => $pa)
+                            <tr>
+                              <td>{{ $j + 1 }}</td>
+                              <td>{{ $pa->anak_nama ?? '-' }}</td>
+                              <td>{{ $pa->total_wajib ?? 0 }}</td>
+                              <td>{{ $pa->on_time_count ?? 0 }}</td>
+                              <td>{{ $pa->assessed_count ?? 0 }}</td>
+                              <td>{{ $pa->percent_on_time ?? 0 }}%</td>
+                            </tr>
+                            @endforeach
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-
-                  <div class="collapse mt-3" id="guruDetail{{ $i }}">
-                    <div class="table-responsive">
-                      <table class="table table-sm mb-0">
-                        <thead>
-                          <tr class="table-light">
-                            <th style="width:40px">#</th>
-                            <th>Anak</th>
-                            <th style="width:110px">Wajib</th>
-                            <th style="width:120px">Tepat Waktu</th>
-                            <th style="width:120px">Dinilai</th>
-                            <th style="width:90px">% Tepat</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @foreach($r->per_anak as $j => $pa)
-                          <tr>
-                            <td>{{ $j + 1 }}</td>
-                            <td>{{ $pa->anak_nama ?? '-' }}</td>
-                            <td>{{ $pa->total_wajib ?? 0 }}</td>
-                            <td>{{ $pa->on_time_count ?? 0 }}</td>
-                            <td>{{ $pa->assessed_count ?? 0 }}</td>
-                            <td>{{ $pa->percent_on_time ?? 0 }}%</td>
-                          </tr>
-                          @endforeach
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-                @endforeach
-              </div>
-              @endif
+                  @endforeach
             </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Riwayat Kedisiplinan -->
-  <div class="modal fade" id="kedisiplinanRiwayatModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Riwayat Kedisiplinan Penilaian</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
-          <div class="mb-3 d-flex align-items-center">
-            <label for="kedisiplinanDate" class="mb-0 me-3">Pilih Tanggal:</label>
-            <div class="d-flex align-items-center w-100">
-              <input type="date" id="kedisiplinanDate" class="form-control me-2" style="flex:1; min-width:0;">
-              <button id="kedisiplinanShowBtn" class="btn btn-primary" title="Tampilkan" aria-label="Tampilkan"><i
-                  class="ri-search-line"></i></button>
-            </div>
-          </div>
-          <div id="kedisiplinanRiwayatWrapper">
-            <div class="text-center py-4 text-body-secondary">Pilih tanggal lalu tekan "Tampilkan" untuk memuat riwayat.
-            </div>
+            @endif
           </div>
         </div>
       </div>
+
     </div>
   </div>
+</div>
 
-  @endsection
+<!-- Modal Riwayat Kedisiplinan -->
+<div class="modal fade" id="kedisiplinanRiwayatModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Riwayat Kedisiplinan Penilaian</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
+        <div class="mb-3 d-flex align-items-center">
+          <label for="kedisiplinanDate" class="mb-0 me-3">Pilih Tanggal:</label>
+          <div class="d-flex align-items-center w-100">
+            <input type="date" id="kedisiplinanDate" class="form-control me-2" style="flex:1; min-width:0;">
+            <button id="kedisiplinanShowBtn" class="btn btn-outline-primary" title="Tampilkan" aria-label="Tampilkan"><i
+                class="ri-search-line"></i></button>
+          </div>
+        </div>
+        <div id="kedisiplinanRiwayatWrapper">
+          <div class="text-center py-4 text-body-secondary">Pilih tanggal lalu tekan "Tampilkan" untuk memuat riwayat.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@endsection
 
 
-  @push('page-script')
-  <script>
-    // helper: format date as Indonesian day, dd-mm-yyyy
-    function formatDateDisplay(dateStr) {
-      try {
-        const d = new Date(dateStr);
-        if (isNaN(d)) return dateStr;
-        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        const dd = String(d.getDate()).padStart(2, '0');
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const yyyy = d.getFullYear();
-        return `${days[d.getDay()]}, ${dd}-${mm}-${yyyy}`;
-      } catch (e) {
-        return dateStr;
+@push('page-script')
+<script>
+  // helper: format date as Indonesian day, dd-mm-yyyy
+  function formatDateDisplay(dateStr) {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${days[d.getDay()]}, ${dd}-${mm}-${yyyy}`;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  // Open modal and prepare date filter for riwayat
+  function showKedisiplinanRiwayat(guruId, guruName) {
+    const modalEl = document.getElementById('kedisiplinanRiwayatModal');
+    modalEl.dataset.guruId = guruId;
+    modalEl.dataset.guruName = guruName;
+    // default date to today and immediately fetch riwayat for today
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('kedisiplinanDate').value = todayStr;
+    document.getElementById('kedisiplinanRiwayatWrapper').innerHTML =
+      '<div class="text-center py-4 text-body-secondary">Memuat data...</div>';
+    try {
+      new bootstrap.Modal(modalEl).show();
+    } catch (e) {
+      /* ignore */
+    }
+    // fetch for today
+    fetchKedisiplinanRiwayat(guruId, guruName, todayStr);
+  }
+
+  async function fetchKedisiplinanRiwayat(gid, gname, date) {
+    const wrapper = document.getElementById('kedisiplinanRiwayatWrapper');
+    wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Memuat data...</div>';
+    try {
+      const res = await fetch(`/kedisiplinan/${gid}/riwayat?date=${encodeURIComponent(date)}`, {
+        credentials: 'same-origin'
+      });
+      const json = await res.json();
+      if (!json || !json.success) {
+        wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Gagal memuat riwayat.</div>';
+        return;
       }
+      const data = json.riwayat || [];
+      if (data.length === 0 || !data[0].items.length) {
+        wrapper.innerHTML =
+          '<div class="text-center py-4 text-body-secondary">Tidak ada data pada tanggal tersebut.</div>';
+        return;
+      }
+      let html = '';
+      data.forEach(group => {
+        html += `<div class="mt-3"><strong>${formatDateDisplay(group.date)}</strong>`;
+        const byChild = {};
+        (group.items || []).forEach(it => {
+          const child = it.anak || '-';
+          if (!byChild[child]) byChild[child] = [];
+          byChild[child].push(it);
+        });
+        Object.keys(byChild).forEach(child => {
+          html += `<div class="mt-2"><div class="fw-semibold">${child}</div><div class="list-group mt-2">`;
+          (byChild[child] || []).forEach(it => {
+            html += `<div class="list-group-item d-flex justify-content-between align-items-start">
+								<div>
+									<div class="fw-semibold">${it.program_display || it.program || '-'}</div>
+									<div class="text-muted small">Waktu: ${it.waktu || '-'}</div>
+									<div class="text-muted small">Penilai: ${it.penilai_nama ? it.penilai_nama : '-'}</div>
+								</div>
+								<div>
+									<span class="badge ${it.status === 'Tepat Waktu' ? 'bg-success' : (it.status === 'Belum Dinilai' ? 'bg-danger text-white' : 'bg-warning text-dark')}">${it.status}</span>
+								</div>
+							</div>`;
+          });
+          html += `</div></div>`;
+        });
+        html += '</div>';
+      });
+      wrapper.innerHTML = html;
+    } catch (err) {
+      console.error(err);
+      // if server returned HTML error page, show a concise message
+      wrapper.innerHTML =
+        '<div class="text-center py-4 text-body-secondary">Terjadi kesalahan saat memuat riwayat.</div>';
+    }
+  }
+
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-riwayat');
+    if (!btn) return;
+    const gid = btn.getAttribute('data-guru-id');
+    const gname = btn.getAttribute('data-guru-name');
+    if (gid) showKedisiplinanRiwayat(gid, gname);
+  });
+
+  // When user clicks Tampilkan, fetch riwayat for selected date
+  document.addEventListener('click', function(e) {
+    if (!e.target) return;
+    const btn = e.target.closest('#kedisiplinanShowBtn');
+    if (!btn) return;
+    const modalEl = document.getElementById('kedisiplinanRiwayatModal');
+    const gid = modalEl.dataset.guruId;
+    const gname = modalEl.dataset.guruName;
+    const date = document.getElementById('kedisiplinanDate').value;
+    if (!date) {
+      alert('Pilih tanggal terlebih dahulu');
+      return;
     }
 
-    // Open modal and prepare date filter for riwayat
-    function showKedisiplinanRiwayat(guruId, guruName) {
-      const modalEl = document.getElementById('kedisiplinanRiwayatModal');
-      modalEl.dataset.guruId = guruId;
-      modalEl.dataset.guruName = guruName;
-      // default date to today and immediately fetch riwayat for today
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      const todayStr = `${yyyy}-${mm}-${dd}`;
-      document.getElementById('kedisiplinanDate').value = todayStr;
-      document.getElementById('kedisiplinanRiwayatWrapper').innerHTML =
-        '<div class="text-center py-4 text-body-secondary">Memuat data...</div>';
-      try {
-        new bootstrap.Modal(modalEl).show();
-      } catch (e) {
-        /* ignore */
-      }
-      // fetch for today
-      fetchKedisiplinanRiwayat(guruId, guruName, todayStr);
-    }
-
-    async function fetchKedisiplinanRiwayat(gid, gname, date) {
+    (async () => {
       const wrapper = document.getElementById('kedisiplinanRiwayatWrapper');
       wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Memuat data...</div>';
       try {
@@ -312,86 +409,10 @@
             byChild[child].push(it);
           });
           Object.keys(byChild).forEach(child => {
-            html += `<div class="mt-2"><div class="fw-semibold">${child}</div><div class="list-group mt-2">`;
+            html +=
+              `<div class="mt-2"><div class="fw-semibold">${child}</div><div class="list-group mt-2">`;
             (byChild[child] || []).forEach(it => {
               html += `<div class="list-group-item d-flex justify-content-between align-items-start">
-								<div>
-									<div class="fw-semibold">${it.program_display || it.program || '-'}</div>
-									<div class="text-muted small">Waktu: ${it.waktu || '-'}</div>
-									<div class="text-muted small">Penilai: ${it.penilai_nama ? it.penilai_nama : '-'}</div>
-								</div>
-								<div>
-									<span class="badge ${it.status === 'Tepat Waktu' ? 'bg-success' : (it.status === 'Belum Dinilai' ? 'bg-danger text-white' : 'bg-warning text-dark')}">${it.status}</span>
-								</div>
-							</div>`;
-            });
-            html += `</div></div>`;
-          });
-          html += '</div>';
-        });
-        wrapper.innerHTML = html;
-      } catch (err) {
-        console.error(err);
-        // if server returned HTML error page, show a concise message
-        wrapper.innerHTML =
-          '<div class="text-center py-4 text-body-secondary">Terjadi kesalahan saat memuat riwayat.</div>';
-      }
-    }
-
-    document.addEventListener('click', function (e) {
-      const btn = e.target.closest('.btn-riwayat');
-      if (!btn) return;
-      const gid = btn.getAttribute('data-guru-id');
-      const gname = btn.getAttribute('data-guru-name');
-      if (gid) showKedisiplinanRiwayat(gid, gname);
-    });
-
-    // When user clicks Tampilkan, fetch riwayat for selected date
-    document.addEventListener('click', function (e) {
-      if (!e.target) return;
-      const btn = e.target.closest('#kedisiplinanShowBtn');
-      if (!btn) return;
-      const modalEl = document.getElementById('kedisiplinanRiwayatModal');
-      const gid = modalEl.dataset.guruId;
-      const gname = modalEl.dataset.guruName;
-      const date = document.getElementById('kedisiplinanDate').value;
-      if (!date) {
-        alert('Pilih tanggal terlebih dahulu');
-        return;
-      }
-
-      (async () => {
-        const wrapper = document.getElementById('kedisiplinanRiwayatWrapper');
-        wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Memuat data...</div>';
-        try {
-          const res = await fetch(`/kedisiplinan/${gid}/riwayat?date=${encodeURIComponent(date)}`, {
-            credentials: 'same-origin'
-          });
-          const json = await res.json();
-          if (!json || !json.success) {
-            wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Gagal memuat riwayat.</div>';
-            return;
-          }
-          const data = json.riwayat || [];
-          if (data.length === 0 || !data[0].items.length) {
-            wrapper.innerHTML =
-              '<div class="text-center py-4 text-body-secondary">Tidak ada data pada tanggal tersebut.</div>';
-            return;
-          }
-          let html = '';
-          data.forEach(group => {
-            html += `<div class="mt-3"><strong>${formatDateDisplay(group.date)}</strong>`;
-            const byChild = {};
-            (group.items || []).forEach(it => {
-              const child = it.anak || '-';
-              if (!byChild[child]) byChild[child] = [];
-              byChild[child].push(it);
-            });
-            Object.keys(byChild).forEach(child => {
-              html +=
-                `<div class="mt-2"><div class="fw-semibold">${child}</div><div class="list-group mt-2">`;
-              (byChild[child] || []).forEach(it => {
-                html += `<div class="list-group-item d-flex justify-content-between align-items-start">
 									<div>
 										<div class="fw-semibold">${it.program_display || it.program || '-'}</div>
 										<div class="text-muted small">Waktu: ${it.waktu || '-'}</div>
@@ -401,19 +422,79 @@
 										<span class="badge ${it.status === 'Tepat Waktu' ? 'bg-success' : (it.status === 'Belum Dinilai' ? 'bg-danger text-white' : 'bg-warning text-dark')}">${it.status}</span>
 									</div>
 								</div>`;
-              });
-              html += `</div></div>`;
             });
-            html += '</div>';
+            html += `</div></div>`;
           });
-          wrapper.innerHTML = html;
-        } catch (err) {
-          console.error(err);
-          wrapper.innerHTML =
-            '<div class="text-center py-4 text-body-secondary">Terjadi kesalahan saat memuat riwayat.</div>';
-        }
-      })();
-    });
+          html += '</div>';
+        });
+        wrapper.innerHTML = html;
+      } catch (err) {
+        console.error(err);
+        wrapper.innerHTML =
+          '<div class="text-center py-4 text-body-secondary">Terjadi kesalahan saat memuat riwayat.</div>';
+      }
+    })();
+  });
+</script>
+@endpush
 
-  </script>
-  @endpush
+@if(request('tab') === 'peringkat')
+@push('page-script')
+<script>
+  // Remove `tab=peringkat` from URL after initial load so hard refresh returns to default tab
+  (function() {
+    try {
+      const u = new URL(window.location.href);
+      if (u.searchParams.get('tab') === 'peringkat') {
+        u.searchParams.delete('tab');
+        const newUrl = u.pathname + (u.search ? ('?' + u.searchParams.toString()) : '') + u.hash;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    } catch (e) {
+      // ignore
+    }
+  })();
+</script>
+@endpush
+@endif
+
+@push('page-script')
+<script>
+  // Refresh peringkatTab by fetching the server-rendered fragment
+  async function refreshPeringkat() {
+    try {
+      const monthInput = document.querySelector('input[name="month"]');
+      const month = monthInput ? monthInput.value : '';
+      const url = '/kedisiplinan' + (month ? ('?month=' + encodeURIComponent(month) + '&tab=peringkat') :
+        '?tab=peringkat');
+      const res = await fetch(url, {
+        credentials: 'same-origin'
+      });
+      const txt = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(txt, 'text/html');
+      const newTab = doc.getElementById('peringkatTab');
+      const curTab = document.getElementById('peringkatTab');
+      if (newTab && curTab) {
+        curTab.innerHTML = newTab.innerHTML;
+      }
+    } catch (err) {
+      console.error('Failed to refresh peringkat', err);
+    }
+  }
+
+  // Refresh when the Peringkat tab is shown
+  document.addEventListener('shown.bs.tab', function(e) {
+    const target = e.target && e.target.getAttribute('data-bs-target');
+    if (target === '#peringkatTab' || target === ' #peringkatTab') {
+      refreshPeringkat();
+    }
+  });
+
+  // Also listen for a custom event `assessment:created` so other scripts
+  // (assessment form JS) can dispatch `window.dispatchEvent(new Event('assessment:created'))`
+  window.addEventListener('assessment:created', function() {
+    refreshPeringkat();
+  });
+</script>
+@endpush
