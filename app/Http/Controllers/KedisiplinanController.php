@@ -116,7 +116,10 @@ class KedisiplinanController extends Controller
       }
 
       $names = array_keys($namesSet);
+      // keep unique names for matching, but compute total instances across children
+      // i.e. sum of each child's wajib program count (do not deduplicate same program across different children)
       $totalWajib = count($names);
+      $totalWajibInstances = 0;
 
       // fetch assessments within target range for these anakIds
       // keep `created_at` for determining the time of the assessment (on-time vs late)
@@ -238,6 +241,7 @@ class KedisiplinanController extends Controller
         }
         $namesAnak = array_keys($namesSetAnak);
         $totalWajibAnak = count($namesAnak);
+        $totalWajibInstances += $totalWajibAnak;
         // compute per-anak counts from matched assessments grouped earlier
         $assessedAnak = isset($assessmentsByAnak[$aid]) ? count($assessmentsByAnak[$aid]['all']) : 0;
         $onTimeAnak = isset($assessmentsByAnak[$aid]) ? count($assessmentsByAnak[$aid]['on_time']) : 0;
@@ -310,7 +314,8 @@ class KedisiplinanController extends Controller
 
       $rows[] = (object) [
         'guru' => $guru,
-        'total_wajib' => $totalWajib,
+        // show total wajib as total instances across all children (so duplicates across different children are counted)
+        'total_wajib' => $totalWajibInstances,
         'assessed_count' => $doneCount,
         'on_time_count' => $onTimePrograms,
         'late_count' => $latePrograms,
