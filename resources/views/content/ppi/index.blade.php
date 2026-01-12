@@ -482,6 +482,12 @@
               </div>`;
           });
           listDiv.innerHTML = html;
+          // initialize bootstrap tooltips for dynamically added tooltip buttons inside the riwayat list
+          try {
+            Array.from(listDiv.querySelectorAll('[data-bs-toggle="tooltip"]')).forEach(el => new bootstrap.Tooltip(el));
+          } catch (e) {
+            // ignore tooltip initialization errors
+          }
         }).catch(() => {
           listDiv.innerHTML = '<div class="text-danger text-center">Gagal memuat data.</div>';
         });
@@ -561,7 +567,7 @@
         let html = '';
         html += `<div class="card">`;
         html += `<div class="card-body">`;
-        html += `<h6 class="card-title">Program Riwayat - ${data.anak ? data.anak.nama : ''}</h6>`;
+        html += `<div class="d-flex align-items-start justify-content-between"><h6 class="card-title mb-0">Program Riwayat - ${data.anak ? data.anak.nama : ''}</h6><button type="button" class="p-0 border-0 bg-transparent text-decoration-none ms-2 d-inline-flex" data-bs-toggle="tooltip" data-bs-placement="top" title="Mengaktifkan toggle akan menjadikan program ini wajib" aria-label="Info wajib"><i class="ri-information-line"></i></button></div>`;
         if (data.items && data.items.length) {
           // group items by kategori
           const groups = {};
@@ -606,7 +612,12 @@
               const wajibChecked = (item.aktif == 1 || item.aktif === true || item.aktif === '1') ? 'checked' : '';
               let adminToggleHtml = '';
               if (window.CURRENT_USER_ROLE === 'admin') {
-                adminToggleHtml = `<div class="form-check form-switch d-inline-block ms-2"><input class="form-check-input ppi-wajib-toggle" type="checkbox" data-item-id="${item.id}" ${wajibChecked}><label class="form-check-label small ms-1">Wajib</label></div>`;
+                adminToggleHtml = `
+                  <div class="d-inline-flex align-items-center ms-2">
+                    <div class="form-check form-switch m-0">
+                      <input class="form-check-input ppi-wajib-toggle" type="checkbox" data-item-id="${item.id}" ${wajibChecked} aria-label="Wajib">
+                    </div>
+                  </div>`;
               }
               // for guru users (guru fokus), show a read-only red "Wajib" badge when aktif
               let guruBadgeHtml = '';
@@ -617,7 +628,8 @@
               const rightHtml = adminToggleHtml || guruBadgeHtml || '';
 
               html += `<li class="list-group-item">`;
-              html += `<div class="d-flex justify-content-between align-items-start"><div><strong>${num}. ${progName}</strong></div><div>${rightHtml}</div></div>`;
+              // layout: left content grows, right control stays no-shrink at the far right
+              html += `<div class="d-flex w-100 align-items-start"><div class="flex-grow-1"><strong>${num}. ${progName}</strong></div><div class="flex-shrink-0 ms-2 text-end">${rightHtml}</div></div>`;
               if (item.notes) html += `<div class="small text-muted mt-1">${item.notes}</div>`;
               html += `</li>`;
             });
@@ -637,6 +649,13 @@
         html += `</div></div>`;
 
         container.innerHTML = html;
+        // initialize tooltip inside the rendered detail card (for mobile info icon)
+        try {
+          const tipEl = container.querySelector('[data-bs-toggle="tooltip"]');
+          if (tipEl) new bootstrap.Tooltip(tipEl);
+        } catch (e) {
+          // ignore
+        }
         container.dataset.loaded = '1';
       } catch (e) {
         const container = document.getElementById('ppiDetailContainer' + (id || (btn && btn.getAttribute ? btn
