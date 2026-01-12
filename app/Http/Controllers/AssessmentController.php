@@ -14,6 +14,7 @@ use App\Models\PpiItem;
 use App\Models\Program;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
 use App\Services\ActivityService;
 
@@ -32,38 +33,33 @@ class AssessmentController extends Controller
    */
   public function index(Request $request)
   {
-    $query = Assessment::with('anakDidik', 'konsultan')
-      ->join('anak_didiks', 'assessments.anak_didik_id', '=', 'anak_didiks.id')
-      ->select('assessments.*')
-      ->orderBy('anak_didiks.nama', 'asc');
+    // List AnakDidik that have a guru fokus (A-Z), paginated 10 per page
+    $query = AnakDidik::with('guruFokus')->whereNotNull('guru_fokus_id')->orderBy('nama', 'asc');
 
-    // Filter by konsultan for non-admin
-    $user = Auth::user();
-    if ($user->role === 'konsultan') {
-      $konsultan = Konsultan::where('user_id', $user->id)->first();
-      if ($konsultan) {
-        $query->where('konsultan_id', $konsultan->id);
-      }
-    }
-
-    // Search by nama anak
+    // Search by nama or NIS
     if ($request->filled('search')) {
       $search = $request->search;
-      $query->whereHas('anakDidik', function ($q) use ($search) {
+      $query->where(function ($q) use ($search) {
         $q->where('nama', 'like', "%{$search}%")
           ->orWhere('nis', 'like', "%{$search}%");
       });
     }
 
-    // Filter by kategori
-    if ($request->filled('kategori')) {
-      $query->where('kategori', $request->kategori);
-    }
+    $perPage = 10;
+    $paginated = $query->paginate($perPage)->appends($request->query());
 
-    $assessments = $query->paginate(10)->appends($request->query());
+    // convert each AnakDidik model into an object with `anakDidik` property to keep view compatibility
+    $paginated->getCollection()->transform(function ($a) {
+      $obj = new \stdClass();
+      $obj->id = $a->id;
+      $obj->anakDidik = $a;
+      return $obj;
+    });
+
+    $assessments = $paginated;
 
     // Prepare wajib counts: total mandatory programs per anak and how many were assessed today
-    $anakIds = $assessments->pluck('anak_didik_id')->unique()->filter()->values()->all();
+    $anakIds = collect($assessments->getCollection())->pluck('anakDidik')->pluck('id')->all();
     $wajibTotals = [];
     $wajibDoneToday = [];
     foreach ($anakIds as $anakId) {
@@ -131,8 +127,11 @@ class AssessmentController extends Controller
       $assignedIds = GuruAnakDidik::where('user_id', $user->id)->where('status', 'aktif')->pluck('anak_didik_id')->toArray();
       // support multiple possible approval status values (localized or different conventions)
       $positiveStatuses = ['approved', 'accepted', 'disetujui', 'approve', 'approved_by_admin', 'accepted_by_admin'];
+      // Only consider approvals that are recent (still within temporary access window)
       $approvedIds = GuruAnakDidikApproval::where('requester_user_id', $user->id)
         ->whereIn('status', $positiveStatuses)
+        ->whereNotNull('approved_at')
+        ->where('approved_at', '>=', now()->subMinutes(600))
         ->pluck('anak_didik_id')
         ->toArray();
 
@@ -287,39 +286,88 @@ class AssessmentController extends Controller
       ->where('anak_didik_id', $anakId)
       ->orderBy('tanggal_assessment')
       ->get();
-
+    // Build per-program per-date selection: prefer latest assessment by guru_fokus (if any),
+    // otherwise pick latest assessment overall for that date.
     $grouped = [];
-    foreach ($assessments as $a) {
-      $progName = $a->program ? $a->program->nama_program : ($a->program_id ? ('Program #' . $a->program_id) : 'Umum');
-      $pid = $a->program_id ?? 'general';
-
-      // determine a numeric score: prefer 'perkembangan', else average kemampuan skala
-      $score = null;
-      if (!is_null($a->perkembangan)) {
-        $score = (float) $a->perkembangan;
-      } elseif (is_array($a->kemampuan) && count($a->kemampuan) > 0) {
-        $vals = array_map(function ($k) {
-          return isset($k['skala']) ? (float) $k['skala'] : null;
-        }, $a->kemampuan);
-        $vals = array_filter($vals, function ($v) {
-          return $v !== null;
-        });
-        if (count($vals) > 0) $score = array_sum($vals) / count($vals);
+    // determine guru_fokus user id for this anak (if available)
+    $guruUserId = null;
+    try {
+      $anak = AnakDidik::find($anakId);
+      if ($anak && $anak->guru_fokus_id) {
+        $k = Karyawan::find($anak->guru_fokus_id);
+        if ($k && isset($k->user_id)) $guruUserId = $k->user_id;
       }
+    } catch (\Throwable $e) {
+      $guruUserId = null;
+    }
 
-      if (!isset($grouped[$pid])) {
-        $grouped[$pid] = [
-          'id' => $pid,
-          'nama_program' => $progName,
-          'kategori' => $a->program ? $a->program->kategori : null,
-          'datapoints' => []
+    // organize assessments by program id (or 'general') then by date
+    $byProgDate = [];
+    $progMeta = [];
+    foreach ($assessments as $a) {
+      $pid = $a->program_id ?? 'general';
+      $progName = $a->program ? $a->program->nama_program : ($a->program_id ? ('Program #' . $a->program_id) : 'Umum');
+      $dateKey = $a->tanggal_assessment ? (string)$a->tanggal_assessment->toDateString() : ($a->created_at ? (string)$a->created_at->toDateString() : null);
+      if (!$dateKey) continue;
+      if (!isset($byProgDate[$pid])) $byProgDate[$pid] = [];
+      if (!isset($byProgDate[$pid][$dateKey])) $byProgDate[$pid][$dateKey] = [];
+      $byProgDate[$pid][$dateKey][] = $a;
+      if (!isset($progMeta[$pid])) {
+        $progMeta[$pid] = ['nama_program' => $progName, 'kategori' => $a->program ? $a->program->kategori : null];
+      }
+    }
+
+    // select chosen assessment per program per date
+    foreach ($byProgDate as $pid => $dates) {
+      $grouped[$pid] = [
+        'id' => $pid,
+        'nama_program' => $progMeta[$pid]['nama_program'] ?? null,
+        'kategori' => $progMeta[$pid]['kategori'] ?? null,
+        'datapoints' => []
+      ];
+      foreach ($dates as $dateKey => $arr) {
+        // prefer assessments by guruUserId (if present)
+        $chosen = null;
+        if ($guruUserId) {
+          $byGuru = array_filter($arr, function ($x) use ($guruUserId) {
+            return isset($x->user_id) && $x->user_id == $guruUserId;
+          });
+          if (!empty($byGuru)) {
+            usort($byGuru, function ($x, $y) {
+              return strtotime($y->created_at) - strtotime($x->created_at);
+            });
+            $chosen = $byGuru[0];
+          }
+        }
+        // fallback: choose latest by created_at
+        if (!$chosen) {
+          usort($arr, function ($x, $y) {
+            return strtotime($y->created_at) - strtotime($x->created_at);
+          });
+          $chosen = $arr[0];
+        }
+
+        // compute score for chosen assessment
+        $score = null;
+        if ($chosen) {
+          if (!is_null($chosen->perkembangan)) {
+            $score = (float) $chosen->perkembangan;
+          } elseif (is_array($chosen->kemampuan) && count($chosen->kemampuan) > 0) {
+            $vals = array_map(function ($k) {
+              return isset($k['skala']) ? (float) $k['skala'] : null;
+            }, $chosen->kemampuan);
+            $vals = array_filter($vals, function ($v) {
+              return $v !== null;
+            });
+            if (count($vals) > 0) $score = array_sum($vals) / count($vals);
+          }
+        }
+
+        $grouped[$pid]['datapoints'][] = [
+          'tanggal' => $dateKey,
+          'score' => $score !== null ? $score : null,
         ];
       }
-
-      $grouped[$pid]['datapoints'][] = [
-        'tanggal' => $a->tanggal_assessment ? $a->tanggal_assessment->toDateString() : ($a->created_at ? $a->created_at->toDateString() : null),
-        'score' => $score !== null ? $score : null,
-      ];
     }
 
     // Convert grouped to indexed array and sort datapoints by tanggal

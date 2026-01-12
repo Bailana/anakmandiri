@@ -171,7 +171,11 @@ class KedisiplinanController extends Controller
         }
       }
 
-      $doneCount = count($matchedNames);
+      // count assessed instances per anak (if same program assessed for multiple children, count each)
+      $doneCount = 0;
+      foreach ($byAnak as $aidKey => $progMap) {
+        $doneCount += is_array($progMap) ? count($progMap) : (is_object($progMap) ? count((array)$progMap) : 0);
+      }
 
       // determine on-time vs late by scanning all matched assessments in the range
       $onTimePrograms = 0;

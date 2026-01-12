@@ -397,17 +397,7 @@
             </tr>
           </thead>
           <tbody>
-            @php
-            // Deduplicate by anak didik on the current page, keeping first occurrence
-            $unique = [];
-            foreach ($assessments as $a) {
-            $id = optional($a->anakDidik)->id ?? 0;
-            if (!isset($unique[$id])) $unique[$id] = $a;
-            }
-            $unique = array_values($unique);
-            @endphp
-
-            @forelse($unique as $index => $assessment)
+            @forelse($assessments as $index => $assessment)
             <tr id="row-{{ $assessment->id }}">
               <td>{{ ($assessments->currentPage() - 1) * $assessments->perPage() + $index + 1 }}</td>
               <td>
