@@ -15,7 +15,7 @@
         <div class="d-flex justify-content-between align-items-center">
           <div>
             <h4 class="mb-0">Kedisiplinan</h4>
-            <p class="text-body-secondary mb-0">Kelola catatan kedisiplinan anak didik</p>
+            <p class="text-body-secondary mb-0">Kelola catatan kedisiplinan guru fokus</p>
           </div>
         </div>
       </div>

@@ -211,6 +211,7 @@ class AssessmentController extends Controller
   {
     $anakId = $request->query('anak_didik_id');
     $kategori = $request->query('kategori');
+    $tanggalQuery = $request->query('tanggal') ?? $request->query('tanggal_assessment') ?? null;
 
     if (!$anakId || !$kategori) {
       return response()->json(['success' => false, 'programs' => []]);
@@ -241,6 +242,17 @@ class AssessmentController extends Controller
       $names[$name] = $name;
     }
 
+    // determine target date for excluding already-assessed programs
+    // Only apply exclusion when caller explicitly provided a tanggal/tanggal_assessment parameter.
+    $targetDate = null;
+    if ($tanggalQuery) {
+      try {
+        $targetDate = Carbon::parse($tanggalQuery)->toDateString();
+      } catch (\Throwable $e) {
+        $targetDate = null;
+      }
+    }
+
     $result = [];
     if (Schema::hasTable('programs')) {
       foreach ($names as $name) {
@@ -252,11 +264,35 @@ class AssessmentController extends Controller
           'konsultan_id' => null,
           'deskripsi' => null,
         ]);
+
+
+        // if targetDate provided, skip program if an assessment exists for this anak & program on that date
+        if ($targetDate) {
+          $already = Assessment::where('anak_didik_id', $anakId)
+            ->where('program_id', $prog->id)
+            ->whereDate('tanggal_assessment', $targetDate)
+            ->exists();
+          if ($already) continue;
+        }
+
         $result[] = ['id' => $prog->id, 'nama_program' => $prog->nama_program];
       }
     } else {
       // return names with null id so frontend can display them; selection will leave program_id null
       foreach ($names as $name) {
+        // for non-Program rows (id=null), try to detect if an assessment mentioning the program name
+        // already exists on target date for this anak; only skip if targetDate provided
+        if ($targetDate) {
+          $nm = trim(strtolower($name));
+          $already = Assessment::where('anak_didik_id', $anakId)
+            ->whereDate('tanggal_assessment', $targetDate)
+            ->where(function ($q) use ($nm) {
+              $q->whereRaw('LOWER(COALESCE(hasil_penilaian, "")) LIKE ?', ["%{$nm}%"])
+                ->orWhereRaw('LOWER(COALESCE(aktivitas, "")) LIKE ?', ["%{$nm}%"]);
+            })->exists();
+          if ($already) continue;
+        }
+
         $result[] = ['id' => null, 'nama_program' => $name];
       }
     }

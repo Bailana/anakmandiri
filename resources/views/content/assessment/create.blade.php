@@ -40,6 +40,14 @@
 
           <div class="row mb-3 g-3 align-items-end">
             <div class="col-md-6">
+              <label class="form-label">Tanggal Penilaian</label>
+              <input type="date" name="tanggal_assessment" class="form-control @error('tanggal_assessment') is-invalid @enderror"
+                value="{{ old('tanggal_assessment') }}">
+              @error('tanggal_assessment')
+              <span class="invalid-feedback">{{ $message }}</span>
+              @enderror
+            </div>
+            <div class="col-md-6">
               <label class="form-label">Kategori Penilaian <span class="text-danger">*</span></label>
               <select name="kategori" class="form-select @error('kategori') is-invalid @enderror" required>
                 <option value="">Pilih Kategori</option>
@@ -50,16 +58,6 @@
                 <option value="vokasi" {{ old('kategori') === 'vokasi' ? 'selected' : '' }}>Vokasi</option>
               </select>
               @error('kategori')
-              <span class="invalid-feedback">{{ $message }}</span>
-              @enderror
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Program</label>
-              <select name="program_id" id="program_id" class="form-select @error('program_id') is-invalid @enderror">
-                <option value="">Pilih Program</option>
-                {{-- Opsi program akan diisi via JS jika ingin dinamis, atau bisa diisi semua program dari backend jika ingin statis --}}
-              </select>
-              @error('program_id')
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>
@@ -83,10 +81,12 @@
             </div>
             @endif
             <div class="col-md-6">
-              <label class="form-label">Tanggal Penilaian</label>
-              <input type="date" name="tanggal_assessment" class="form-control @error('tanggal_assessment') is-invalid @enderror"
-                value="{{ old('tanggal_assessment') }}">
-              @error('tanggal_assessment')
+              <label class="form-label">Program</label>
+              <select name="program_id" id="program_id" class="form-select @error('program_id') is-invalid @enderror">
+                <option value="">Pilih Program</option>
+                {{-- Opsi program akan diisi via JS jika ingin dinamis, atau bisa diisi semua program dari backend jika ingin statis --}}
+              </select>
+              @error('program_id')
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
             </div>
@@ -175,8 +175,11 @@
         programEl.innerHTML = '<option value="">Pilih Program</option>';
         return;
       }
+      const tanggalEl = document.querySelector('input[name="tanggal_assessment"]');
+      const tanggal = tanggalEl ? tanggalEl.value : '';
       programEl.innerHTML = '<option value="">Memuat...</option>';
-      const url = `/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anak)}&kategori=${encodeURIComponent(kategori)}`;
+      let url = `/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anak)}&kategori=${encodeURIComponent(kategori)}`;
+      if (tanggal) url += `&tanggal=${encodeURIComponent(tanggal)}`;
       console.debug('Loading programs from', url);
       fetch(url, {
           credentials: 'same-origin'
@@ -206,8 +209,10 @@
         });
     }
 
+    const tanggalEl = document.querySelector('input[name="tanggal_assessment"]');
     if (anakEl) anakEl.addEventListener('change', loadPrograms);
     if (kategoriEl) kategoriEl.addEventListener('change', loadPrograms);
+    if (tanggalEl) tanggalEl.addEventListener('change', loadPrograms);
 
     // load on page load if both selected (old input)
     if (anakEl && kategoriEl && anakEl.value && kategoriEl.value) loadPrograms();
