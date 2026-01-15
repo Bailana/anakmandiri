@@ -163,7 +163,8 @@
       };
 
       try {
-        const results = await Promise.all(kategoriKeys.map(k => fetch(`/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anakDidikId)}&kategori=${encodeURIComponent(k)}`, {
+        // Request PPI programs including inactive ones so riwayat view shows all programs
+        const results = await Promise.all(kategoriKeys.map(k => fetch(`/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anakDidikId)}&kategori=${encodeURIComponent(k)}&include_inactive=1`, {
           credentials: 'same-origin'
         }).then(r => r.json().catch(() => null)).catch(() => null)));
 
@@ -272,6 +273,80 @@
         wrapper.innerHTML = html;
       } catch (err) {
         console.error('Failed to load ppi programs', err);
+        // Fallback: if we have riwayat data, build groups from it so modal still shows programs
+        try {
+          if (data && Array.isArray(data.riwayat) && data.riwayat.length) {
+            // clear any existing groups
+            Object.keys(groupMap).forEach(k => delete groupMap[k]);
+            // build groups directly from history items
+            data.riwayat.forEach(group => {
+              (group.items || []).forEach(it => {
+                const rawKat = it.kategori || 'Lainnya';
+                const g = ensureGroup(rawKat);
+                const exists = g.items.find(x => (x.id && it.id && x.id == it.id) || (x.nama_program && it.nama_program && x.nama_program === it.nama_program));
+                if (!exists) g.items.push({
+                  id: it.id || null,
+                  nama_program: it.nama_program || '-',
+                  kategori: rawKat
+                });
+              });
+            });
+
+            // render (same renderer as below)
+            let html = '';
+            Object.keys(groupMap).sort().forEach(k => {
+              const g = groupMap[k];
+              if (normalizeKey(g.raw) === 'lainnya') {
+                // include Lainnya as well to surface unmapped/inactive programs
+              }
+              html += `<div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge ${badgeFor(g.raw)} text-uppercase">${g.label}</span>
+                <strong class="ms-2">${g.items.length} item</strong>
+              </div>
+            </div>`;
+
+              if (!g.items.length) {
+                html += '<div class="text-body-secondary small">(Tidak ada program pada kategori ini)</div>';
+              } else {
+                html += '<div class="list-group">';
+                g.items.forEach(p => {
+                  const name = p.nama_program || '-';
+                  const keyId = p.id ? `id:${p.id}` : `name:${String((p.nama_program || '').trim().toLowerCase())}`;
+                  const dates = historyIndex[keyId] || [];
+                  const dateText = (function() {
+                    const nameKey = String(name || '').trim().toLowerCase();
+                    if (scoreIndex && typeof scoreIndex[nameKey] !== 'undefined') {
+                      const s = scoreIndex[nameKey];
+                      return 'Skor: ' + (Number.isInteger(s) ? s : (Math.round(s * 10) / 10));
+                    }
+                    return dates.length ? dates[0] : '-';
+                  })();
+                  const pid = String(p.id || p.nama_program || '').replace(/'/g, "\\'");
+                  html += `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="fw-semibold">${name}</div>
+                    <div class="text-muted small">${dateText}</div>
+                  </div>
+                  <div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectProgramAndClose(${anakDidikId}, '${pid}')" title="Lihat"><i class="ri-bar-chart-line"></i></button>
+                  </div>
+                </div>`;
+                });
+                html += '</div>';
+              }
+
+              html += '</div>';
+            });
+            wrapper.innerHTML = html;
+            return;
+          }
+        } catch (e) {
+          console.debug('Fallback rendering from riwayat failed', e);
+        }
+
         wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Gagal memuat daftar program.</div>';
       }
     } catch (err) {
