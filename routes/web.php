@@ -146,14 +146,17 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('program', 'App\Http\Controllers\ProgramController');
     Route::post('program/{id}/approve', [App\Http\Controllers\ProgramController::class, 'approve'])->name('program.approve');
     Route::resource('pengguna', 'App\Http\Controllers\PenggunaController');
-    // Kedisiplinan - tampilan index untuk admin
-    Route::get('kedisiplinan', [App\Http\Controllers\KedisiplinanController::class, 'index'])->name('kedisiplinan.index');
-    Route::get('kedisiplinan/{guru}/riwayat', [App\Http\Controllers\KedisiplinanController::class, 'riwayat'])->name('kedisiplinan.riwayat');
+    // Kedisiplinan - admin-only routes removed from here so we can allow guru access separately
   });
   // Allow konsultan, terapis, admin, and guru to view program index/show (read-only for guru)
   Route::middleware(['auth', 'role:admin,konsultan,terapis,guru'])->group(function () {
     Route::get('program/{id}/export-pdf', [App\Http\Controllers\ProgramController::class, 'exportPdf'])->name('program.export-pdf');
     Route::resource('program', 'App\Http\Controllers\ProgramController')->only(['index', 'show']);
+  });
+  // Kedisiplinan: allow both admin and guru to access the index and riwayat
+  Route::middleware(['auth', 'role:admin,guru'])->group(function () {
+    Route::get('kedisiplinan', [App\Http\Controllers\KedisiplinanController::class, 'index'])->name('kedisiplinan.index');
+    Route::get('kedisiplinan/{guru}/riwayat', [App\Http\Controllers\KedisiplinanController::class, 'riwayat'])->name('kedisiplinan.riwayat');
   });
   Route::middleware(['auth', 'role:konsultan'])->group(function () {
     Route::resource('program', 'App\Http\Controllers\ProgramController')->only(['create', 'store']);

@@ -35,9 +35,14 @@ use Illuminate\Support\Facades\Route;
         }
         // Allow role 'terapis' and 'guru' to access certain menus even if menu roles don't include it
         if (isset($menu->slug) && auth()->check() && in_array(auth()->user()->role, ['terapis','guru'])) {
+        $role = auth()->user()->role;
         $slugStr = is_array($menu->slug) ? implode(',', $menu->slug) : $menu->slug;
-        // Anak Didik, Observasi/Evaluasi (program.index) and Program Anak should be visible to terapis
+        // Anak Didik, Observasi/Evaluasi (program.index) and Program Anak should be visible to terapis/guru
         if (str_contains($slugStr, 'anak-didik') || str_contains($slugStr, 'program.index') || str_contains($slugStr, 'program-anak') || str_contains($slugStr, 'program')) {
+        $showMenu = true;
+        }
+        // Kedisiplinan should only be visible to guru (not terapis)
+        if (str_contains($slugStr, 'kedisiplinan') && $role === 'guru') {
         $showMenu = true;
         }
         }

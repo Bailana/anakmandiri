@@ -33,20 +33,61 @@ class AssessmentController extends Controller
    */
   public function index(Request $request)
   {
-    // List AnakDidik that have a guru fokus (A-Z), paginated 10 per page
-    $query = AnakDidik::with('guruFokus')->whereNotNull('guru_fokus_id')->orderBy('nama', 'asc');
-
-    // Search by nama or NIS
-    if ($request->filled('search')) {
-      $search = $request->search;
-      $query->where(function ($q) use ($search) {
-        $q->where('nama', 'like', "%{$search}%")
-          ->orWhere('nis', 'like', "%{$search}%");
-      });
-    }
-
+    // List AnakDidik (paginated). If logged in as `guru`, restrict to:
+    // - anak yang memiliki guru_fokus = guru ini
+    // - anak yang diberi akses via GuruAnakDidik (assigned)
+    // - anak yang diberi persetujuan sementara via GuruAnakDidikApproval (approved)
+    // Untuk role lain, show all anak dengan guru_fokus.
     $perPage = 10;
-    $paginated = $query->paginate($perPage)->appends($request->query());
+    if (Auth::check() && Auth::user()->role === 'guru') {
+      $user = Auth::user();
+      // assigned children via explicit assignment table
+      $assignedIds = GuruAnakDidik::where('user_id', $user->id)->where('status', 'aktif')->pluck('anak_didik_id')->toArray();
+      // temporary approvals (same logic as create view)
+      $positiveStatuses = ['approved', 'accepted', 'disetujui', 'approve', 'approved_by_admin', 'accepted_by_admin'];
+      $approvedIds = GuruAnakDidikApproval::where('requester_user_id', $user->id)
+        ->whereIn('status', $positiveStatuses)
+        ->whereNotNull('approved_at')
+        ->where('approved_at', '>=', now()->subMinutes(600))
+        ->pluck('anak_didik_id')
+        ->toArray();
+
+      // children where this guru is the recorded guru_fokus
+      $karyawan = Karyawan::where('nama', $user->name)->first();
+      $fokusIds = [];
+      if ($karyawan) {
+        $fokusIds = AnakDidik::where('guru_fokus_id', $karyawan->id)->pluck('id')->toArray();
+      }
+
+      $ids = array_values(array_unique(array_merge($assignedIds, $approvedIds, $fokusIds)));
+
+      if (count($ids) > 0) {
+        $query = AnakDidik::with('guruFokus')->whereIn('id', $ids)->orderBy('nama', 'asc');
+        if ($request->filled('search')) {
+          $search = $request->search;
+          $query->where(function ($q) use ($search) {
+            $q->where('nama', 'like', "%{$search}%")
+              ->orWhere('nis', 'like', "%{$search}%");
+          });
+        }
+        $paginated = $query->paginate($perPage)->appends($request->query());
+      } else {
+        // no children available for this guru -> empty paginator
+        $paginated = new LengthAwarePaginator(collect([]), 0, $perPage, 1, ['path' => LengthAwarePaginator::resolveCurrentPath()]);
+      }
+    } else {
+      // default behaviour for non-guru users
+      $query = AnakDidik::with('guruFokus')->whereNotNull('guru_fokus_id')->orderBy('nama', 'asc');
+      // Search by nama or NIS
+      if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function ($q) use ($search) {
+          $q->where('nama', 'like', "%{$search}%")
+            ->orWhere('nis', 'like', "%{$search}%");
+        });
+      }
+      $paginated = $query->paginate($perPage)->appends($request->query());
+    }
 
     // convert each AnakDidik model into an object with `anakDidik` property to keep view compatibility
     $paginated->getCollection()->transform(function ($a) {
@@ -84,10 +125,12 @@ class AssessmentController extends Controller
         })->pluck('id')->toArray();
 
         if (!empty($programs)) {
+          // count unique programs assessed today (distinct program_id)
           $done = \App\Models\Assessment::where('anak_didik_id', $anakId)
             ->whereDate('tanggal_assessment', Carbon::today())
             ->whereIn('program_id', $programs)
-            ->count();
+            ->distinct('program_id')
+            ->count('program_id');
         } else {
           // no matching Program records; fallback: try to count assessments whose hasil_penilaian or aktivitas mention the program name
           $doneCount = 0;
