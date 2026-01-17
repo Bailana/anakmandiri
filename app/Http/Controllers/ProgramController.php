@@ -330,7 +330,7 @@ class ProgramController extends Controller
         'anak_didik_id' => 'required|exists:anak_didiks,id',
         'kemampuan' => 'nullable|array',
         'kemampuan.*.judul' => 'required_with:kemampuan|string',
-        'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:5',
+        'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:6',
         'wawancara' => 'nullable|string', // ini akan jadi keterangan
         'diagnosa' => 'nullable|string',
       ];
@@ -613,7 +613,7 @@ class ProgramController extends Controller
       $rules = [
         'anak_didik_id' => 'required|exists:anak_didiks,id',
         'kemampuan.*.judul' => 'nullable|string',
-        'kemampuan.*.skala' => 'nullable|integer|min:1|max:5',
+        'kemampuan.*.skala' => 'nullable|integer|min:1|max:6',
         'wawancara' => 'nullable|string',
         'diagnosa' => 'nullable|string',
       ];

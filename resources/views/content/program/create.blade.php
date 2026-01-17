@@ -13,9 +13,6 @@
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Tambah Observasi/Evaluasi</h5>
         <!-- Mobile: icon-only circular back button (transparent, matches anak-didik detail); Desktop: text back button -->
-        <a href="{{ route('program.index') }}" class="btn p-0 border-0 bg-transparent d-inline-flex d-sm-none align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
-          <i class="ri-arrow-left-circle-fill" style="font-size:2em;font-weight:bold;"></i>
-        </a>
         <a href="{{ route('program.index') }}" class="btn btn-secondary d-none d-sm-inline-flex btn-sm align-items-center">
           <i class="ri-arrow-left-line me-2"></i>Kembali
         </a>
@@ -155,27 +152,8 @@
                 </style>
                 <table class="table table-bordered align-middle">
                   <thead class="table-light">
-                    <tr>
-                      <th style="width:40%">Kemampuan</th>
-                      <th colspan="5" class="text-center">Skala Penilaian</th>
-                    </tr>
-                    <tr>
-                      <th></th>
-                      <th class="text-center">1<br><small>Tidak Mampu</small></th>
-                      <th class="text-center">2<br><small>Kurang Mampu</small></th>
-                      <th class="text-center">3<br><small>Cukup Mampu</small></th>
-                      <th class="text-center">4<br><small>Mampu</small></th>
-                      <th class="text-center">5<br><small>Sangat Mampu</small></th>
-                    </tr>
-                  </thead>
-                  <tbody>
                     @php
-                    $kemampuanWicara = [
-                    'Kontak mata','Atensi','Simbolik play','Pralinguistik 1','Pralingustik 2','Paham instruksi','Kata Benda','Kata kerja','Kata Sifat','Konsep waktu','Paham frasa','Paham kalimat','Paham kata tanya','Menamai tingkat kata','Menamai tingkat frasa','Menamai tingkat kalimat','Bercerita','Menjawab pertanyaan sederhana','Menyebutkan','Auditory','Visual','Taktil','Motorik kasar','Motorik halus','Motorik oral','Menggigit, mengunyah dan menelan','Komunikasi sosial','Pernafasan','Suara','Artikulasi','Kelancaran'
-                    ];
-                    $kemampuanSI = [
-                    'Activity Level','Social Interaction','Frustration Tolerance','Attention','Postural Control','Muscle Tone & Joint Stability','Gravitational Security','Bilateral Motor Coordination','Oculomotor Control','Sensori Modulasi & Registrasi (Umum)','Sensori Modulasi & Registrasi Visual','Sensori Modulasi & Registrasi Auditory','Sensori Modulasi & Registrasi Tactile','Sensori Modulasi & Registrasi Proprioseptif','Sensori Modulasi & Registrasi Vestibular','Sensori Modulasi & Registrasi Body Awareness','Praxis (Umum)','Praxis Space Visualization','Praxis Design Copying','Praxis Postural Praxis','Praxis Sequencing Praxis','Praxis Oral Praxis','Auditory Praxis','Praxis Finger Identification','Praxis Localization of Tactile Stimuli'
-                    ];
+                    // Tentukan spesialisasi konsultan terlebih dahulu agar $isSI tersedia
                     $isWicara = false;
                     $isSI = false;
                     if (old('konsultan_id')) {
@@ -187,6 +165,31 @@
                     $isWicara = $konsultan && strtolower($konsultan->spesialisasi) === 'wicara';
                     $isSI = $konsultan && strtolower($konsultan->spesialisasi) === 'sensori integrasi';
                     }
+
+                    $skalaCount = $isSI ? 6 : 5;
+                    $skalaLabels = $isSI
+                    ? [1 => 'Tidak ada', 2 => 'Kurang sekali', 3 => 'Kurang', 4 => 'Cukup', 5 => 'Baik', 6 => 'Baik sekali']
+                    : [1 => 'Tidak Mampu', 2 => 'Kurang Mampu', 3 => 'Cukup Mampu', 4 => 'Mampu', 5 => 'Sangat Mampu'];
+                    @endphp
+                    <tr>
+                      <th style="width:40%">Kemampuan</th>
+                      <th colspan="{{ $skalaCount }}" class="text-center">Skala Penilaian</th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      @for($s = 1; $s <= $skalaCount; $s++)
+                        <th class="text-center">{{ $s }}<br><small>{{ $skalaLabels[$s] }}</small></th>
+                        @endfor
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @php
+                    $kemampuanWicara = [
+                    'Kontak mata','Atensi','Simbolik play','Pralinguistik 1','Pralingustik 2','Paham instruksi','Kata Benda','Kata kerja','Kata Sifat','Konsep waktu','Paham frasa','Paham kalimat','Paham kata tanya','Menamai tingkat kata','Menamai tingkat frasa','Menamai tingkat kalimat','Bercerita','Menjawab pertanyaan sederhana','Menyebutkan','Auditory','Visual','Taktil','Motorik kasar','Motorik halus','Motorik oral','Menggigit, mengunyah dan menelan','Komunikasi sosial','Pernafasan','Suara','Artikulasi','Kelancaran'
+                    ];
+                    $kemampuanSI = [
+                    'Activity Level','Social Interaction','Frustration Tolerance','Attention','Postural Control','Muscle Tone & Joint Stability','Gravitational Security','Bilateral Motor Coordination','Oculomotor Control','Sensori Modulasi & Registrasi (Umum)','Sensori Modulasi & Registrasi Visual','Sensori Modulasi & Registrasi Auditory','Sensori Modulasi & Registrasi Tactile','Sensori Modulasi & Registrasi Proprioseptif','Sensori Modulasi & Registrasi Vestibular','Sensori Modulasi & Registrasi Body Awareness','Praxis (Umum)','Praxis Space Visualization','Praxis Design Copying','Praxis Postural Praxis','Praxis Sequencing Praxis','Praxis Oral Praxis','Auditory Praxis','Praxis Finger Identification','Praxis Localization of Tactile Stimuli'
+                    ];
                     @endphp
                     @if($isWicara)
                     @foreach($kemampuanWicara as $i => $judul)
@@ -197,7 +200,7 @@
                           <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </td>
-                      @for($skala=1;$skala<=5;$skala++)
+                      @for($skala=1;$skala<=$skalaCount;$skala++)
                         <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
                         @endfor
                     </tr>
@@ -212,7 +215,7 @@
                           <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </td>
-                      @for($skala=1;$skala<=5;$skala++)
+                      @for($skala=1;$skala<=$skalaCount;$skala++)
                         <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
                         @endfor
                     </tr>
@@ -226,7 +229,7 @@
                           <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </td>
-                      @for($skala=1;$skala<=5;$skala++)
+                      @for($skala=1;$skala<=$skalaCount;$skala++)
                         <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}" required></td>
                         @endfor
                     </tr>
@@ -235,7 +238,7 @@
                     <!-- Baris kemampuan tambahan dinamis -->
                     <tr id="row-tambah-kemampuan"></tr>
                     <tr>
-                      <td colspan="6">
+                      <td colspan="{{ $skalaCount + 1 }}">
                         <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn-tambah-kemampuan">
                           <i class="ri-add-line"></i> Tambah Kemampuan Lainnya
                         </button>
@@ -325,6 +328,8 @@
         if (typeof window.handleKonsultanChange === 'function') window.handleKonsultanChange();
       }
     }
+    // maxSkala diputuskan di server sesuai spesialisasi: 6 untuk SI, 5 untuk lainnya
+    var maxSkala = {{ $isSI ? 6 : 5 }};
     // --- Penilaian Kemampuan Anak ---
     // Toggle tampilan field sesuai konsultan
     var psikologiFields = document.getElementById('psikologiFields');
