@@ -305,7 +305,23 @@ class ProgramController extends Controller
 
   public function destroyObservasiProgram($id)
   {
-    $program = \App\Models\ProgramWicara::findOrFail($id);
+    // Try to find the program across all sumber (wicara, si, psikologi)
+    $program = \App\Models\ProgramWicara::find($id)
+      ?? \App\Models\ProgramSI::find($id)
+      ?? \App\Models\ProgramPsikologi::find($id);
+    if (!$program) {
+      abort(404);
+    }
+
+    // Authorization: allow owner (user_id) or admin
+    $user = Auth::user();
+    if ($user->role !== 'admin' && $program->user_id && $program->user_id !== $user->id) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Anda tidak memiliki izin untuk menghapus data ini.'
+      ], 403);
+    }
+
     $program->delete();
     return response()->json([
       'success' => true,
@@ -330,7 +346,8 @@ class ProgramController extends Controller
         'anak_didik_id' => 'required|exists:anak_didiks,id',
         'kemampuan' => 'nullable|array',
         'kemampuan.*.judul' => 'required_with:kemampuan|string',
-        'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:1|max:6',
+        // Allow skala 0..5 for SI (0 = Tidak ada, 5 = Baik sekali)
+        'kemampuan.*.skala' => 'required_with:kemampuan|integer|min:0|max:5',
         'wawancara' => 'nullable|string', // ini akan jadi keterangan
         'diagnosa' => 'nullable|string',
       ];
@@ -613,7 +630,8 @@ class ProgramController extends Controller
       $rules = [
         'anak_didik_id' => 'required|exists:anak_didiks,id',
         'kemampuan.*.judul' => 'nullable|string',
-        'kemampuan.*.skala' => 'nullable|integer|min:1|max:6',
+        // Allow skala 0..5 for SI on update as well
+        'kemampuan.*.skala' => 'nullable|integer|min:0|max:5',
         'wawancara' => 'nullable|string',
         'diagnosa' => 'nullable|string',
       ];

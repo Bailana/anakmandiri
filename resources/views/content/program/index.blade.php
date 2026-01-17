@@ -400,42 +400,48 @@
             if (el && program && document.body.contains(el)) {
               let kemampuanHtml = '';
               if (Array.isArray(program.kemampuan) && program.kemampuan.length > 0) {
-                // Determine skala count: 6 for Sensori Integrasi (si), otherwise 5
                 const isSI = (program.sumber === 'si' || (program.konsultan_spesialisasi && typeof program.konsultan_spesialisasi === 'string' && program.konsultan_spesialisasi.toLowerCase() === 'sensori integrasi'));
-                const skalaCount = isSI ? 6 : 5;
-                // Labels for SI (optional small text under number)
-                const skalaLabels = isSI ? {
-                  1: 'Tidak ada',
-                  2: 'Kurang sekali',
-                  3: 'Kurang',
-                  4: 'Cukup',
-                  5: 'Baik',
-                  6: 'Baik sekali'
-                } : {
-                  1: '1',
-                  2: '2',
-                  3: '3',
-                  4: '4',
-                  5: '5'
-                };
-                kemampuanHtml += '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:40%">KEMAMPUAN</th>';
-                for (let s = 1; s <= skalaCount; s++) {
-                  if (isSI) {
-                    kemampuanHtml += `<th class="text-center">${s}<br><small>${skalaLabels[s]}</small></th>`;
-                  } else {
-                    kemampuanHtml += `<th class="text-center">${s}</th>`;
-                  }
+                if (isSI) {
+                  const siSkalaValues = [5, 4, 3, 2, 1, 0];
+                  const siSkalaLabels = {
+                    5: 'Baik sekali',
+                    4: 'Baik',
+                    3: 'Cukup',
+                    2: 'Kurang',
+                    1: 'Kurang sekali',
+                    0: 'Tidak ada'
+                  };
+                  kemampuanHtml += '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:40%">KEMAMPUAN</th>';
+                  siSkalaValues.forEach(function(sv) {
+                    kemampuanHtml += `<th class="text-center">${sv}<br><small>${siSkalaLabels[sv]}</small></th>`;
+                  });
+                  kemampuanHtml += '</tr></thead><tbody>';
+                  program.kemampuan.forEach((item, idx) => {
+                    let skalaInt = (typeof item.skala === 'string' || typeof item.skala === 'number') ? parseInt(item.skala) : null;
+                    kemampuanHtml += `<tr><td>${item.judul}</td>`;
+                    siSkalaValues.forEach(function(sv) {
+                      kemampuanHtml += `<td class="text-center">${skalaInt === sv ? '<i class="ri-check-line text-success"></i>' : ''}</td>`;
+                    });
+                    kemampuanHtml += '</tr>';
+                  });
+                  kemampuanHtml += '</tbody></table></div>';
+                } else {
+                  const skalaValues = [1, 2, 3, 4, 5];
+                  kemampuanHtml += '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th style="width:40%">KEMAMPUAN</th>';
+                  skalaValues.forEach(function(sv) {
+                    kemampuanHtml += `<th class="text-center">${sv}</th>`;
+                  });
+                  kemampuanHtml += '</tr></thead><tbody>';
+                  program.kemampuan.forEach((item, idx) => {
+                    let skalaInt = (typeof item.skala === 'string' || typeof item.skala === 'number') ? parseInt(item.skala) : null;
+                    kemampuanHtml += `<tr><td>${item.judul}</td>`;
+                    skalaValues.forEach(function(sv) {
+                      kemampuanHtml += `<td class="text-center">${skalaInt === sv ? '<i class="ri-check-line text-success"></i>' : ''}</td>`;
+                    });
+                    kemampuanHtml += '</tr>';
+                  });
+                  kemampuanHtml += '</tbody></table></div>';
                 }
-                kemampuanHtml += '</tr></thead><tbody>';
-                program.kemampuan.forEach((item, idx) => {
-                  let skalaInt = (typeof item.skala === 'string' || typeof item.skala === 'number') ? parseInt(item.skala) : null;
-                  kemampuanHtml += `<tr><td>${item.judul}</td>`;
-                  for (let skala = 1; skala <= skalaCount; skala++) {
-                    kemampuanHtml += `<td class="text-center">${skalaInt === skala ? '<i class="ri-check-line text-success"></i>' : ''}</td>`;
-                  }
-                  kemampuanHtml += '</tr>';
-                });
-                kemampuanHtml += '</tbody></table></div>';
               } else {
                 kemampuanHtml = '<em>Tidak ada data kemampuan</em>';
               }

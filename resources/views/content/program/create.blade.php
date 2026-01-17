@@ -166,10 +166,29 @@
                     $isSI = $konsultan && strtolower($konsultan->spesialisasi) === 'sensori integrasi';
                     }
 
-                    $skalaCount = $isSI ? 6 : 5;
-                    $skalaLabels = $isSI
-                    ? [1 => 'Tidak ada', 2 => 'Kurang sekali', 3 => 'Kurang', 4 => 'Cukup', 5 => 'Baik', 6 => 'Baik sekali']
-                    : [1 => 'Tidak Mampu', 2 => 'Kurang Mampu', 3 => 'Cukup Mampu', 4 => 'Mampu', 5 => 'Sangat Mampu'];
+                    // Untuk SI kita ingin urutan skala terbalik: mulai dari Baik sekali (5) -> ... -> Tidak ada (0)
+                    if ($isSI) {
+                    $skalaValues = [5,4,3,2,1,0];
+                    $skalaLabels = [
+                    5 => 'Baik sekali',
+                    4 => 'Baik',
+                    3 => 'Cukup',
+                    2 => 'Kurang',
+                    1 => 'Kurang sekali',
+                    0 => 'Tidak ada'
+                    ];
+                    } else {
+                    $skalaValues = [1,2,3,4,5];
+                    $skalaLabels = [
+                    1 => 'Tidak Mampu',
+                    2 => 'Kurang Mampu',
+                    3 => 'Cukup Mampu',
+                    4 => 'Mampu',
+                    5 => 'Sangat Mampu'
+                    ];
+                    }
+
+                    $skalaCount = count($skalaValues);
                     @endphp
                     <tr>
                       <th style="width:40%">Kemampuan</th>
@@ -177,9 +196,9 @@
                     </tr>
                     <tr>
                       <th></th>
-                      @for($s = 1; $s <= $skalaCount; $s++)
-                        <th class="text-center">{{ $s }}<br><small>{{ $skalaLabels[$s] }}</small></th>
-                        @endfor
+                      @foreach($skalaValues as $s)
+                      <th class="text-center">{{ $s }}<br><small>{{ $skalaLabels[$s] }}</small></th>
+                      @endforeach
                     </tr>
                   </thead>
                   <tbody>
@@ -200,9 +219,9 @@
                           <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </td>
-                      @for($skala=1;$skala<=$skalaCount;$skala++)
-                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
-                        @endfor
+                      @foreach($skalaValues as $skala)
+                      <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
+                      @endforeach
                     </tr>
                     @endforeach
                     @php $kemampuanIndex = count($kemampuanWicara); @endphp
@@ -215,9 +234,9 @@
                           <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </td>
-                      @for($skala=1;$skala<=$skalaCount;$skala++)
-                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
-                        @endfor
+                      @foreach($skalaValues as $skala)
+                      <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
+                      @endforeach
                     </tr>
                     @endforeach
                     @php $kemampuanIndex = count($kemampuanSI); @endphp
@@ -229,9 +248,9 @@
                           <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </td>
-                      @for($skala=1;$skala<=$skalaCount;$skala++)
-                        <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}" required></td>
-                        @endfor
+                      @foreach($skalaValues as $skala)
+                      <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}" required></td>
+                      @endforeach
                     </tr>
                     @php $kemampuanIndex = 1; @endphp
                     @endif
@@ -328,8 +347,9 @@
         if (typeof window.handleKonsultanChange === 'function') window.handleKonsultanChange();
       }
     }
-    // maxSkala diputuskan di server sesuai spesialisasi: 6 untuk SI, 5 untuk lainnya
-    var maxSkala = {{ $isSI ? 6 : 5 }};
+    // skalaValues berisi daftar nilai skala dalam urutan yang ingin ditampilkan (mis. SI => [5,4,3,2,1,0])
+    var skalaValues = {!! json_encode($skalaValues) !!};
+    var maxSkala = skalaValues.length;
     // --- Penilaian Kemampuan Anak ---
     // Toggle tampilan field sesuai konsultan
     var psikologiFields = document.getElementById('psikologiFields');
@@ -343,6 +363,8 @@
       var select = document.getElementById('konsultan_id');
       var selected = select.options[select.selectedIndex];
       var spesialisasi = selected.getAttribute('data-spesialisasi');
+      // Render ulang skala agar urutan kolom sesuai spesialisasi yang dipilih
+      renderSkalaFor(spesialisasi);
       if (spesialisasi === 'psikologi') {
         psikologiFields.style.display = '';
         if (wrapperPenilaian) toggleContainerDisabled(wrapperPenilaian, true);
@@ -374,6 +396,69 @@
         // don't disable buttons used to add/remove rows globally
         if (c.classList && (c.classList.contains('btn-hapus-kemampuan') || c.id === 'btn-tambah-kemampuan' || c.classList.contains('btn-tambah-kemampuan'))) return;
         c.disabled = !!disabled;
+      });
+    }
+    // Fungsi untuk merender ulang header dan kolom skala sesuai spesialisasi terpilih
+    function renderSkalaFor(spesialisasi) {
+      var isSiNow = (spesialisasi === 'sensori integrasi' || spesialisasi === 'si' || spesialisasi === 'sensori_integrasi');
+      var targetSkalaValues = isSiNow ? [5, 4, 3, 2, 1, 0] : [1, 2, 3, 4, 5];
+      // Update global skalaValues agar JS lain (tambah baris) mengikuti
+      skalaValues = targetSkalaValues;
+      var thead = document.querySelector('table.table thead');
+      if (!thead) return;
+      var firstRow = thead.querySelector('tr');
+      var colspanTh = firstRow ? firstRow.querySelector('th[colspan]') : null;
+      if (colspanTh) colspanTh.setAttribute('colspan', String(targetSkalaValues.length));
+      var rows = thead.querySelectorAll('tr');
+      if (rows.length >= 2) {
+        var labelRow = rows[1];
+        var newHtml = '';
+        newHtml += '<th></th>';
+        targetSkalaValues.forEach(function(s) {
+          var label = isSiNow ? ({
+            5: 'Baik sekali',
+            4: 'Baik',
+            3: 'Cukup',
+            2: 'Kurang',
+            1: 'Kurang sekali',
+            0: 'Tidak ada'
+          })[s] : ({
+            1: 'Tidak Mampu',
+            2: 'Kurang Mampu',
+            3: 'Cukup Mampu',
+            4: 'Mampu',
+            5: 'Sangat Mampu'
+          })[s];
+          newHtml += `<th class="text-center">${s}<br><small>${label}</small></th>`;
+        });
+        labelRow.innerHTML = newHtml;
+      }
+      // Rebuild setiap baris kemampuan: pertahankan kolom pertama (judul), rebuild kolom skala
+      var tbodyTable = document.querySelector('table.table tbody');
+      if (!tbodyTable) return;
+      var rowsBody = Array.from(tbodyTable.querySelectorAll('tr')).filter(r => r.id && r.id.startsWith('row-kemampuan-'));
+      rowsBody.forEach(function(r) {
+        var firstTd = r.querySelector('td');
+        var newRow = document.createElement('tr');
+        newRow.id = r.id;
+        var html = '';
+        if (firstTd) html += `<td>${firstTd.innerHTML}</td>`;
+        // Build inputs with names preserving index part before [skala]
+        var inputNameBase = null;
+        var inp = r.querySelector('input[name$="[skala]"]');
+        if (inp) {
+          inputNameBase = inp.name.replace(/\[skala\]$/, '');
+        } else {
+          // fallback: try to derive from first input
+          var anyInp = r.querySelector('input[name^="kemampuan"]');
+          if (anyInp) inputNameBase = anyInp.name.replace(/\[judul\]$/, '');
+        }
+        targetSkalaValues.forEach(function(s) {
+          var name = inputNameBase ? (inputNameBase + '[skala]') : 'kemampuan[][skala]';
+          html += `<td class="text-center"><input type="radio" name="${name}" value="${s}" required></td>`;
+        });
+        r.parentNode.replaceChild(newRow, r);
+        newRow.innerHTML = html;
       });
     }
     document.getElementById('konsultan_id').addEventListener('change', toggleFieldsByKonsultan);
@@ -414,6 +499,28 @@
       });
       window._handlerKemampuanSudahDipasang = true;
     }
+
+    // Override tombol tambah kemampuan agar menggunakan `skalaValues` (menangani urutan SI terbalik)
+    (function() {
+      var btnTambah = document.getElementById('btn-tambah-kemampuan');
+      if (btnTambah) {
+        btnTambah.addEventListener('click', function(e) {
+          // cegah bubbling ke tbody agar handler lama tidak membuat baris duplikat
+          e.stopPropagation();
+          const tr = document.createElement('tr');
+          tr.id = `row-kemampuan-${kemampuanIndex}`;
+          let html = `<td><div class="input-group"><input type="text" name="kemampuan[${kemampuanIndex}][judul]" class="form-control" required><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button></div></td>`;
+          skalaValues.forEach(function(skala) {
+            html += `<td class="text-center"><input type="radio" name="kemampuan[${kemampuanIndex}][skala]" value="${skala}" required></td>`;
+          });
+          tr.innerHTML = html;
+          const placeholder = document.getElementById('row-tambah-kemampuan');
+          if (placeholder && placeholder.parentNode) placeholder.parentNode.insertBefore(tr, placeholder);
+          else if (tbody) tbody.appendChild(tr);
+          kemampuanIndex++;
+        });
+      }
+    })();
 
     // --- Konsultan Change Handler ---
     window.handleKonsultanChange = function() {

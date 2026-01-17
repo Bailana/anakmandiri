@@ -66,64 +66,64 @@
           <thead>
             <tr>
               <th style="border:1px solid #ddd;padding:6px;text-align:left">Kemampuan</th>
-              <th style="border:1px solid #ddd;padding:6px;text-align:center">1<br><small>Tidak ada</small></th>
-              <th style="border:1px solid #ddd;padding:6px;text-align:center">2<br><small>Kurang sekali</small></th>
-              <th style="border:1px solid #ddd;padding:6px;text-align:center">3<br><small>Kurang</small></th>
-              <th style="border:1px solid #ddd;padding:6px;text-align:center">4<br><small>Cukup</small></th>
-              <th style="border:1px solid #ddd;padding:6px;text-align:center">5<br><small>Baik</small></th>
-              <th style="border:1px solid #ddd;padding:6px;text-align:center">6<br><small>Baik sekali</small></th>
+              @php
+              $siSkalaValues = [5,4,3,2,1,0];
+              $siSkalaLabels = [5 => 'Baik sekali',4 => 'Baik',3 => 'Cukup',2 => 'Kurang',1 => 'Kurang sekali',0 => 'Tidak ada'];
+              @endphp
+              @foreach($siSkalaValues as $sv)
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">{{ $sv }}<br><small>{{ $siSkalaLabels[$sv] }}</small></th>
+              @endforeach
             </tr>
           </thead>
           <tbody>
             @foreach($program->kemampuan as $item)
             <tr>
               <td style="border:1px solid #ddd;padding:6px">{{ $item['judul'] ?? '-' }}</td>
-              @for($skala=1; $skala<=6; $skala++)
+              @foreach($siSkalaValues as $sv)
+              <td style="border:1px solid #ddd;padding:6px;text-align:center">@if(isset($item['skala']) && (int)$item['skala'] === $sv)✔️@endif</td>
+              @endforeach
+            </tr>
+            @endforeach
+          </tbody>
+
+        </table>
+        @else
+        <em>Tidak ada data kemampuan</em>
+        @endif
+      </td>
+    </tr>
+    <tr>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Keterangan</th>
+      <td style="padding:6px;border:1px solid #ddd">{{ $program->keterangan ?? $program->wawancara ?? '-' }}</td>
+    </tr>
+    {{-- Untuk SI kita sembunyikan Kemampuan Saat Ini dan Saran Rekomendasi pada PDF --}}
+    @else
+    <tr>
+      <th style="text-align:left;padding:6px;border:1px solid #ddd">Kemampuan</th>
+      <td style="padding:6px;border:1px solid #ddd">
+        @if(is_array($program->kemampuan) && count($program->kemampuan) > 0)
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr>
+              <th style="border:1px solid #ddd;padding:6px;text-align:left">Kemampuan</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">1</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">2</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">3</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">4</th>
+              <th style="border:1px solid #ddd;padding:6px;text-align:center">5</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach($program->kemampuan as $item)
+            <tr>
+              <td style="border:1px solid #ddd;padding:6px">{{ $item['judul'] ?? '-' }}</td>
+              @for($skala=1; $skala<=5; $skala++)
                 <td style="border:1px solid #ddd;padding:6px;text-align:center">@if(isset($item['skala']) && (int)$item['skala'] === $skala)✔️@endif
       </td>
       @endfor
     </tr>
     @endforeach
     </tbody>
-
-  </table>
-  @else
-  <em>Tidak ada data kemampuan</em>
-  @endif
-  </td>
-  </tr>
-  <tr>
-    <th style="text-align:left;padding:6px;border:1px solid #ddd">Keterangan</th>
-    <td style="padding:6px;border:1px solid #ddd">{{ $program->keterangan ?? $program->wawancara ?? '-' }}</td>
-  </tr>
-  {{-- Untuk SI kita sembunyikan Kemampuan Saat Ini dan Saran Rekomendasi pada PDF --}}
-  @else
-  <tr>
-    <th style="text-align:left;padding:6px;border:1px solid #ddd">Kemampuan</th>
-    <td style="padding:6px;border:1px solid #ddd">
-      @if(is_array($program->kemampuan) && count($program->kemampuan) > 0)
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr>
-            <th style="border:1px solid #ddd;padding:6px;text-align:left">Kemampuan</th>
-            <th style="border:1px solid #ddd;padding:6px;text-align:center">1</th>
-            <th style="border:1px solid #ddd;padding:6px;text-align:center">2</th>
-            <th style="border:1px solid #ddd;padding:6px;text-align:center">3</th>
-            <th style="border:1px solid #ddd;padding:6px;text-align:center">4</th>
-            <th style="border:1px solid #ddd;padding:6px;text-align:center">5</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($program->kemampuan as $item)
-          <tr>
-            <td style="border:1px solid #ddd;padding:6px">{{ $item['judul'] ?? '-' }}</td>
-            @for($skala=1; $skala<=5; $skala++)
-              <td style="border:1px solid #ddd;padding:6px;text-align:center">@if(isset($item['skala']) && (int)$item['skala'] === $skala)✔️@endif
-    </td>
-    @endfor
-  </tr>
-  @endforeach
-  </tbody>
 
   </table>
   @else
