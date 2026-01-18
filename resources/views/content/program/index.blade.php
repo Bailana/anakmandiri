@@ -638,6 +638,8 @@
       listDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
       // Ambil id anak didik dari atribut data-anak-didik-id jika ada, fallback ke programId
       var anakDidikId = btn.getAttribute('data-anak-didik-id') || programId;
+      // read optional flag: if set, do not show modal when riwayat is empty
+      var suppressShowIfEmpty = btn.getAttribute('data-suppress-show-if-empty') === '1';
       // simpan untuk refresh setelah penghapusan
       window.currentRiwayatAnakId = anakDidikId;
       var currentUserId = @json(Auth::id());
@@ -654,6 +656,24 @@
         .then(res => {
           if (!res.success || !res.riwayat || res.riwayat.length === 0) {
             listDiv.innerHTML = '<div class="text-center text-muted">Belum ada riwayat observasi/evaluasi.</div>';
+            if (suppressShowIfEmpty) {
+              // close any open riwayat modal and remove table row(s) for this anak
+              try {
+                if (modal) {
+                  try {
+                    bootstrap.Modal.getInstance(modalEl)?.hide();
+                  } catch (e) {}
+                }
+                // remove table rows that reference this anakDidikId via buttons
+                try {
+                  document.querySelectorAll('button[data-anak-didik-id="' + anakDidikId + '"]').forEach(function(b) {
+                    var tr = b.closest('tr');
+                    if (tr && tr.parentNode) tr.parentNode.removeChild(tr);
+                  });
+                } catch (e) {}
+              } catch (e) {}
+              return;
+            }
             if (modal) try {
               modal.show();
             } catch (e) {}
@@ -806,37 +826,78 @@
           headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json'
-          }
+          },
+          credentials: 'same-origin'
         })
-        .then(response => response.json())
+        .then(response => {
+          // log for hosted debugging
+          console.log('DELETE', url, 'status', response.status, 'ok', response.ok);
+          // try parse json, otherwise show text
+          return response.text().then(text => {
+            let data = null;
+            try {
+              data = text ? JSON.parse(text) : null;
+            } catch (e) {
+              data = text;
+            }
+            return {
+              status: response.status,
+              ok: response.ok,
+              body: data,
+              raw: text
+            };
+          });
+        })
         .then(res => {
-          if (res.success) {
+          if (res && res.ok && res.body && res.body.success) {
             showToast('Berhasil dihapus', 'success');
             // Tutup modal detail jika sedang terbuka
             var detailModalEl = document.getElementById('detailModal');
             var detailModal = detailModalEl ? bootstrap.Modal.getInstance(detailModalEl) : null;
             if (detailModal) detailModal.hide();
-            // Refresh daftar riwayat: prefer stored currentRiwayatAnakId (set when riwayat dibuka)
-            var anakId = window.currentRiwayatAnakId || null;
-            if (!anakId) {
-              // fallback: try to find a button that opened the riwayat
-              var lastBtn = document.querySelector('button[data-program-id][data-anak-didik-id]');
-              if (lastBtn) anakId = lastBtn.getAttribute('data-anak-didik-id') || lastBtn.getAttribute('data-program-id');
-            }
-            if (anakId) {
-              var dummyBtn = document.createElement('button');
-              dummyBtn.setAttribute('data-anak-didik-id', anakId);
-              // reload riwayat (this will also ensure modal stays/opened)
-              try {
-                loadRiwayatObservasi(dummyBtn);
-              } catch (e) {
-                console.error('Gagal memanggil loadRiwayatObservasi', e);
+            // Remove the corresponding list item from riwayat modal (if present)
+            try {
+              var li = document.querySelector('li.list-group-item[data-id="' + id + '"]');
+              if (li && li.parentNode) li.parentNode.removeChild(li);
+            } catch (e) {}
+            // If the riwayat list is now empty, close the riwayat modal and remove the table row(s)
+            try {
+              var remaining = document.querySelectorAll('#riwayatObservasiList li.list-group-item');
+              if (!remaining || remaining.length === 0) {
+                var riwayatEl = document.getElementById('riwayatObservasiModal');
+                try {
+                  bootstrap.Modal.getInstance(riwayatEl)?.hide();
+                } catch (e) {}
+                // remove table rows that reference this anakDidikId via buttons
+                var anakId = window.currentRiwayatAnakId || null;
+                if (!anakId) {
+                  var lastBtn = document.querySelector('button[data-program-id][data-anak-didik-id]');
+                  if (lastBtn) anakId = lastBtn.getAttribute('data-anak-didik-id') || lastBtn.getAttribute('data-program-id');
+                }
+                if (anakId) {
+                  try {
+                    document.querySelectorAll('button[data-anak-didik-id="' + anakId + '"]').forEach(function(b) {
+                      var tr = b.closest('tr');
+                      if (tr && tr.parentNode) tr.parentNode.removeChild(tr);
+                    });
+                  } catch (e) {}
+                }
+                // Reindex 'No' column starting from 1 after DOM removal
+                try {
+                  reindexProgramTableNumbers();
+                } catch (e) {}
               }
-            }
+            } catch (e) {}
           } else {
-            showToast('Gagal menghapus data', 'danger');
+            console.warn('Hapus gagal, response:', res);
+            // if server returned json with message, show it
+            let msg = 'Gagal menghapus data';
+            if (res && res.body && res.body.message) msg = res.body.message;
+            else if (res && typeof res.body === 'string' && res.body.length) msg = res.body;
+            showToast(msg, 'danger');
           }
-        }).catch(() => {
+        }).catch((err) => {
+          console.error('Error saat hapus:', err);
           showToast('Gagal menghapus data', 'danger');
         });
     }
@@ -879,6 +940,29 @@
         }, 50);
       });
     })();
+    // Global cleanup: ensure no leftover backdrops or modal-open class after any modal is hidden
+    document.addEventListener('hidden.bs.modal', function() {
+      setTimeout(function() {
+        if (!document.querySelector('.modal.show')) {
+          document.querySelectorAll('.modal-backdrop').forEach(function(el) {
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+          });
+          document.body.classList.remove('modal-open');
+        }
+      }, 50);
+    });
+  </script>
+  <script>
+    // Reindex the No column in #programTable so it starts from 1
+    function reindexProgramTableNumbers() {
+      try {
+        var rows = document.querySelectorAll('#programTable tbody tr');
+        rows.forEach(function(tr, idx) {
+          var el = tr.querySelector('.no-col');
+          if (el) el.textContent = (idx + 1);
+        });
+      } catch (e) {}
+    }
   </script>
 </div>
 @endsection

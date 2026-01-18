@@ -18,7 +18,8 @@
       </div>
       <div class="card-body">
         @if(!empty($sumber))
-        <form action="{{ route('program.observasi-program.update.withsumber', [$sumber, $program->id]) }}" method="POST">
+        <form action="{{ route('program.observasi-program.update.withsumber', [$sumber, $program->id]) }}"
+          method="POST">
           @else
           <form action="{{ route('program.observasi-program.update', $program->id) }}" method="POST">
             @endif
@@ -30,7 +31,8 @@
                 <label class="form-label">Anak Didik <span class="text-danger">*</span></label>
                 <select class="form-select" disabled>
                   @foreach($anakDidiks as $anak)
-                  <option value="{{ $anak->id }}" {{ (old('anak_didik_id', $program->anak_didik_id) == $anak->id) ? 'selected' : '' }}>
+                  <option value="{{ $anak->id }}"
+                    {{ (old('anak_didik_id', $program->anak_didik_id) == $anak->id) ? 'selected' : '' }}>
                     {{ $anak->nama }}
                   </option>
                   @endforeach
@@ -38,7 +40,8 @@
                 <input type="hidden" name="anak_didik_id" value="{{ old('anak_didik_id', $program->anak_didik_id) }}">
               </div>
               {{-- Keep konsultan_id submitted but hide the field in edit view to avoid edits here --}}
-              <input type="hidden" name="konsultan_id" value="{{ $program->konsultan_id ?? optional(\App\Models\Konsultan::where('user_id', auth()->id())->first())->id }}">
+              <input type="hidden" name="konsultan_id"
+                value="{{ $program->konsultan_id ?? optional(\App\Models\Konsultan::where('user_id', auth()->id())->first())->id }}">
               @php
               // Determine selected konsultan specialization for initial toggle (if available)
               $selectedKonsultanId = old('konsultan_id', $program->konsultan_id ?? null);
@@ -48,14 +51,18 @@
               if ($k && $k->spesialisasi) $selectedSpesialisasi = strtolower($k->spesialisasi);
               }
               // Also detect if this program record is a psikologi record
-              $isPsikologiProgram = (isset($sumber) && $sumber === 'psikologi') || ($program instanceof \App\Models\ProgramPsikologi) || ($selectedSpesialisasi === 'psikologi');
+              $isPsikologiProgram = (isset($sumber) && $sumber === 'psikologi') || ($program instanceof
+              \App\Models\ProgramPsikologi) || ($selectedSpesialisasi === 'psikologi');
               // Detect if the currently logged-in user is a konsultan psikologi
               $currentKons = optional(\App\Models\Konsultan::where('user_id', auth()->id())->first());
-              $isCurrentUserPsikologi = $currentKons && isset($currentKons->spesialisasi) && strtolower($currentKons->spesialisasi) === 'psikologi';
+              $isCurrentUserPsikologi = $currentKons && isset($currentKons->spesialisasi) &&
+              strtolower($currentKons->spesialisasi) === 'psikologi';
               // Determine if this is SI or Wicara for rendering skala and default kemampuan
               $programSpesialisasi = strtolower(optional($program->konsultan)->spesialisasi ?? '');
-              $isWicara = ($selectedSpesialisasi === 'wicara') || $programSpesialisasi === 'wicara' || (!empty($sumber) && $sumber === 'wicara') || ($program instanceof \App\Models\ProgramWicara);
-              $isSI = ($selectedSpesialisasi === 'sensori integrasi') || $programSpesialisasi === 'sensori integrasi' || (!empty($sumber) && $sumber === 'si') || ($program instanceof \App\Models\ProgramSI);
+              $isWicara = ($selectedSpesialisasi === 'wicara') || $programSpesialisasi === 'wicara' || (!empty($sumber)
+              && $sumber === 'wicara') || ($program instanceof \App\Models\ProgramWicara);
+              $isSI = ($selectedSpesialisasi === 'sensori integrasi') || $programSpesialisasi === 'sensori integrasi' ||
+              (!empty($sumber) && $sumber === 'si') || ($program instanceof \App\Models\ProgramSI);
               // Fallback: ensure we consider the konsultan referenced by the program record
               if (!$isWicara && !empty($program->konsultan_id)) {
               $progK = \App\Models\Konsultan::find($program->konsultan_id);
@@ -65,7 +72,8 @@
               }
               if (!$isSI && !empty($program->konsultan_id)) {
               $progK2 = \App\Models\Konsultan::find($program->konsultan_id);
-              if ($progK2 && isset($progK2->spesialisasi) && strtolower($progK2->spesialisasi) === 'sensori integrasi') {
+              if ($progK2 && isset($progK2->spesialisasi) && strtolower($progK2->spesialisasi) === 'sensori integrasi')
+              {
               $isSI = true;
               }
               }
@@ -75,7 +83,19 @@
               $skalaLabels = [5 => 'Baik sekali',4=>'Baik',3=>'Cukup',2=>'Kurang',1=>'Kurang sekali',0=>'Tidak ada'];
               } else {
               $skalaValues = [1,2,3,4,5];
-              $skalaLabels = [1 => 'Tidak Mampu', 2 => 'Kurang Mampu', 3 => 'Cukup Mampu', 4 => 'Mampu', 5 => 'Sangat Mampu'];
+              $skalaLabels = [1 => 'Tidak Mampu', 2 => 'Kurang Mampu', 3 => 'Cukup Mampu', 4 => 'Mampu', 5 => 'Sangat
+              Mampu'];
+              }
+              // If program record lacks konsultan_id but the logged-in user is a konsultan SI,
+              // prefer displaying SI skala so the konsultan sees the same UI as on 'Tambah'.
+              if (!$isSI) {
+              $currentK = optional(\App\Models\Konsultan::where('user_id', auth()->id())->first());
+              if ($currentK && isset($currentK->spesialisasi) && strtolower($currentK->spesialisasi) === 'sensori
+              integrasi') {
+              $isSI = true;
+              $skalaValues = [5,4,3,2,1,0];
+              $skalaLabels = [5 => 'Baik sekali',4=>'Baik',3=>'Cukup',2=>'Kurang',1=>'Kurang sekali',0=>'Tidak ada'];
+              }
               }
               $skalaCount = count($skalaValues);
               @endphp
@@ -87,18 +107,14 @@
             <div class="row mb-3" id="psikologiFields" style="display:{{ !empty($isPsikologiProgram) ? '' : 'none' }};">
               <div class="col-md-12 mb-2">
                 <label for="latar_belakang" class="form-label">Latar Belakang</label>
-                <textarea name="latar_belakang" id="latar_belakang" class="form-control" rows="3">{{ old('latar_belakang', $program->latar_belakang) }}</textarea>
+                <textarea name="latar_belakang" id="latar_belakang" class="form-control"
+                  rows="3">{{ old('latar_belakang', $program->latar_belakang) }}</textarea>
               </div>
               @push('page-script')
               <script>
                 document.addEventListener('DOMContentLoaded', function() {
-                  var preSpesialisasi = '{{ $selectedSpesialisasi ?? '
-                  ' }}';
-                  var isPsikologiProgram = {
-                    {
-                      !empty($isPsikologiProgram) ? 'true' : 'false'
-                    }
-                  };
+                  var preSpesialisasi = {!! json_encode($selectedSpesialisasi ?? '') !!};
+                  var isPsikologiProgram = {{ !empty($isPsikologiProgram) ? 'true' : 'false'}};
                   var psikologiFields = document.getElementById('psikologiFields');
                   var wrapperPenilaian = document.getElementById('wrapper-penilaian-kemampuan');
                   var wrapperWawancara = document.getElementById('wrapper-wawancara');
@@ -112,7 +128,8 @@
                     container.style.display = disabled ? 'none' : '';
                     var controls = container.querySelectorAll('input,textarea,select,button');
                     controls.forEach(function(c) {
-                      if (c.classList && (c.classList.contains('btn-hapus-kemampuan') || c.id === 'btn-tambah-kemampuan' || c.classList.contains('btn-tambah-kemampuan'))) return;
+                      if (c.classList && (c.classList.contains('btn-hapus-kemampuan') || c.id ===
+                          'btn-tambah-kemampuan' || c.classList.contains('btn-tambah-kemampuan'))) return;
                       c.disabled = !!disabled;
                     });
                   }
@@ -155,31 +172,38 @@
               @endpush
               <div class="col-md-12 mb-2">
                 <label for="metode_assessment" class="form-label">Metode Assessment</label>
-                <textarea name="metode_assessment" id="metode_assessment" class="form-control" rows="3">{{ old('metode_assessment', $program->metode_assessment) }}</textarea>
+                <textarea name="metode_assessment" id="metode_assessment" class="form-control"
+                  rows="3">{{ old('metode_assessment', $program->metode_assessment) }}</textarea>
               </div>
               <div class="col-md-12 mb-2">
                 <label for="hasil_assessment" class="form-label">Hasil Assessment</label>
-                <textarea name="hasil_assessment" id="hasil_assessment" class="form-control" rows="3">{{ old('hasil_assessment', $program->hasil_assessment) }}</textarea>
+                <textarea name="hasil_assessment" id="hasil_assessment" class="form-control"
+                  rows="3">{{ old('hasil_assessment', $program->hasil_assessment) }}</textarea>
               </div>
               <div class="col-md-12 mb-2">
                 <label for="diagnosa_psikologi" class="form-label">Diagnosa</label>
-                <textarea name="diagnosa_psikologi" id="diagnosa_psikologi" class="form-control" rows="3">{{ old('diagnosa_psikologi', $program->diagnosa_psikologi) }}</textarea>
+                <textarea name="diagnosa_psikologi" id="diagnosa_psikologi" class="form-control"
+                  rows="3">{{ old('diagnosa_psikologi', $program->diagnosa_psikologi) }}</textarea>
               </div>
               <div class="col-md-12 mb-2">
                 <label for="kesimpulan" class="form-label">Kesimpulan</label>
-                <textarea name="kesimpulan" id="kesimpulan" class="form-control" rows="3">{{ old('kesimpulan', $program->kesimpulan) }}</textarea>
+                <textarea name="kesimpulan" id="kesimpulan" class="form-control"
+                  rows="3">{{ old('kesimpulan', $program->kesimpulan) }}</textarea>
               </div>
             </div>
 
-            <div class="row mb-3" id="row-diagnosa" style="display:{{ ($isWicara && empty($isPsikologiProgram)) ? '' : 'none' }};">
+            <div class="row mb-3" id="row-diagnosa"
+              style="display:{{ ($isWicara && empty($isPsikologiProgram)) ? '' : 'none' }};">
               <div class="col-md-12" id="wrapper-diagnosa">
                 <label class="form-label">Diagnosa</label>
-                <input type="text" name="diagnosa" id="input-diagnosa" class="form-control" placeholder="Masukkan diagnosa..." value="{{ old('diagnosa', $program->diagnosa) }}">
+                <input type="text" name="diagnosa" id="input-diagnosa" class="form-control"
+                  placeholder="Masukkan diagnosa..." value="{{ old('diagnosa', $program->diagnosa) }}">
               </div>
 
             </div>
             <div class="row mb-3">
-              <div class="col-md-12" id="wrapper-penilaian-kemampuan" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
+              <div class="col-md-12" id="wrapper-penilaian-kemampuan"
+                style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                 <label class="form-label">Penilaian Kemampuan Anak</label>
                 <div class="table-responsive">
                   <style>
@@ -241,13 +265,28 @@
                     <tbody>
                       @php
                       $kemampuanWicara = [
-                      'Kontak mata','Atensi','Simbolik play','Pralinguistik 1','Pralingustik 2','Paham instruksi','Kata Benda','Kata kerja','Kata Sifat','Konsep waktu','Paham frasa','Paham kalimat','Paham kata tanya','Menamai tingkat kata','Menamai tingkat frasa','Menamai tingkat kalimat','Bercerita','Menjawab pertanyaan sederhana','Menyebutkan','Auditory','Visual','Taktil','Motorik kasar','Motorik halus','Motorik oral','Menggigit, mengunyah dan menelan','Komunikasi sosial','Pernafasan','Suara','Artikulasi','Kelancaran'
+                      'Kontak mata','Atensi','Simbolik play','Pralinguistik 1','Pralingustik 2','Paham instruksi','Kata
+                      Benda','Kata kerja','Kata Sifat','Konsep waktu','Paham frasa','Paham kalimat','Paham kata
+                      tanya','Menamai tingkat kata','Menamai tingkat frasa','Menamai tingkat
+                      kalimat','Bercerita','Menjawab pertanyaan
+                      sederhana','Menyebutkan','Auditory','Visual','Taktil','Motorik kasar','Motorik halus','Motorik
+                      oral','Menggigit, mengunyah dan menelan','Komunikasi
+                      sosial','Pernafasan','Suara','Artikulasi','Kelancaran'
                       ];
                       $kemampuanSI = [
-                      'Activity Level','Social Interaction','Frustration Tolerance','Attention','Postural Control','Muscle Tone & Joint Stability','Gravitational Security','Bilateral Motor Coordination','Oculomotor Control','Sensori Modulasi & Registrasi (Umum)','Sensori Modulasi & Registrasi Visual','Sensori Modulasi & Registrasi Auditory','Sensori Modulasi & Registrasi Tactile','Sensori Modulasi & Registrasi Proprioseptif','Sensori Modulasi & Registrasi Vestibular','Sensori Modulasi & Registrasi Body Awareness','Praxis (Umum)','Praxis Space Visualization','Praxis Design Copying','Praxis Postural Praxis','Praxis Sequencing Praxis','Praxis Oral Praxis','Auditory Praxis','Praxis Finger Identification','Praxis Localization of Tactile Stimuli'
+                      'Activity Level','Social Interaction','Frustration Tolerance','Attention','Postural
+                      Control','Muscle Tone & Joint Stability','Gravitational Security','Bilateral Motor
+                      Coordination','Oculomotor Control','Sensori Modulasi & Registrasi (Umum)','Sensori Modulasi &
+                      Registrasi Visual','Sensori Modulasi & Registrasi Auditory','Sensori Modulasi & Registrasi
+                      Tactile','Sensori Modulasi & Registrasi Proprioseptif','Sensori Modulasi & Registrasi
+                      Vestibular','Sensori Modulasi & Registrasi Body Awareness','Praxis (Umum)','Praxis Space
+                      Visualization','Praxis Design Copying','Praxis Postural Praxis','Praxis Sequencing Praxis','Praxis
+                      Oral Praxis','Auditory Praxis','Praxis Finger Identification','Praxis Localization of Tactile
+                      Stimuli'
                       ];
                       // prepare existing kemampuan from program
-                      $existingKemampuan = is_array($program->kemampuan) ? $program->kemampuan : (is_string($program->kemampuan) ? json_decode($program->kemampuan, true) : null);
+                      $existingKemampuan = is_array($program->kemampuan) ? $program->kemampuan :
+                      (is_string($program->kemampuan) ? json_decode($program->kemampuan, true) : null);
                       $kemampuanIndex = 0;
                       @endphp
                       @if($existingKemampuan && is_array($existingKemampuan) && count($existingKemampuan) > 0 && !$isSI)
@@ -255,12 +294,18 @@
                       <tr id="row-kemampuan-{{ $i }}">
                         <td>
                           <div class="input-group">
-                            <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" {{ empty($isPsikologiProgram) ? 'required' : '' }} value="{{ $k['judul'] ?? ($k['name'] ?? '') }}">
-                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
+                            <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control"
+                              {{ empty($isPsikologiProgram) ? 'required' : '' }}
+                              value="{{ $k['judul'] ?? ($k['name'] ?? '') }}">
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i
+                                class="ri-delete-bin-line"></i></button>
                           </div>
                         </td>
                         @foreach($skalaValues as $skala)
-                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" {{ (isset($k['skala']) && intval($k['skala'])== $skala) ? 'checked' : '' }} @if(!empty($isPsikologiProgram)) disabled @else required @endif></td>
+                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]"
+                            value="{{ $skala }}"
+                            {{ (isset($k['skala']) && intval($k['skala'])== $skala) ? 'checked' : '' }}
+                            @if(!empty($isPsikologiProgram)) disabled @else required @endif></td>
                         @endforeach
                       </tr>
                       @php $kemampuanIndex = $i + 1; @endphp
@@ -270,12 +315,15 @@
                       <tr id="row-kemampuan-{{ $i }}">
                         <td>
                           <div class="input-group">
-                            <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" required value="{{ $judul }}">
-                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
+                            <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" required
+                              value="{{ $judul }}">
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i
+                                class="ri-delete-bin-line"></i></button>
                           </div>
                         </td>
                         @foreach($skalaValues as $skala)
-                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" required></td>
+                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]"
+                            value="{{ $skala }}" required></td>
                         @endforeach
                       </tr>
                       @endforeach
@@ -288,12 +336,16 @@
                       <tr id="row-kemampuan-{{ $i }}">
                         <td>
                           <div class="input-group">
-                            <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" required value="{{ $k['judul'] ?? ($k['name'] ?? '') }}">
-                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
+                            <input type="text" name="kemampuan[{{ $i }}][judul]" class="form-control" required
+                              value="{{ $k['judul'] ?? ($k['name'] ?? '') }}">
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i
+                                class="ri-delete-bin-line"></i></button>
                           </div>
                         </td>
                         @foreach($skalaValues as $skala)
-                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]" value="{{ $skala }}" {{ (isset($k['skala']) && intval($k['skala'])== $skala) ? 'checked' : '' }} required></td>
+                        <td class="text-center"><input type="radio" name="kemampuan[{{ $i }}][skala]"
+                            value="{{ $skala }}"
+                            {{ (isset($k['skala']) && intval($k['skala'])== $skala) ? 'checked' : '' }} required></td>
                         @endforeach
                       </tr>
                       @php $printedSI = true; $lastSIIndex = $i; @endphp
@@ -305,12 +357,15 @@
                       <tr id="row-kemampuan-0">
                         <td>
                           <div class="input-group">
-                            <input type="text" name="kemampuan[0][judul]" class="form-control" {{ empty($isPsikologiProgram) ? 'required' : '' }} placeholder="Jenis kemampuan">
-                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
+                            <input type="text" name="kemampuan[0][judul]" class="form-control"
+                              {{ empty($isPsikologiProgram) ? 'required' : '' }} placeholder="Jenis kemampuan">
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i
+                                class="ri-delete-bin-line"></i></button>
                           </div>
                         </td>
                         @foreach($skalaValues as $skala)
-                        <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}" @if(!empty($isPsikologiProgram)) disabled @else required @endif></td>
+                        <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}"
+                            @if(!empty($isPsikologiProgram)) disabled @else required @endif></td>
                         @endforeach
                       </tr>
                       @php $kemampuanIndex = 1; @endphp
@@ -321,12 +376,15 @@
                       <tr id="row-kemampuan-0">
                         <td>
                           <div class="input-group">
-                            <input type="text" name="kemampuan[0][judul]" class="form-control" {{ empty($isPsikologiProgram) ? 'required' : '' }} placeholder="Jenis kemampuan">
-                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button>
+                            <input type="text" name="kemampuan[0][judul]" class="form-control"
+                              {{ empty($isPsikologiProgram) ? 'required' : '' }} placeholder="Jenis kemampuan">
+                            <button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i
+                                class="ri-delete-bin-line"></i></button>
                           </div>
                         </td>
                         @foreach($skalaValues as $skala)
-                        <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}" @if(!empty($isPsikologiProgram)) disabled @else required @endif></td>
+                        <td class="text-center"><input type="radio" name="kemampuan[0][skala]" value="{{ $skala }}"
+                            @if(!empty($isPsikologiProgram)) disabled @else required @endif></td>
                         @endforeach
                       </tr>
                       @php $kemampuanIndex = 1; @endphp
@@ -346,9 +404,11 @@
 
               @if($isSI)
               <div class="row mb-3" id="row-keterangan">
-                <div class="col-md-12" id="wrapper-keterangan" style="display:{{ (!empty($isPsikologiProgram) || $isWicara) ? 'none' : '' }};">
+                <div class="col-md-12" id="wrapper-keterangan"
+                  style="display:{{ (!empty($isPsikologiProgram) || $isWicara) ? 'none' : '' }};">
                   <label class="form-label">Keterangan</label>
-                  <textarea name="wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Keterangan tambahan...">{{ old('wawancara', $program->keterangan ?? $program->wawancara) }}</textarea>
+                  <textarea name="wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3"
+                    placeholder="Keterangan tambahan...">{{ old('wawancara', $program->keterangan ?? $program->wawancara) }}</textarea>
                   @error('wawancara')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -356,36 +416,47 @@
               </div>
               @else
               <div class="row mb-3" id="row-keterangan">
-                <div class="col-md-12" id="wrapper-keterangan" style="display:{{ (!empty($isPsikologiProgram) || $isWicara) ? 'none' : '' }};">
+                <div class="col-md-12" id="wrapper-keterangan"
+                  style="display:{{ (!empty($isPsikologiProgram) || $isWicara) ? 'none' : '' }};">
                   <label class="form-label">Keterangan</label>
-                  <textarea name="wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Keterangan tambahan...">{{ old('wawancara', $program->keterangan ?? $program->wawancara) }}</textarea>
+                  <textarea name="wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3"
+                    placeholder="Keterangan tambahan...">{{ old('wawancara', $program->keterangan ?? $program->wawancara) }}</textarea>
                   @error('wawancara')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
               </div>
               <div class="row mb-3" id="row-wawancara">
-                <div class="col-md-12" id="wrapper-wawancara" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
+                <div class="col-md-12" id="wrapper-wawancara"
+                  style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                   <label class="form-label" id="label-wawancara">Wawancara</label>
-                  <textarea name="wawancara" id="input-wawancara" class="form-control @error('wawancara') is-invalid @enderror" rows="3" placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara', $program->wawancara) }}</textarea>
+                  <textarea name="wawancara" id="input-wawancara"
+                    class="form-control @error('wawancara') is-invalid @enderror" rows="3"
+                    placeholder="Hasil wawancara dengan orang tua/anak/guru">{{ old('wawancara', $program->wawancara) }}</textarea>
                   @error('wawancara')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
               </div>
               <div class="row mb-3" id="row-kemampuan-saat-ini">
-                <div class="col-md-12" id="wrapper-kemampuan-saat-ini" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
+                <div class="col-md-12" id="wrapper-kemampuan-saat-ini"
+                  style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                   <label class="form-label">Kemampuan Saat Ini</label>
-                  <textarea name="kemampuan_saat_ini" class="form-control @error('kemampuan_saat_ini') is-invalid @enderror" rows="3" placeholder="Deskripsikan kemampuan anak saat ini">{{ old('kemampuan_saat_ini', $program->kemampuan_saat_ini) }}</textarea>
+                  <textarea name="kemampuan_saat_ini"
+                    class="form-control @error('kemampuan_saat_ini') is-invalid @enderror" rows="3"
+                    placeholder="Deskripsikan kemampuan anak saat ini">{{ old('kemampuan_saat_ini', $program->kemampuan_saat_ini) }}</textarea>
                   @error('kemampuan_saat_ini')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
               </div>
               <div class="row mb-3" id="row-saran-rekomendasi">
-                <div class="col-md-12" id="wrapper-saran-rekomendasi" style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
+                <div class="col-md-12" id="wrapper-saran-rekomendasi"
+                  style="display:{{ !empty($isPsikologiProgram) ? 'none' : '' }};">
                   <label class="form-label">Saran / Rekomendasi</label>
-                  <textarea name="saran_rekomendasi" class="form-control @error('saran_rekomendasi') is-invalid @enderror" rows="3" placeholder="Saran atau rekomendasi untuk program berikutnya">{{ old('saran_rekomendasi', $program->saran_rekomendasi) }}</textarea>
+                  <textarea name="saran_rekomendasi"
+                    class="form-control @error('saran_rekomendasi') is-invalid @enderror" rows="3"
+                    placeholder="Saran atau rekomendasi untuk program berikutnya">{{ old('saran_rekomendasi', $program->saran_rekomendasi) }}</textarea>
                   @error('saran_rekomendasi')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
@@ -414,10 +485,10 @@
 @push('page-script')
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    var skalaValues = {!! json_encode($skalaValues ?? [1,2,3,4,5]) !!};
+    var skalaValues = {!! json_encode($skalaValues ?? [1, 2, 3, 4, 5]) !!};
     var maxSkala = skalaValues.length;
     // initialize kemampuanIndex from server-side computed value
-    var kemampuanIndex = {{ $kemampuanIndex ?? 1 }};
+    var kemampuanIndex = {{$kemampuanIndex ?? 1}};
     const tbody = document.querySelector('table tbody');
 
     if (tbody && !window._handlerKemampuanEditSudahDipasang) {
@@ -434,9 +505,11 @@
         if (e.target.closest('#btn-tambah-kemampuan')) {
           const tr = document.createElement('tr');
           tr.id = `row-kemampuan-${kemampuanIndex}`;
-          let html = `<td><div class="input-group"><input type="text" name="kemampuan[${kemampuanIndex}][judul]" class="form-control" required><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button></div></td>`;
+          let html =
+            `<td><div class="input-group"><input type="text" name="kemampuan[${kemampuanIndex}][judul]" class="form-control" required><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-kemampuan"><i class="ri-delete-bin-line"></i></button></div></td>`;
           skalaValues.forEach(function(skala) {
-            html += `<td class="text-center"><input type="radio" name="kemampuan[${kemampuanIndex}][skala]" value="${skala}" required></td>`;
+            html +=
+              `<td class="text-center"><input type="radio" name="kemampuan[${kemampuanIndex}][skala]" value="${skala}" required></td>`;
           });
           tr.innerHTML = html;
           const placeholder = document.getElementById('row-tambah-kemampuan');
