@@ -785,7 +785,23 @@
     // Fungsi hapus observasi dengan logika aman
     window.hapusObservasi = function(id) {
       if (!confirm('Yakin ingin menghapus observasi ini?')) return;
-      fetch('/program/observasi-program/' + id, {
+
+      // Try to detect sumber (source) for source-aware deletion. Prefer last clicked item, else search DOM.
+      var sumber = null;
+      try {
+        if (window._lastClickedRiwayatItem && window._lastClickedRiwayatItem.dataset && window._lastClickedRiwayatItem.dataset.sumber) {
+          sumber = window._lastClickedRiwayatItem.dataset.sumber;
+        }
+      } catch (e) {}
+      if (!sumber) {
+        try {
+          var li = document.querySelector('li.list-group-item[data-id="' + id + '"]');
+          if (li && li.dataset && li.dataset.sumber) sumber = li.dataset.sumber;
+        } catch (e) {}
+      }
+
+      var url = sumber ? '/program/observasi-program/' + sumber + '/' + id : '/program/observasi-program/' + id;
+      fetch(url, {
           method: 'DELETE',
           headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -820,6 +836,8 @@
           } else {
             showToast('Gagal menghapus data', 'danger');
           }
+        }).catch(() => {
+          showToast('Gagal menghapus data', 'danger');
         });
     }
 

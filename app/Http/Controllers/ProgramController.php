@@ -330,6 +330,39 @@ class ProgramController extends Controller
   }
 
   /**
+   * Source-aware delete: allow client to send sumber in URL to target a specific table.
+   */
+  public function destroyObservasiProgramWithSumber($sumber, $id)
+  {
+    $program = null;
+    if ($sumber === 'wicara') {
+      $program = \App\Models\ProgramWicara::find($id);
+    } elseif ($sumber === 'psikologi') {
+      $program = \App\Models\ProgramPsikologi::find($id);
+    } elseif ($sumber === 'si') {
+      $program = \App\Models\ProgramSI::find($id);
+    }
+    if (!$program) {
+      abort(404);
+    }
+
+    // Authorization: allow owner (user_id) or admin
+    $user = Auth::user();
+    if ($user->role !== 'admin' && $program->user_id && $program->user_id !== $user->id) {
+      return response()->json([
+        'success' => false,
+        'message' => 'Anda tidak memiliki izin untuk menghapus data ini.'
+      ], 403);
+    }
+
+    $program->delete();
+    return response()->json([
+      'success' => true,
+      'message' => 'Observasi/Evaluasi berhasil dihapus',
+    ]);
+  }
+
+  /**
    * Store a newly created resource in storage.
    */
   public function store(Request $request)
