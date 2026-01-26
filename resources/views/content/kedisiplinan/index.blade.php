@@ -128,11 +128,11 @@
           <div class="tab-pane fade {{ $activeTab === 'peringkat' ? 'show active' : '' }}" id="peringkatTab"
             role="tabpanel" aria-labelledby="tab-peringkat">
             <div class="p-3">
-              <form method="GET" action="{{ route('kedisiplinan.index') }}"
+              <form id="peringkatForm" method="GET" action="{{ route('kedisiplinan.index') }}"
                 class="mb-2 d-flex flex-column flex-md-row gap-2 align-items-stretch align-items-md-center">
                 <label class="mb-0 me-2">Bulan:</label>
                 <div class="flex-grow-1" style="min-width:0">
-                  <input type="month" name="month" class="form-control form-control-sm"
+                  <input id="peringkatMonth" type="month" name="month" class="form-control form-control-sm"
                     value="{{ request('month', \Carbon\Carbon::now()->format('Y-m')) }}">
                 </div>
                 <input type="hidden" name="tab" value="peringkat">
@@ -201,12 +201,11 @@
                         <table class="table table-sm mb-0">
                           <thead>
                             <tr class="table-light">
-                              <th style="width:40px">#</th>
+                              <th style="width:40px">No.</th>
                               <th>Anak</th>
                               <th style="width:110px">Wajib</th>
                               <th style="width:120px">Tepat Waktu</th>
                               <th style="width:120px">Dinilai</th>
-                              <th style="width:90px">% Tepat</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -217,7 +216,6 @@
                               <td>{{ $pa->total_wajib ?? 0 }}</td>
                               <td>{{ $pa->on_time_count ?? 0 }}</td>
                               <td>{{ $pa->assessed_count ?? 0 }}</td>
-                              <td>{{ $pa->percent_on_time ?? 0 }}%</td>
                             </tr>
                             @endforeach
                           </tbody>
@@ -267,6 +265,19 @@
 
 @push('page-script')
 <script>
+  // Auto-submit peringkat form when month selector changes
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      var monthEl = document.getElementById('peringkatMonth');
+      var formEl = document.getElementById('peringkatForm');
+      if (monthEl && formEl) {
+        monthEl.addEventListener('change', function() {
+          formEl.submit();
+        });
+      }
+    } catch (e) {
+      /* ignore */ }
+  });
   // helper: format date as Indonesian day, dd-mm-yyyy
   function formatDateDisplay(dateStr) {
     try {

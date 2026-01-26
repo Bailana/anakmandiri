@@ -128,6 +128,17 @@
       ]
     },
     {
+      "url": "absensi",
+      "name": "Absensi Anak",
+      "icon": "menu-icon icon-base ri ri-checkbox-multiple-line",
+      "slug": "absensi.index",
+      "roles": [
+        "admin",
+        "guru",
+        "terapis"
+      ]
+    },
+    {
       "url": "kedisiplinan",
       "name": "Kedisiplinan",
       "icon": "menu-icon icon-base ri ri-file-list-3-line",

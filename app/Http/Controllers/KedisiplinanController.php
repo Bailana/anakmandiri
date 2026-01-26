@@ -98,8 +98,234 @@ class KedisiplinanController extends Controller
     }
 
     $rows = [];
+
+    $isSingleDay = $rangeStart->toDateString() === $rangeEnd->toDateString();
+
+    // For month-range (peringkat) we should attribute points to the penilai (user who made
+    // the assessment) so that when an anak_didik changes `guru_fokus`, historical points
+    // remain with the original penilai. For single-day penilaian we keep the existing
+    // grouping by current `guru_fokus` to show required programs for today's checks.
+    if (!$isSingleDay) {
+      // fetch all assessments within range and group by penilai (user_id)
+      $allAssess = Assessment::with(['program', 'user', 'konsultan', 'anakDidik'])
+        ->whereBetween('tanggal_assessment', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
+        ->get();
+
+      $byUser = [];
+      foreach ($allAssess as $a) {
+        $uid = $a->user_id ?? null;
+        if (!$uid) continue; // skip assessments without a user penilai
+        if (!isset($byUser[$uid])) $byUser[$uid] = [];
+        $byUser[$uid][] = $a;
+      }
+
+      foreach ($byUser as $uid => $assessList) {
+        $guru = Karyawan::where('user_id', $uid)->first();
+        // fallback: if there's no Karyawan record for this user_id, try to use the User.name
+        if (!$guru) {
+          $u = User::find($uid);
+          if ($u) {
+            $guru = (object) ['id' => null, 'user_id' => $uid, 'nama' => $u->name];
+          }
+        }
+
+        // determine unique anak ids assessed by this user in range
+        $anakIds = [];
+        foreach ($assessList as $a) {
+          if ($a->anak_didik_id) $anakIds[] = $a->anak_didik_id;
+        }
+        $anakIds = array_values(array_unique($anakIds));
+
+        // collect wajib program names for these anakIds
+        $namesSet = [];
+        if (!empty($anakIds)) {
+          $items = PpiItem::whereHas('ppi', function ($q) use ($anakIds) {
+            $q->whereIn('anak_didik_id', $anakIds);
+          })->where('aktif', 1)->get();
+          foreach ($items as $it) {
+            $n = trim(strtolower($it->nama_program ?? ''));
+            if ($n !== '') $namesSet[$n] = true;
+          }
+        }
+
+        $names = array_keys($namesSet);
+
+        // match assessments to wajib names and compute earliest per anak/program
+        $byAnak = [];
+        $earliest = [];
+        foreach ($assessList as $a) {
+          $matchedName = null;
+          if ($a->program && $a->program->nama_program) {
+            $pn = trim(strtolower($a->program->nama_program));
+            if (isset($namesSet[$pn])) $matchedName = $pn;
+          }
+          if (!$matchedName) {
+            $hay = strtolower((string)($a->hasil_penilaian ?? '')) . ' ' . strtolower((string)($a->aktivitas ?? ''));
+            foreach ($names as $nm) {
+              if ($nm !== '' && strpos($hay, $nm) !== false) {
+                $matchedName = $nm;
+                break;
+              }
+            }
+          }
+          if ($matchedName) {
+            $t = Carbon::parse($a->created_at);
+            if (!isset($earliest[$matchedName]) || $t->lessThan(Carbon::parse($earliest[$matchedName]->created_at))) {
+              $earliest[$matchedName] = $a;
+            }
+            $aid = $a->anak_didik_id ?? ($a->anakDidik ? $a->anakDidik->id : null);
+            if ($aid) {
+              if (!isset($byAnak[$aid])) $byAnak[$aid] = [];
+              if (!isset($byAnak[$aid][$matchedName]) || Carbon::parse($a->created_at)->lessThan(Carbon::parse($byAnak[$aid][$matchedName]->created_at))) {
+                $byAnak[$aid][$matchedName] = $a;
+              }
+            }
+          }
+        }
+
+        // counts
+        $doneCount = 0;
+        foreach ($byAnak as $aidKey => $progMap) {
+          $doneCount += is_array($progMap) ? count($progMap) : (is_object($progMap) ? count((array)$progMap) : 0);
+        }
+
+        $onTimePrograms = 0;
+        $latePrograms = 0;
+        $assessmentsByAnak = [];
+        foreach ($assessList as $a) {
+          $matchedName = null;
+          if ($a->program && $a->program->nama_program) {
+            $pn = trim(strtolower($a->program->nama_program));
+            if (isset($namesSet[$pn])) $matchedName = $pn;
+          }
+          if (!$matchedName) {
+            $hay = strtolower((string)($a->hasil_penilaian ?? '')) . ' ' . strtolower((string)($a->aktivitas ?? ''));
+            foreach ($names as $nm) {
+              if ($nm !== '' && strpos($hay, $nm) !== false) {
+                $matchedName = $nm;
+                break;
+              }
+            }
+          }
+          if (!$matchedName) continue;
+          $aid = $a->anak_didik_id ?? ($a->anakDidik ? $a->anakDidik->id : null);
+          if (!$aid) continue;
+          if (!isset($assessmentsByAnak[$aid])) $assessmentsByAnak[$aid] = ['all' => [], 'on_time' => [], 'late' => []];
+          $assessmentsByAnak[$aid]['all'][] = $a;
+          $t = Carbon::parse($a->created_at);
+          $assessDate = null;
+          if (isset($a->tanggal_assessment) && $a->tanggal_assessment) {
+            try {
+              $assessDate = Carbon::parse($a->tanggal_assessment);
+            } catch (\Exception $e) {
+              $assessDate = null;
+            }
+          }
+          if ($assessDate && $assessDate->toDateString() !== $t->toDateString()) {
+            $latePrograms++;
+            $assessmentsByAnak[$aid]['late'][] = $a;
+          } else {
+            $deadlineFor = $t->copy()->setTime(17, 0, 0);
+            if ($t->lessThanOrEqualTo($deadlineFor)) {
+              $onTimePrograms++;
+              $assessmentsByAnak[$aid]['on_time'][] = $a;
+            } else {
+              $latePrograms++;
+              $assessmentsByAnak[$aid]['late'][] = $a;
+            }
+          }
+        }
+
+        // per-anak breakdown
+        $perAnak = [];
+        $totalWajibInstances = 0;
+        $anakListObjs = AnakDidik::whereIn('id', $anakIds)->get()->keyBy('id');
+        foreach ($anakIds as $aid) {
+          $ppiItemsForAnak = PpiItem::whereHas('ppi', function ($q) use ($aid) {
+            $q->where('anak_didik_id', $aid);
+          })->where('aktif', 1)->get();
+          $namesSetAnak = [];
+          foreach ($ppiItemsForAnak as $it) {
+            $n = trim(strtolower($it->nama_program ?? ''));
+            if ($n !== '') $namesSetAnak[$n] = true;
+          }
+          $namesAnak = array_keys($namesSetAnak);
+          $totalWajibAnak = count($namesAnak);
+          $totalWajibInstances += $totalWajibAnak;
+          $assessedAnak = isset($assessmentsByAnak[$aid]) ? count($assessmentsByAnak[$aid]['all']) : 0;
+          $onTimeAnak = isset($assessmentsByAnak[$aid]) ? count($assessmentsByAnak[$aid]['on_time']) : 0;
+          $percent = $totalWajibAnak > 0 ? round($onTimeAnak / $totalWajibAnak * 100, 1) : 0;
+          $perAnak[] = (object) [
+            'anak_id' => $aid,
+            'anak_nama' => isset($anakListObjs[$aid]) ? $anakListObjs[$aid]->nama : null,
+            'total_wajib' => $totalWajibAnak,
+            'assessed_count' => $assessedAnak,
+            'on_time_count' => $onTimeAnak,
+            'percent_on_time' => $percent,
+          ];
+        }
+
+        $score = (($onTimePrograms ?? 0) * 10) - (($latePrograms ?? 0) * 15);
+
+        $status = 'Belum Dinilai';
+        if (!empty($onTimePrograms)) $status = 'Tepat Waktu';
+        elseif (!empty($latePrograms)) $status = 'Terlambat';
+
+        // average time
+        $timeSum = 0;
+        $timeCount = 0;
+        foreach ($byAnak as $aidKey => $progMap) {
+          foreach ($progMap as $pname => $assessment) {
+            if ($assessment && isset($assessment->created_at)) {
+              $t = Carbon::parse($assessment->created_at);
+              $seconds = $t->hour * 3600 + $t->minute * 60 + $t->second;
+              $timeSum += $seconds;
+              $timeCount++;
+            }
+          }
+        }
+        $avgTimeSeconds = null;
+        $avgTimeDisplay = null;
+        if ($timeCount > 0) {
+          $avgTimeSeconds = (int) round($timeSum / $timeCount);
+          $avgTimeDisplay = Carbon::createFromTime(0, 0, 0)->addSeconds($avgTimeSeconds)->format('H:i');
+        }
+
+        $rows[] = (object) [
+          'guru' => $guru,
+          'total_wajib' => $totalWajibInstances,
+          'assessed_count' => $doneCount,
+          'on_time_count' => $onTimePrograms,
+          'late_count' => $latePrograms,
+          'score' => $score,
+          'avg_time_seconds' => $avgTimeSeconds,
+          'avg_time' => $avgTimeDisplay,
+          'status' => $status,
+          'per_anak' => $perAnak,
+        ];
+      }
+
+      // also sort rows by score desc, avg_time asc to keep consistent ordering
+      usort($rows, function ($a, $b) {
+        $sa = $a->score ?? 0;
+        $sb = $b->score ?? 0;
+        if ($sa === $sb) {
+          $aa = $a->avg_time_seconds ?? null;
+          $ab = $b->avg_time_seconds ?? null;
+          if (!is_null($aa) && !is_null($ab)) return $aa <=> $ab;
+          if (!is_null($aa) && is_null($ab)) return -1;
+          if (is_null($aa) && !is_null($ab)) return 1;
+          return 0;
+        }
+        return $sb <=> $sa;
+      });
+
+      return $rows;
+    }
+
     foreach ($grouped as $gid => $anakList) {
       $guru = Karyawan::find($gid);
+      $guruUserId = $guru && isset($guru->user_id) ? $guru->user_id : null;
 
       // collect unique wajib program names across semua anak guru ini
       $namesSet = [];
@@ -126,6 +352,14 @@ class KedisiplinanController extends Controller
       $assessmentsToday = [];
       if (!empty($anakIds)) {
         $qry = Assessment::with(['program', 'user', 'konsultan'])->whereIn('anak_didik_id', $anakIds);
+        // Apply penilai filter only for single-day penilaian view (so today's penilaian
+        // shows only assessments performed by the guru). For month-range (peringkat),
+        // we must include assessments performed by any penilai so historical points remain.
+        if ($rangeStart->toDateString() === $rangeEnd->toDateString()) {
+          if ($guruUserId) {
+            $qry->where('user_id', $guruUserId);
+          }
+        }
         if ($rangeStart->toDateString() !== $rangeEnd->toDateString()) {
           $qry->whereBetween('tanggal_assessment', [$rangeStart->toDateString(), $rangeEnd->toDateString()]);
         } else {
@@ -340,6 +574,8 @@ class KedisiplinanController extends Controller
   public function riwayat(Request $request, $guruId)
   {
     $anakIds = AnakDidik::where('guru_fokus_id', $guruId)->pluck('id')->toArray();
+    $guru = Karyawan::find($guruId);
+    $guruUserId = $guru && isset($guru->user_id) ? $guru->user_id : null;
     if (empty($anakIds)) {
       return response()->json(['success' => true, 'riwayat' => []]);
     }
@@ -374,9 +610,12 @@ class KedisiplinanController extends Controller
     // select by assessment date (`tanggal_assessment`) but keep `created_at` for time
     $assessments = Assessment::with(['program', 'anakDidik', 'user', 'konsultan'])
       ->whereIn('anak_didik_id', $anakIds)
-      ->whereDate('tanggal_assessment', $dateParsed)
-      ->orderBy('created_at', 'asc')
-      ->get();
+      ->whereDate('tanggal_assessment', $dateParsed);
+    // Only include assessments performed by this guru (penilai)
+    if ($guruUserId) {
+      $assessments->where('user_id', $guruUserId);
+    }
+    $assessments = $assessments->orderBy('created_at', 'asc')->get();
 
     // Map program names to anak ids (which children have that program assigned)
     $ppiItems = PpiItem::whereHas('ppi', function ($q) use ($anakIds) {
