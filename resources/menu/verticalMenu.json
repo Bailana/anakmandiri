@@ -134,8 +134,7 @@
       "slug": "absensi.index",
       "roles": [
         "admin",
-        "guru",
-        "terapis"
+        "guru"
       ]
     },
     {

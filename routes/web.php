@@ -211,11 +211,17 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('guru-anak/approvals/{id}', [App\Http\Controllers\GuruAnakDidikController::class, 'destroyApproval'])->name('guru-anak.approvals.destroy');
   });
 
-  // Absensi: index view for admin, guru, terapis
-  Route::middleware(['auth', 'role:admin,guru,terapis'])->group(function () {
-    Route::get('absensi', function () {
-      return view('content.absensi.index');
-    })->name('absensi.index');
+  // Absensi: CRUD for admin, guru
+  Route::middleware(['auth', 'role:admin,guru'])->group(function () {
+    Route::resource('absensi', App\Http\Controllers\AbsensiController::class);
+    Route::get('absensi/{id}/detail', [App\Http\Controllers\AbsensiController::class, 'showDetail'])->name('absensi.detail');
+    Route::get('absensi/riwayat/{anakDidikId}', [App\Http\Controllers\AbsensiController::class, 'getRiwayatAbsensi'])->name('absensi.riwayat');
+    Route::post('absensi/{id}/jemput', [App\Http\Controllers\AbsensiController::class, 'jemput'])->name('absensi.jemput');
+  });
+
+  // Absensi Export PDF (Admin only)
+  Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('absensi-export-pdf', [App\Http\Controllers\AbsensiController::class, 'exportPdf'])->name('absensi.export-pdf');
   });
 
   // Admin-only endpoint for toggling PPI item active flag
