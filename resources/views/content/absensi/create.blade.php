@@ -278,6 +278,9 @@
                       </div>
                     </div>
                   </div>
+                  <div id="model3DError" class="alert alert-warning mt-2" style="display: none;" role="alert">
+                    Gagal memuat model 3D. Pastikan URL aset tersedia di server.
+                  </div>
                 </div>
 
                 <div class="col-md-6">
@@ -478,6 +481,10 @@
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 
 <script>
+  // Resolve model asset URLs via Laravel to handle subdirectory deployments
+  const MODEL_FEMALE_URL = "{{ asset('assets/Female.glb') }}";
+  const MODEL_MALE_URL = "{{ asset('assets/Male.glb') }}";
+
   // Hybrid drawing system - uses Signature Pad if available, falls back to native canvas
   function initializeSignatureCanvas() {
     const canvas = document.getElementById('signaturePad');
@@ -1008,14 +1015,14 @@
       // Set model based on jenis_kelamin
       const jenisKelamin = (selectedAnak.jenis_kelamin || '').toLowerCase();
       if (jenisKelamin === 'perempuan' || jenisKelamin === 'p') {
-        bodyModel3D.src = '/assets/Female.glb';
+        bodyModel3D.src = MODEL_FEMALE_URL;
         console.log('Loading female 3D model...');
       } else if (jenisKelamin === 'laki-laki' || jenisKelamin === 'l') {
-        bodyModel3D.src = '/assets/Male.glb';
+        bodyModel3D.src = MODEL_MALE_URL;
         console.log('Loading male 3D model...');
       } else {
         // Default to male if gender not specified
-        bodyModel3D.src = '/assets/Male.glb';
+        bodyModel3D.src = MODEL_MALE_URL;
         console.log('Loading default (male) 3D model...');
       }
     }
