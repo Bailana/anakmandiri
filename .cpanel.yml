@@ -1,9 +1,14 @@
 ---
 deployment:
   tasks:
+    # 1. Definisikan folder tujuan
     - export APP_ROOT=/home/xhkjiigp/laravel_proyek/
     - export PUBLIC_ROOT=/home/xhkjiigp/public_html/
-    # 1. Copy semua file project ke folder laravel_proyek (Backend)
+
+    # 2. Copy SEMUA file proyek ke folder backend (laravel_proyek)
+    #    Ini akan mengupdate Controller, Model, View, Route, dll.
     - /bin/cp -R * $APP_ROOT
-    # 2. Copy hanya isi folder public ke public_html (Frontend)
+
+    # 3. Copy isi folder 'public' (aset) ke folder frontend (public_html)
+    #    Ini akan mengupdate file CSS, JS, Gambar, dan Build (Vite) terbaru.
     - /bin/cp -R public/* $PUBLIC_ROOT
