@@ -1,0 +1,226 @@
+{
+  "__commonjsHelpers-Cpj98o6Y.js": {
+    "file": "assets/_commonjsHelpers-Cpj98o6Y.js",
+    "name": "_commonjsHelpers"
+  },
+  "_index.html": {
+    "file": "index.html",
+    "src": "_index.html"
+  },
+  "resources/assets/css/demo.css": {
+    "file": "assets/demo-B9Pxs1C6.css",
+    "src": "resources/assets/css/demo.css",
+    "isEntry": true
+  },
+  "resources/assets/js/config.js": {
+    "file": "assets/config-CQjA4MVn.js",
+    "name": "config",
+    "src": "resources/assets/js/config.js",
+    "isEntry": true
+  },
+  "resources/assets/js/dashboards-analytics.js": {
+    "file": "assets/dashboards-analytics-Bzx0uG5K.js",
+    "name": "dashboards-analytics",
+    "src": "resources/assets/js/dashboards-analytics.js",
+    "isEntry": true
+  },
+  "resources/assets/js/extended-ui-perfect-scrollbar.js": {
+    "file": "assets/extended-ui-perfect-scrollbar-87gYG_r1.js",
+    "name": "extended-ui-perfect-scrollbar",
+    "src": "resources/assets/js/extended-ui-perfect-scrollbar.js",
+    "isEntry": true
+  },
+  "resources/assets/js/form-basic-inputs.js": {
+    "file": "assets/form-basic-inputs-CjS8llQr.js",
+    "name": "form-basic-inputs",
+    "src": "resources/assets/js/form-basic-inputs.js",
+    "isEntry": true
+  },
+  "resources/assets/js/main.js": {
+    "file": "assets/main-CZm4JO_n.js",
+    "name": "main",
+    "src": "resources/assets/js/main.js",
+    "isEntry": true
+  },
+  "resources/assets/js/pages-account-settings-account.js": {
+    "file": "assets/pages-account-settings-account-CFTyzG2K.js",
+    "name": "pages-account-settings-account",
+    "src": "resources/assets/js/pages-account-settings-account.js",
+    "isEntry": true
+  },
+  "resources/assets/js/ui-modals.js": {
+    "file": "assets/ui-modals-CYNbp-iO.js",
+    "name": "ui-modals",
+    "src": "resources/assets/js/ui-modals.js",
+    "isEntry": true
+  },
+  "resources/assets/js/ui-popover.js": {
+    "file": "assets/ui-popover-CbvAU9Mu.js",
+    "name": "ui-popover",
+    "src": "resources/assets/js/ui-popover.js",
+    "isEntry": true
+  },
+  "resources/assets/js/ui-toasts.js": {
+    "file": "assets/ui-toasts-nlQPE7wn.js",
+    "name": "ui-toasts",
+    "src": "resources/assets/js/ui-toasts.js",
+    "isEntry": true
+  },
+  "resources/assets/vendor/fonts/iconify/iconify.css": {
+    "file": "assets/iconify-gmF8Ppqf.css",
+    "src": "resources/assets/vendor/fonts/iconify/iconify.css",
+    "isEntry": true
+  },
+  "resources/assets/vendor/fonts/iconify/iconify.js": {
+    "file": "assets/iconify-BoSjt-eU.js",
+    "name": "iconify",
+    "src": "resources/assets/vendor/fonts/iconify/iconify.js",
+    "isEntry": true
+  },
+  "resources/assets/vendor/js/bootstrap.js": {
+    "file": "assets/bootstrap-CRv40SU6.js",
+    "name": "bootstrap",
+    "src": "resources/assets/vendor/js/bootstrap.js",
+    "isEntry": true
+  },
+  "resources/assets/vendor/js/helpers.js": {
+    "file": "assets/helpers-xuwOQqll.js",
+    "name": "helpers",
+    "src": "resources/assets/vendor/js/helpers.js",
+    "isEntry": true
+  },
+  "resources/assets/vendor/js/menu.js": {
+    "file": "assets/menu-Bldkajpn.js",
+    "name": "menu",
+    "src": "resources/assets/vendor/js/menu.js",
+    "isEntry": true
+  },
+  "resources/assets/vendor/libs/apex-charts/apex-charts.scss": {
+    "file": "assets/apex-charts-DVgmgUoZ.css",
+    "src": "resources/assets/vendor/libs/apex-charts/apex-charts.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/libs/apex-charts/apexcharts.js": {
+    "file": "assets/apexcharts-DD5SbFow.js",
+    "name": "apexcharts",
+    "src": "resources/assets/vendor/libs/apex-charts/apexcharts.js",
+    "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-Cpj98o6Y.js"
+    ]
+  },
+  "resources/assets/vendor/libs/highlight/highlight-github.scss": {
+    "file": "assets/highlight-github-BfC0goYb.css",
+    "src": "resources/assets/vendor/libs/highlight/highlight-github.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/libs/highlight/highlight.js": {
+    "file": "assets/highlight-Bzwjs2T-.js",
+    "name": "highlight",
+    "src": "resources/assets/vendor/libs/highlight/highlight.js",
+    "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-Cpj98o6Y.js"
+    ]
+  },
+  "resources/assets/vendor/libs/highlight/highlight.scss": {
+    "file": "assets/highlight-DGVygr29.css",
+    "src": "resources/assets/vendor/libs/highlight/highlight.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/libs/jquery/jquery.js": {
+    "file": "assets/jquery-CS3NxP3G.js",
+    "name": "jquery",
+    "src": "resources/assets/vendor/libs/jquery/jquery.js",
+    "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-Cpj98o6Y.js"
+    ]
+  },
+  "resources/assets/vendor/libs/masonry/masonry.js": {
+    "file": "assets/masonry-C0WB6QSm.js",
+    "name": "masonry",
+    "src": "resources/assets/vendor/libs/masonry/masonry.js",
+    "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-Cpj98o6Y.js"
+    ]
+  },
+  "resources/assets/vendor/libs/node-waves/node-waves.js": {
+    "file": "assets/node-waves-B8bZzeKS.js",
+    "name": "node-waves",
+    "src": "resources/assets/vendor/libs/node-waves/node-waves.js",
+    "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-Cpj98o6Y.js"
+    ]
+  },
+  "resources/assets/vendor/libs/node-waves/node-waves.scss": {
+    "file": "assets/node-waves-CNx6tA5W.css",
+    "src": "resources/assets/vendor/libs/node-waves/node-waves.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js": {
+    "file": "assets/perfect-scrollbar-Cop9XuFt.js",
+    "name": "perfect-scrollbar",
+    "src": "resources/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js",
+    "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-Cpj98o6Y.js"
+    ]
+  },
+  "resources/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.scss": {
+    "file": "assets/perfect-scrollbar-D1VS3Q33.css",
+    "src": "resources/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/libs/popper/popper.js": {
+    "file": "assets/popper-CgDBDevV.js",
+    "name": "popper",
+    "src": "resources/assets/vendor/libs/popper/popper.js",
+    "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-Cpj98o6Y.js"
+    ]
+  },
+  "resources/assets/vendor/scss/core.scss": {
+    "file": "assets/core-DkJAMmy6.css",
+    "src": "resources/assets/vendor/scss/core.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/scss/pages/page-account-settings.scss": {
+    "file": "assets/page-account-settings-BAGgFoLY.css",
+    "src": "resources/assets/vendor/scss/pages/page-account-settings.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/scss/pages/page-auth.scss": {
+    "file": "assets/page-auth-B-6tUBG7.css",
+    "src": "resources/assets/vendor/scss/pages/page-auth.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/scss/pages/page-icons.scss": {
+    "file": "assets/page-icons-D2pxsqXk.css",
+    "src": "resources/assets/vendor/scss/pages/page-icons.scss",
+    "isEntry": true
+  },
+  "resources/assets/vendor/scss/pages/page-misc.scss": {
+    "file": "assets/page-misc-T8DZym3n.css",
+    "src": "resources/assets/vendor/scss/pages/page-misc.scss",
+    "isEntry": true
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-l0sNRNKZ.js",
+    "name": "app",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-UrURlrcC.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "__commonjsHelpers-Cpj98o6Y.js"
+    ]
+  }
+}
