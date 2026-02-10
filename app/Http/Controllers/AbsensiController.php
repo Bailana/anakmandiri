@@ -28,8 +28,12 @@ class AbsensiController extends Controller
     $anakDidikQuery = AnakDidik::query();
 
     if ($user->role === 'guru' || $user->role === 'terapis') {
-      // Get employee data
+      // Get employee data (prefer user_id linkage, fallback to name match)
       $karyawan = Karyawan::where('user_id', $user->id)->first();
+      if (!$karyawan) {
+        // Fallback: attempt match by exact name (case-insensitive)
+        $karyawan = Karyawan::whereRaw('LOWER(nama) = ?', [strtolower($user->name ?? '')])->first();
+      }
       if (!$karyawan) {
         // User bukan karyawan, kembalikan empty
         $anakDidikQuery->whereRaw('1 = 0');
@@ -141,8 +145,11 @@ class AbsensiController extends Controller
   {
     $user = Auth::user();
 
-    // Cari Karyawan berdasarkan user_id
+    // Cari Karyawan berdasarkan user_id, fallback nama jika diperlukan
     $karyawan = Karyawan::where('user_id', $user->id)->first();
+    if (!$karyawan) {
+      $karyawan = Karyawan::whereRaw('LOWER(nama) = ?', [strtolower($user->name ?? '')])->first();
+    }
 
     if (!$karyawan) {
       return redirect()->route('absensi.index')
@@ -204,6 +211,9 @@ class AbsensiController extends Controller
       // Validasi bahwa guru hanya bisa mengabsensi anak didiknya sendiri
       $anakDidik = AnakDidik::findOrFail($request->anak_didik_id);
       $karyawan = Karyawan::where('user_id', $user->id)->first();
+      if (!$karyawan) {
+        $karyawan = Karyawan::whereRaw('LOWER(nama) = ?', [strtolower($user->name ?? '')])->first();
+      }
 
       if (!$karyawan || $anakDidik->guru_fokus_id !== $karyawan->id) {
         if ($user->role !== 'admin') {

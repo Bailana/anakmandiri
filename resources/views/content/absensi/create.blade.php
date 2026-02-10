@@ -485,6 +485,12 @@
   const MODEL_FEMALE_URL = "{{ asset('assets/Female.glb') }}";
   const MODEL_MALE_URL = "{{ asset('assets/Male.glb') }}";
 
+  // Debug: tampilkan URL yang akan dimuat
+  console.log('🔍 Model URLs:', {
+    female: MODEL_FEMALE_URL,
+    male: MODEL_MALE_URL
+  });
+
   // Hybrid drawing system - uses Signature Pad if available, falls back to native canvas
   function initializeSignatureCanvas() {
     const canvas = document.getElementById('signaturePad');
@@ -1016,14 +1022,14 @@
       const jenisKelamin = (selectedAnak.jenis_kelamin || '').toLowerCase();
       if (jenisKelamin === 'perempuan' || jenisKelamin === 'p') {
         bodyModel3D.src = MODEL_FEMALE_URL;
-        console.log('Loading female 3D model...');
+        console.log('🔄 Loading female 3D model from:', MODEL_FEMALE_URL);
       } else if (jenisKelamin === 'laki-laki' || jenisKelamin === 'l') {
         bodyModel3D.src = MODEL_MALE_URL;
-        console.log('Loading male 3D model...');
+        console.log('🔄 Loading male 3D model from:', MODEL_MALE_URL);
       } else {
         // Default to male if gender not specified
         bodyModel3D.src = MODEL_MALE_URL;
-        console.log('Loading default (male) 3D model...');
+        console.log('🔄 Loading default (male) 3D model from:', MODEL_MALE_URL);
       }
     }
 
@@ -1072,8 +1078,23 @@
     // Handle loading errors
     bodyModel3D.addEventListener('error', function(event) {
       const loader = document.getElementById('model3DLoader');
-      loader.innerHTML = '<div class="text-danger"><i class="ri-error-warning-line"></i><br><small>Gagal memuat model 3D</small></div>';
-      console.error('Failed to load 3D model:', event);
+      const errorBox = document.getElementById('model3DError');
+
+      // Dapatkan URL yang gagal dimuat
+      const failedURL = bodyModel3D.src;
+
+      loader.style.display = 'none';
+      if (errorBox) {
+        errorBox.style.display = 'block';
+        errorBox.innerHTML = `
+          <strong>❌ Gagal memuat model 3D</strong><br>
+          <small class="text-muted">URL: ${failedURL}</small><br>
+          <small>Periksa apakah file ada di server dan dapat diakses.</small>
+        `;
+      }
+
+      console.error('❌ Failed to load 3D model from:', failedURL);
+      console.error('Event:', event);
     });
 
     // Update model when anak didik selection changes

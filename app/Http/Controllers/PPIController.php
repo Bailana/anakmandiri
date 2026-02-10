@@ -605,7 +605,7 @@ class PPIController extends Controller
 
         // Get latest assessment for this program within the period (kept for potential future use)
         $maxPenilaian = null;
-        
+
         if ($programKonsultan && $programKonsultan->konsultan_id) {
           // Query assessments by matching konsultan_id
           // Check both tanggal_assessment (if set) and created_at (fallback)
@@ -623,19 +623,19 @@ class PPIController extends Controller
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
             ->get();
-          
+
           foreach ($assessments as $assessment) {
             // Extract numeric value from hasil_penilaian using regex
             $penilaian = null;
             $hasilPenilaian = $assessment->hasil_penilaian ?? '';
-            
+
             // Try to extract first number from the string (e.g., "4", "Skor: 4", etc.)
             if (preg_match('/\d+/', (string)$hasilPenilaian, $matches)) {
               $penilaian = (int)$matches[0];
             } elseif (is_numeric($hasilPenilaian)) {
               $penilaian = (int)$hasilPenilaian;
             }
-            
+
             if ($penilaian !== null && ($maxPenilaian === null || $penilaian > $maxPenilaian)) {
               $maxPenilaian = $penilaian;
             }

@@ -1,9 +1,18 @@
+# MIME Types untuk 3D Models
+<IfModule mod_mime.c>
+    AddType model/gltf-binary .glb
+    AddType model/gltf+json .gltf
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+    
+    # Jangan proses file .glb dan .gltf dengan PHP
+    RewriteRule \.(glb|gltf)$ - [L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
