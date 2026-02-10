@@ -1,5 +1,9 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/xhkjiigp/public_html/
-    - /bin/cp -R * $DEPLOYPATH
+    - export APP_ROOT=/home/xhkjiigp/laravel_proyek/
+    - export PUBLIC_ROOT=/home/xhkjiigp/public_html/
+    # 1. Copy semua file project ke folder laravel_proyek (Backend)
+    - /bin/cp -R * $APP_ROOT
+    # 2. Copy hanya isi folder public ke public_html (Frontend)
+    - /bin/cp -R public/* $PUBLIC_ROOT
