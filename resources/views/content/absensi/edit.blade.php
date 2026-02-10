@@ -510,7 +510,7 @@
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 <script>
-  @if($absensi - > waktu_jemput)
+  @if($absensi->waktu_jemput)
   // Edit Penjemputan Scripts
   let editSignaturePad;
   let editCameraStream = null;
@@ -711,7 +711,7 @@
   @else
   // Edit Absensi Biasa Scripts
   let signaturePad;
-  let selectedBodyParts = @json($absensi - > lokasi_luka ?? []);
+  let selectedBodyParts = @json($absensi->lokasi_luka ?? []);
 
   // 3D Model coordinates
   const bodyPartCoordinates = {

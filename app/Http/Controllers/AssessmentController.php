@@ -198,9 +198,26 @@ class AssessmentController extends Controller
 
     $konsultans = Konsultan::orderBy('nama')->get();
 
+    // Cek status absensi hari ini untuk setiap anak didik
+    $absensiHariIni = [];
+    $today = Carbon::today()->format('Y-m-d');
+
+    foreach ($anakDidiks as $anak) {
+      $absensi = \App\Models\Absensi::where('anak_didik_id', $anak->id)
+        ->whereDate('tanggal', $today)
+        ->first();
+
+      $absensiHariIni[$anak->id] = [
+        'sudah_absen' => $absensi !== null,
+        'status' => $absensi ? $absensi->status : null,
+        'boleh_dinilai' => $absensi && $absensi->status === 'hadir'
+      ];
+    }
+
     return view('content.assessment.create', [
       'anakDidiks' => $anakDidiks,
       'konsultans' => $konsultans,
+      'absensiHariIni' => $absensiHariIni,
     ]);
   }
 
@@ -225,6 +242,18 @@ class AssessmentController extends Controller
       'kemampuan.*.judul' => 'nullable|string',
       'kemampuan.*.skala' => 'nullable|in:1,2,3,4,5',
     ]);
+
+    // Validasi: anak didik harus sudah absensi dengan status hadir hari ini
+    $today = Carbon::today()->format('Y-m-d');
+    $absensi = \App\Models\Absensi::where('anak_didik_id', $validated['anak_didik_id'])
+      ->whereDate('tanggal', $today)
+      ->first();
+
+    if (!$absensi || $absensi->status !== 'hadir') {
+      return redirect()->back()->withErrors([
+        'anak_didik_id' => 'Penilaian hanya dapat dilakukan untuk anak didik yang sudah absensi dengan status hadir hari ini.'
+      ])->withInput();
+    }
 
     // Ensure kemampuan is an array (store empty array if not provided)
     $validated['kemampuan'] = array_values($request->input('kemampuan', []));

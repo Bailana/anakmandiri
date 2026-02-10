@@ -276,7 +276,8 @@
         });
       }
     } catch (e) {
-      /* ignore */ }
+      /* ignore */
+    }
   });
   // helper: format date as Indonesian day, dd-mm-yyyy
   function formatDateDisplay(dateStr) {
@@ -346,7 +347,18 @@
         Object.keys(byChild).forEach(child => {
           html += `<div class="mt-2"><div class="fw-semibold">${child}</div><div class="list-group mt-2">`;
           (byChild[child] || []).forEach(it => {
-            html += `<div class="list-group-item d-flex justify-content-between align-items-start">
+            // If this is an absensi status (not program assessment)
+            if (it.is_absensi) {
+              const badgeClass = it.absensi_status === 'Izin' ? 'bg-warning text-dark' : (it.absensi_status === 'Belum Absen' ? 'bg-secondary' : 'bg-danger text-white');
+              html += `<div class="list-group-item">
+								<div>
+									<div class="fw-semibold">Status Absensi</div>
+									<div class="text-muted small">Status: <span class="badge ${badgeClass}">${it.absensi_status}</span></div>
+									<div class="text-muted small">Keterangan: ${it.absensi_keterangan || '-'}</div>
+								</div>
+							</div>`;
+            } else {
+              html += `<div class="list-group-item d-flex justify-content-between align-items-start">
 								<div>
 									<div class="fw-semibold">${it.program_display || it.program || '-'}</div>
 									<div class="text-muted small">Waktu: ${it.waktu || '-'}</div>
@@ -356,6 +368,7 @@
 									<span class="badge ${it.status === 'Tepat Waktu' ? 'bg-success' : (it.status === 'Belum Dinilai' ? 'bg-danger text-white' : 'bg-warning text-dark')}">${it.status}</span>
 								</div>
 							</div>`;
+            }
           });
           html += `</div></div>`;
         });
@@ -423,16 +436,28 @@
             html +=
               `<div class="mt-2"><div class="fw-semibold">${child}</div><div class="list-group mt-2">`;
             (byChild[child] || []).forEach(it => {
-              html += `<div class="list-group-item d-flex justify-content-between align-items-start">
-									<div>
-										<div class="fw-semibold">${it.program_display || it.program || '-'}</div>
-										<div class="text-muted small">Waktu: ${it.waktu || '-'}</div>
-										<div class="text-muted small">Penilai: ${it.penilai_nama ? it.penilai_nama : '-'}</div>
-									</div>
-									<div>
-										<span class="badge ${it.status === 'Tepat Waktu' ? 'bg-success' : (it.status === 'Belum Dinilai' ? 'bg-danger text-white' : 'bg-warning text-dark')}">${it.status}</span>
-									</div>
-								</div>`;
+              // If this is an absensi status (not program assessment)
+              if (it.is_absensi) {
+                const badgeClass = it.absensi_status === 'Izin' ? 'bg-warning text-dark' : (it.absensi_status === 'Belum Absen' ? 'bg-secondary' : 'bg-danger text-white');
+                html += `<div class="list-group-item">
+										<div>
+											<div class="fw-semibold">Status Absensi</div>
+											<div class="text-muted small">Status: <span class="badge ${badgeClass}">${it.absensi_status}</span></div>
+											<div class="text-muted small">Keterangan: ${it.absensi_keterangan || '-'}</div>
+										</div>
+									</div>`;
+              } else {
+                html += `<div class="list-group-item d-flex justify-content-between align-items-start">
+										<div>
+											<div class="fw-semibold">${it.program_display || it.program || '-'}</div>
+											<div class="text-muted small">Waktu: ${it.waktu || '-'}</div>
+											<div class="text-muted small">Penilai: ${it.penilai_nama ? it.penilai_nama : '-'}</div>
+										</div>
+										<div>
+											<span class="badge ${it.status === 'Tepat Waktu' ? 'bg-success' : (it.status === 'Belum Dinilai' ? 'bg-danger text-white' : 'bg-warning text-dark')}">${it.status}</span>
+										</div>
+									</div>`;
+              }
             });
             html += `</div></div>`;
           });

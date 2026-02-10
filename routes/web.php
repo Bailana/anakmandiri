@@ -195,6 +195,7 @@ Route::middleware(['auth'])->group(function () {
   Route::middleware(['auth', 'role:admin,guru,konsultan'])->group(function () {
     Route::get('ppi', [App\Http\Controllers\PPIController::class, 'index'])->name('ppi.index');
     Route::get('ppi/create', [App\Http\Controllers\PPIController::class, 'create'])->name('ppi.create');
+    Route::get('ppi/export-pdf', [App\Http\Controllers\PPIController::class, 'exportPdf'])->name('ppi.export-pdf');
     Route::post('ppi', [App\Http\Controllers\PPIController::class, 'store'])->name('ppi.store');
     Route::get('ppi/{id}', [App\Http\Controllers\PPIController::class, 'show'])->name('ppi.show');
     Route::post('ppi/request-access', [App\Http\Controllers\GuruAnakDidikController::class, 'requestAccess'])->name('ppi.request-access');

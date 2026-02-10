@@ -9,6 +9,7 @@ use App\Models\Program;
 use App\Models\Assessment;
 use App\Models\Karyawan;
 use App\Models\User;
+use App\Models\Absensi;
 use Carbon\Carbon;
 
 class KedisiplinanController extends Controller
@@ -327,6 +328,16 @@ class KedisiplinanController extends Controller
       $guru = Karyawan::find($gid);
       $guruUserId = $guru && isset($guru->user_id) ? $guru->user_id : null;
 
+      // For single day (Penilaian tab), filter only students who attended (status = hadir)
+      if ($rangeStart->toDateString() === $rangeEnd->toDateString()) {
+        $attendedAnakIds = Absensi::whereDate('tanggal', $rangeStart->toDateString())
+          ->where('status', 'hadir')
+          ->whereIn('anak_didik_id', array_map(fn($a) => $a->id, $anakList))
+          ->pluck('anak_didik_id')
+          ->toArray();
+        $anakList = array_filter($anakList, fn($anak) => in_array($anak->id, $attendedAnakIds));
+      }
+
       // collect unique wajib program names across semua anak guru ini
       $namesSet = [];
       $anakIds = [];
@@ -638,6 +649,12 @@ class KedisiplinanController extends Controller
     // map anak id to name
     $anakNames = AnakDidik::whereIn('id', $anakIds)->pluck('nama', 'id')->toArray();
 
+    // fetch attendance data for all children on this date
+    $absensiData = Absensi::whereDate('tanggal', $dateParsed)
+      ->whereIn('anak_didik_id', $anakIds)
+      ->get()
+      ->keyBy('anak_didik_id');
+
     // build assessed map per program name and anak id (pick earliest per anak)
     $assessedMap = [];
     foreach ($assessments as $a) {
@@ -670,6 +687,43 @@ class KedisiplinanController extends Controller
     $items = [];
     $deadline = Carbon::parse($dateParsed)->setTime(17, 0, 0);
 
+    // First, add attendance status for students who were not present (non-hadir)
+    foreach ($anakIds as $aid) {
+      if (isset($absensiData[$aid])) {
+        $absen = $absensiData[$aid];
+        if ($absen->status !== 'hadir') {
+          $statusDisplay = ucfirst($absen->status);
+          $keterangan = $absen->keterangan ?? '-';
+          $items[] = [
+            'anak' => $anakNames[$aid] ?? null,
+            'program' => null,
+            'program_display' => null,
+            'waktu' => null,
+            'status' => $statusDisplay,
+            'penilai_user_id' => null,
+            'penilai_nama' => null,
+            'is_absensi' => true,
+            'absensi_status' => $statusDisplay,
+            'absensi_keterangan' => $keterangan,
+          ];
+        }
+      } else {
+        // Student hasn't been marked for attendance yet
+        $items[] = [
+          'anak' => $anakNames[$aid] ?? null,
+          'program' => null,
+          'program_display' => null,
+          'waktu' => null,
+          'status' => 'Belum Absen',
+          'penilai_user_id' => null,
+          'penilai_nama' => null,
+          'is_absensi' => true,
+          'absensi_status' => 'Belum Absen',
+          'absensi_keterangan' => 'Belum melakukan absensi',
+        ];
+      }
+    }
+
     // include all programs: wajib names + any programs that were actually assessed (even if non-wajib)
     $allProgramNames = array_unique(array_merge($names, array_keys($assessedMap)));
 
@@ -680,6 +734,11 @@ class KedisiplinanController extends Controller
 
       if (!empty($uids)) {
         foreach ($uids as $aid) {
+          // Skip students who were not present or haven't been marked for attendance
+          if (!isset($absensiData[$aid]) || $absensiData[$aid]->status !== 'hadir') {
+            continue;
+          }
+
           if (isset($assessedMap[$nm][$aid])) {
             $a = $assessedMap[$nm][$aid];
             $waktu = $a->created_at ? $a->created_at->toTimeString() : null;

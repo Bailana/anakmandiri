@@ -574,6 +574,12 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Filter Bulan</label>
+          <select id="chartMonthFilter" class="form-select">
+            <option value="">Semua Bulan</option>
+          </select>
+        </div>
         <div id="programChartContainer" style="min-height:240px;">
           <!-- Legend removed as requested -->
           <div id="programApexChart" style="width:100%;min-height:320px"></div>
@@ -600,6 +606,7 @@
   async function renderProgramChart(anakId, programIdOrName) {
     const chartEl = document.getElementById('programApexChart');
     const titleEl = document.getElementById('programChartTitle');
+    const monthFilterEl = document.getElementById('chartMonthFilter');
     if (!chartEl) return;
 
     try {
@@ -610,7 +617,7 @@
       return;
     }
 
-    // fetch program history and build daily series
+    // fetch program history and build monthly series (default)
     try {
       const res = await fetch(`/assessment/${anakId}/program-history`, {
         credentials: 'same-origin'
@@ -642,122 +649,205 @@
         return;
       }
 
-      // find min/max dates
-      let minDate = null,
-        maxDate = null;
-      dps.forEach(d => {
-        if (!d || !d.tanggal) return;
-        const dt = new Date(d.tanggal);
-        if (isNaN(dt)) return;
-        if (!minDate || dt < minDate) minDate = dt;
-        if (!maxDate || dt > maxDate) maxDate = dt;
-      });
-      if (!minDate || !maxDate) {
-        if (titleEl) titleEl.textContent = prog.nama_program + ' — (Belum ada penilaian)';
-        return;
-      }
-
-      // aggregate per day
-      const dayMap = {};
-      dps.forEach(d => {
-        if (!d || !d.tanggal) return;
-        const dt = new Date(d.tanggal);
-        if (isNaN(dt)) return;
-        const key = dt.toISOString().slice(0, 10);
-        dayMap[key] = dayMap[key] || {
-          sum: 0,
-          count: 0
-        };
-        const s = (typeof d.score === 'number') ? d.score : Number(d.score);
-        if (!isNaN(s)) {
-          dayMap[key].sum += s;
-          dayMap[key].count += 1;
-        }
-      });
-
-      const labels = [];
-      const seriesData = [];
-      for (let dt = new Date(minDate); dt <= maxDate; dt.setDate(dt.getDate() + 1)) {
-        const key = dt.toISOString().slice(0, 10);
-        labels.push(new Date(key).toLocaleDateString('id-ID', {
-          day: '2-digit',
-          month: 'short'
-        }));
-        if (dayMap[key] && dayMap[key].count) {
-          const avg = Math.round((dayMap[key].sum / dayMap[key].count) * 100) / 100;
-          seriesData.push(avg);
-        } else {
-          seriesData.push(0);
-        }
-      }
-
-      // destroy previous instance
-      try {
-        if (window._programApexChartInstance && typeof window._programApexChartInstance.destroy === 'function') {
-          window._programApexChartInstance.destroy();
-        }
-      } catch (e) {}
-
-      const chartEl = document.getElementById('programApexChart');
-      if (!chartEl) return;
-
-      const options = {
-        series: [{
-          name: prog.nama_program || 'Program',
-          data: seriesData
-        }],
-        chart: {
-          type: 'line',
-          height: 320,
-          toolbar: {
-            show: true
-          },
-          zoom: {
-            enabled: true
-          }
-        },
-        stroke: {
-          curve: 'smooth',
-          width: 3
-        },
-        markers: {
-          size: 5
-        },
-        colors: ['#10b981'],
-        dataLabels: {
-          enabled: true
-        },
-        xaxis: {
-          categories: labels,
-          labels: {
-            rotate: -45
-          }
-        },
-        yaxis: {
-          min: 0,
-          max: 4,
-          tickAmount: 4
-        },
-        grid: {
-          borderColor: '#f1f5f9'
-        },
-        tooltip: {
-          y: {
-            formatter: function(val) {
-              return val;
-            }
-          }
-        }
+      // Store data globally for filter usage
+      window._currentProgramData = {
+        anakId: anakId,
+        programIdOrName: programIdOrName,
+        prog: prog,
+        datapoints: dps
       };
 
-      window._programApexChartInstance = new ApexCharts(chartEl, options);
-      window._programApexChartInstance.render();
+      // Populate month filter dropdown
+      const monthSet = new Set();
+      dps.forEach(d => {
+        if (!d || !d.tanggal) return;
+        const dt = new Date(d.tanggal);
+        if (isNaN(dt)) return;
+        const monthKey = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0');
+        monthSet.add(monthKey);
+      });
+
+      const months = Array.from(monthSet).sort();
+      if (monthFilterEl) {
+        monthFilterEl.innerHTML = '<option value="">Semua Bulan</option>';
+        months.forEach(m => {
+          const [year, month] = m.split('-');
+          const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleDateString('id-ID', {
+            month: 'long',
+            year: 'numeric'
+          });
+          const opt = document.createElement('option');
+          opt.value = m;
+          opt.textContent = monthName;
+          monthFilterEl.appendChild(opt);
+        });
+
+        // Set default to current month if available
+        const now = new Date();
+        const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        if (months.includes(currentMonth)) {
+          monthFilterEl.value = currentMonth;
+        } else if (months.length > 0) {
+          monthFilterEl.value = months[months.length - 1]; // latest month
+        }
+
+        // Add event listener for filter change
+        monthFilterEl.onchange = function() {
+          renderChartWithFilter(monthFilterEl.value);
+        };
+      }
+
+      // Render with default filter (current/latest month)
+      renderChartWithFilter(monthFilterEl ? monthFilterEl.value : '');
 
     } catch (err) {
       console.error('renderProgramChart failed', err);
       if (titleEl) titleEl.textContent = 'Gagal memuat grafik.';
     }
+  }
 
+  function renderChartWithFilter(selectedMonth) {
+    if (!window._currentProgramData) return;
+
+    const {
+      prog,
+      datapoints
+    } = window._currentProgramData;
+    const titleEl = document.getElementById('programChartTitle');
+    const chartEl = document.getElementById('programApexChart');
+
+    if (!chartEl) return;
+
+    // Filter datapoints by selected month
+    let filteredDps = datapoints;
+    if (selectedMonth) {
+      const [year, month] = selectedMonth.split('-');
+      filteredDps = datapoints.filter(d => {
+        if (!d || !d.tanggal) return false;
+        const dt = new Date(d.tanggal);
+        if (isNaN(dt)) return false;
+        return dt.getFullYear() === parseInt(year) && (dt.getMonth() + 1) === parseInt(month);
+      });
+    }
+
+    if (!filteredDps.length) {
+      if (titleEl) titleEl.textContent = prog.nama_program + ' — (Tidak ada data untuk periode ini)';
+      try {
+        if (window._programApexChartInstance && typeof window._programApexChartInstance.destroy === 'function') {
+          window._programApexChartInstance.destroy();
+        }
+      } catch (e) {}
+      return;
+    }
+
+    // find min/max dates
+    let minDate = null,
+      maxDate = null;
+    filteredDps.forEach(d => {
+      if (!d || !d.tanggal) return;
+      const dt = new Date(d.tanggal);
+      if (isNaN(dt)) return;
+      if (!minDate || dt < minDate) minDate = dt;
+      if (!maxDate || dt > maxDate) maxDate = dt;
+    });
+
+    if (!minDate || !maxDate) {
+      if (titleEl) titleEl.textContent = prog.nama_program + ' — (Tidak ada data untuk periode ini)';
+      return;
+    }
+
+    // Aggregate per day (for monthly view)
+    const dayMap = {};
+    filteredDps.forEach(d => {
+      if (!d || !d.tanggal) return;
+      const dt = new Date(d.tanggal);
+      if (isNaN(dt)) return;
+      const key = dt.toISOString().slice(0, 10);
+      dayMap[key] = dayMap[key] || {
+        sum: 0,
+        count: 0
+      };
+      const s = (typeof d.score === 'number') ? d.score : Number(d.score);
+      if (!isNaN(s)) {
+        dayMap[key].sum += s;
+        dayMap[key].count += 1;
+      }
+    });
+
+    const labels = [];
+    const seriesData = [];
+    for (let dt = new Date(minDate); dt <= maxDate; dt.setDate(dt.getDate() + 1)) {
+      const key = dt.toISOString().slice(0, 10);
+      labels.push(new Date(key).toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short'
+      }));
+      if (dayMap[key] && dayMap[key].count) {
+        const avg = Math.round((dayMap[key].sum / dayMap[key].count) * 100) / 100;
+        seriesData.push(avg);
+      } else {
+        seriesData.push(0);
+      }
+    }
+
+    // destroy previous instance
+    try {
+      if (window._programApexChartInstance && typeof window._programApexChartInstance.destroy === 'function') {
+        window._programApexChartInstance.destroy();
+      }
+    } catch (e) {}
+
+    const options = {
+      series: [{
+        name: prog.nama_program || 'Program',
+        data: seriesData
+      }],
+      chart: {
+        type: 'line',
+        height: 320,
+        toolbar: {
+          show: true
+        },
+        zoom: {
+          enabled: true
+        }
+      },
+      stroke: {
+        curve: 'smooth',
+        width: 3
+      },
+      markers: {
+        size: 5
+      },
+      colors: ['#10b981'],
+      dataLabels: {
+        enabled: true
+      },
+      xaxis: {
+        categories: labels,
+        labels: {
+          rotate: -45
+        }
+      },
+      yaxis: {
+        min: 0,
+        max: 4,
+        tickAmount: 4
+      },
+      grid: {
+        borderColor: '#f1f5f9'
+      },
+      tooltip: {
+        y: {
+          formatter: function(val) {
+            return val;
+          }
+        }
+      }
+    };
+
+    window._programApexChartInstance = new ApexCharts(chartEl, options);
+    window._programApexChartInstance.render();
   }
 
   // small helper to show Bootstrap toasts programmatically

@@ -11,7 +11,18 @@
             <p class="text-body-secondary mb-0">Kelola PPI anak didik anda.</p>
           </div>
           @if(!(isset($isKonsultanPendidikan) && $isKonsultanPendidikan))
-          <div>
+          <div class="d-flex gap-2">
+            <!-- Tombol Export PDF -->
+            <button type="button" class="btn btn-outline-danger d-none d-sm-inline-flex align-items-center"
+              data-bs-toggle="modal" data-bs-target="#exportPdfModal">
+              <i class="ri-file-pdf-line me-2"></i>Export PDF
+            </button>
+            <button type="button" class="btn btn-outline-danger d-inline-flex d-sm-none align-items-center justify-content-center p-0"
+              data-bs-toggle="modal" data-bs-target="#exportPdfModal"
+              style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+              <i class="ri-file-pdf-line" style="font-size:1.7em;"></i>
+            </button>
+
             <!-- Tombol tambah PPI responsif -->
             <a href="{{ route('ppi.create') }}"
               class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0"
@@ -207,6 +218,57 @@
       </div>
       <div class="modal-footer">
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Export PDF -->
+<div class="modal fade" id="exportPdfModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Export PDF PPI</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="exportPdfForm" method="GET" action="{{ route('ppi.export-pdf') }}" target="_blank">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Anak Didik <span class="text-danger">*</span></label>
+            <select name="anak_didik_id" class="form-select" required>
+              <option value="">Pilih Anak Didik</option>
+              @foreach($anakList as $anak)
+              @if(isset($accessMap[$anak->id]) && $accessMap[$anak->id])
+              <option value="{{ $anak->id }}">{{ $anak->nama }}</option>
+              @endif
+              @endforeach
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Periode <span class="text-danger">*</span></label>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="form-label text-muted" style="font-size: 0.875rem;">Dari</label>
+                <input type="month" name="periode_awal" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted" style="font-size: 0.875rem;">Sampai</label>
+                <input type="month" name="periode_akhir" class="form-control" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-info mb-0">
+            <i class="ri-information-line me-2"></i>
+            PDF akan menampilkan nama program dan detail program dari konsultan untuk periode yang dipilih.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">
+            <i class="ri-file-pdf-line me-2"></i>Generate PDF
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

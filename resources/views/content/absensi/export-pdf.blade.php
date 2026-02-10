@@ -264,10 +264,18 @@
   </div>
 
   @php
-  $totalAbsensi = $absensis->count();
-  $totalHadir = $absensis->where('status', 'hadir')->count();
-  $totalIzin = $absensis->where('status', 'izin')->count();
-  $totalAlfa = $absensis->where('status', 'alfa')->count();
+  $totalAbsensi = collect($completeData)->filter(function($item) {
+  return $item['absensi'] !== null;
+  })->count();
+  $totalHadir = collect($completeData)->filter(function($item) {
+  return $item['absensi'] && $item['absensi']->status === 'hadir';
+  })->count();
+  $totalIzin = collect($completeData)->filter(function($item) {
+  return $item['absensi'] && $item['absensi']->status === 'izin';
+  })->count();
+  $totalAlfa = collect($completeData)->filter(function($item) {
+  return $item['absensi'] && $item['absensi']->status === 'alfa';
+  })->count();
   @endphp
 
   <div class="summary-box">
@@ -292,60 +300,144 @@
     </div>
   </div>
 
-  @if($absensis->count() > 0)
+  <div class="summary-box" style="background: #fff3cd; border-color: #ffc107;">
+    <h3 style="color: #856404;">📋 Ringkasan Data Per Anak Didik</h3>
+    <table style="margin-bottom: 0;">
+      <thead style="background: #ffc107; color: #000;">
+        <tr>
+          <th width="5%">No</th>
+          <th width="45%">Nama Anak Didik</th>
+          <th width="12%" class="text-center">Hadir</th>
+          <th width="12%" class="text-center">Izin</th>
+          <th width="12%" class="text-center">Alfa</th>
+          <th width="14%" class="text-center">Total Absensi</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach($summaryPerAnak as $index => $summary)
+        <tr>
+          <td class="text-center">{{ $index + 1 }}</td>
+          <td><strong>{{ $summary['anak_didik']->nama }}</strong></td>
+          <td class="text-center">
+            <span class="badge badge-success">{{ $summary['hadir'] }}</span>
+          </td>
+          <td class="text-center">
+            <span class="badge badge-warning">{{ $summary['izin'] }}</span>
+          </td>
+          <td class="text-center">
+            <span class="badge badge-danger">{{ $summary['alfa'] }}</span>
+          </td>
+          <td class="text-center"><strong>{{ $summary['total'] }}</strong></td>
+        </tr>
+        @endforeach
+      </tbody>
+    </table>
+  </div>
+
+  @if(count($completeData) > 0)
+  <div style="margin-top: 20px; margin-bottom: 10px;">
+    <h3 style="font-size: 14pt; color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 8px;">📝 Detail Absensi</h3>
+  </div>
+
+  @php
+  // Group data by tanggal
+  $groupedByDate = collect($completeData)->groupBy(function($item) {
+  return $item['tanggal']->format('Y-m-d');
+  });
+  @endphp
+
+  @foreach($groupedByDate as $dateKey => $dataForDate)
+  @php
+  $tanggalDisplay = \Carbon\Carbon::parse($dateKey);
+  @endphp
+
+  <div style="margin-top: 15px; margin-bottom: 8px;">
+    <h4 style="font-size: 11pt; color: #495057; background-color: #e9ecef; padding: 6px 10px; border-left: 4px solid #007bff;">
+      📅 {{ $tanggalDisplay->locale('id')->isoFormat('dddd, D MMMM Y') }}
+    </h4>
+  </div>
+
   <table>
     <thead>
       <tr>
-        <th width="4%">No</th>
-        <th width="12%">Tanggal</th>
-        <th width="20%">Nama Anak Didik</th>
-        <th width="10%">Status</th>
-        <th width="10%">Keterangan</th>
+        <th width="6%">No</th>
+        <th width="22%">Nama Anak Didik</th>
+        <th width="7%" class="text-center">Hadir</th>
+        <th width="7%" class="text-center">Izin</th>
+        <th width="7%" class="text-center">Alfa</th>
+        <th width="13%">Keterangan</th>
         <th width="12%">Kondisi Fisik</th>
-        <th width="15%">Lokasi Luka</th>
-        <th width="17%">Diinput Oleh</th>
+        <th width="13%">Lokasi Luka</th>
+        <th width="13%">Diinput Oleh</th>
       </tr>
     </thead>
     <tbody>
-      @foreach($absensis as $index => $absensi)
+      @foreach($dataForDate as $index => $data)
+      @php
+      $absensi = $data['absensi'];
+      $anakDidik = $data['anak_didik'];
+      @endphp
       <tr>
         <td class="text-center">{{ $index + 1 }}</td>
-        <td>{{ $absensi->tanggal->format('d/m/Y') }}</td>
-        <td><strong>{{ $absensi->anakDidik->nama ?? '-' }}</strong></td>
-        <td>
-          @if($absensi->status === 'hadir')
-          <span class="badge badge-success">Hadir</span>
-          @elseif($absensi->status === 'izin')
-          <span class="badge badge-warning">Izin</span>
+        <td><strong>{{ $anakDidik->nama ?? '-' }}</strong></td>
+        <td class="text-center">
+          @if($absensi && $absensi->status === 'hadir')
+          ✓
           @else
-          <span class="badge badge-danger">Alfa</span>
+          -
           @endif
         </td>
-        <td>{{ $absensi->keterangan ?? '-' }}</td>
-        <td>
-          @if($absensi->kondisi_fisik === 'sehat')
-          <span class="badge badge-success">Sehat</span>
-          @elseif($absensi->kondisi_fisik === 'sakit')
-          <span class="badge badge-danger">Sakit</span>
+        <td class="text-center">
+          @if($absensi && $absensi->status === 'izin')
+          ✓
           @else
-          <span class="badge badge-info">Terluka</span>
+          -
+          @endif
+        </td>
+        <td class="text-center">
+          @if($absensi && $absensi->status === 'alfa')
+          ✓
+          @else
+          -
           @endif
         </td>
         <td>
-          @if(is_array($absensi->lokasi_luka) && count($absensi->lokasi_luka) > 0)
+          @if($absensi && $absensi->status === 'izin' && $absensi->keterangan)
+          {{ $absensi->keterangan }}
+          @else
+          -
+          @endif
+        </td>
+        <td>
+          @if($absensi && $absensi->status !== 'izin')
+          @if($absensi->kondisi_fisik === 'baik')
+          <span class="badge badge-success">Baik</span>
+          @elseif($absensi->kondisi_fisik === 'ada_tanda')
+          <span class="badge badge-danger">{{ $absensi->jenis_tanda_fisik_label }}</span>
+          @else
+          -
+          @endif
+          @else
+          -
+          @endif
+        </td>
+        <td>
+          @if($absensi && is_array($absensi->lokasi_luka) && count($absensi->lokasi_luka) > 0)
           {{ implode(', ', $absensi->lokasi_luka) }}
           @else
           -
           @endif
         </td>
-        <td>{{ $absensi->guru->name ?? '-' }}</td>
+        <td>{{ $absensi && $absensi->guru ? $absensi->guru->name : '-' }}</td>
       </tr>
       @endforeach
     </tbody>
   </table>
+
+  @endforeach
   @else
   <div class="no-data">
-    <p>📋 Tidak ada data absensi pada periode yang dipilih.</p>
+    <p>📋 Tidak ada data anak didik dengan guru fokus yang ditugaskan.</p>
   </div>
   @endif
 

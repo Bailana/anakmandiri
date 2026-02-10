@@ -14,6 +14,9 @@ class ProgramKonsultan extends Model
     'tujuan',
     'aktivitas',
     'keterangan',
+    'deskripsi',
+    'metode',
+    'durasi',
   ];
 
   public function konsultan()

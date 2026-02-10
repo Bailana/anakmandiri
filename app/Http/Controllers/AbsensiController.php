@@ -631,6 +631,17 @@ class AbsensiController extends Controller
         'month' => $monthName,
         'month_key' => $monthKey,
         'items' => $items->map(function ($absensi) {
+          // Check if pickup notes are missing and date has passed
+          $tanggalAbsensi = $absensi->tanggal;
+          $today = \Carbon\Carbon::now()->startOfDay();
+          $isPast = $tanggalAbsensi->isBefore($today);
+
+          // Check if has pickup data - waktu_jemput should not be null
+          $hasPickupData = ($absensi->waktu_jemput !== null);
+
+          // Needs pickup data if: date is past AND no pickup data AND status is hadir
+          $needsPickupData = $isPast && !$hasPickupData && $absensi->status === 'hadir';
+
           return [
             'id' => $absensi->id,
             'tanggal' => $absensi->tanggal->format('Y-m-d'),
@@ -642,6 +653,9 @@ class AbsensiController extends Controller
             'keterangan' => $absensi->keterangan,
             'foto_bukti' => $absensi->foto_bukti,
             'guru_nama' => $absensi->guru ? $absensi->guru->name : '-',
+            'waktu_jemput' => $absensi->waktu_jemput,
+            'keterangan_penjemput' => $absensi->keterangan_penjemput,
+            'needs_pickup_data' => $needsPickupData,
           ];
         })->values()
       ];
@@ -660,22 +674,84 @@ class AbsensiController extends Controller
    */
   public function exportPdf(Request $request)
   {
-    // Get all students
-    $anakDidiks = AnakDidik::orderBy('nama', 'asc')->get();
+    // Get all active students with guru fokus assigned
+    $anakDidiks = AnakDidik::with('guruFokus')
+      ->whereNotNull('guru_fokus_id')
+      ->where('status', 'aktif')
+      ->orderBy('nama', 'asc')
+      ->get();
 
     // Get date range (default: current month)
     $startDate = $request->filled('start_date') ? $request->start_date : now()->startOfMonth()->toDateString();
     $endDate = $request->filled('end_date') ? $request->end_date : now()->endOfMonth()->toDateString();
 
-    // Get all absensi data within date range
+    // Get all absensi data within date range for active students with guru fokus
     $absensis = Absensi::with(['anakDidik', 'guru'])
-      ->whereBetween('tanggal', [$startDate, $endDate])
-      ->orderBy('tanggal', 'desc')
-      ->orderBy('anak_didik_id', 'asc')
-      ->get();
+      ->join('anak_didiks', 'absensis.anak_didik_id', '=', 'anak_didiks.id')
+      ->whereNotNull('anak_didiks.guru_fokus_id')
+      ->where('anak_didiks.status', 'aktif')
+      ->whereBetween('absensis.tanggal', [$startDate, $endDate])
+      ->select('absensis.*')
+      ->get()
+      ->keyBy(function ($item) {
+        return $item->tanggal->format('Y-m-d') . '_' . $item->anak_didik_id;
+      });
+
+    // Generate all date-student combinations
+    $dateRange = [];
+    $currentDate = \Carbon\Carbon::parse($startDate);
+    $endDateCarbon = \Carbon\Carbon::parse($endDate);
+
+    while ($currentDate->lte($endDateCarbon)) {
+      $dateRange[] = $currentDate->format('Y-m-d');
+      $currentDate->addDay();
+    }
+
+    // Build complete data array
+    $completeData = [];
+    foreach ($dateRange as $date) {
+      foreach ($anakDidiks as $anak) {
+        $key = $date . '_' . $anak->id;
+        $absensi = $absensis->get($key);
+
+        $completeData[] = [
+          'tanggal' => \Carbon\Carbon::parse($date),
+          'anak_didik' => $anak,
+          'absensi' => $absensi,
+        ];
+      }
+    }
+
+    // Calculate summary per anak didik
+    $summaryPerAnak = [];
+    foreach ($anakDidiks as $anak) {
+      $hadirCount = 0;
+      $izinCount = 0;
+      $alfaCount = 0;
+
+      foreach ($dateRange as $date) {
+        $key = $date . '_' . $anak->id;
+        $absensi = $absensis->get($key);
+
+        if ($absensi) {
+          if ($absensi->status === 'hadir') $hadirCount++;
+          elseif ($absensi->status === 'izin') $izinCount++;
+          elseif ($absensi->status === 'alfa') $alfaCount++;
+        }
+      }
+
+      $summaryPerAnak[] = [
+        'anak_didik' => $anak,
+        'hadir' => $hadirCount,
+        'izin' => $izinCount,
+        'alfa' => $alfaCount,
+        'total' => $hadirCount + $izinCount + $alfaCount,
+      ];
+    }
 
     return view('content.absensi.export-pdf', [
-      'absensis' => $absensis,
+      'completeData' => $completeData,
+      'summaryPerAnak' => $summaryPerAnak,
       'startDate' => $startDate,
       'endDate' => $endDate,
       'anakDidiks' => $anakDidiks,

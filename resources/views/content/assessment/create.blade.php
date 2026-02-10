@@ -27,14 +27,23 @@
               <select name="anak_didik_id" class="form-select @error('anak_didik_id') is-invalid @enderror" required>
                 <option value="">Pilih Anak Didik</option>
                 @foreach($anakDidiks as $anak)
+                @php
+                $statusAbsen = $absensiHariIni[$anak->id] ?? ['boleh_dinilai' => false, 'status' => null, 'sudah_absen' => false];
+                $bolehDinilai = $statusAbsen['boleh_dinilai'];
+                @endphp
+                @if($bolehDinilai)
                 <option value="{{ $anak->id }}" {{ old('anak_didik_id') == $anak->id ? 'selected' : '' }}>
                   {{ $anak->nama }}
                 </option>
+                @endif
                 @endforeach
               </select>
               @error('anak_didik_id')
               <span class="invalid-feedback">{{ $message }}</span>
               @enderror
+              <div class="form-text">
+                <i class="ri-information-line"></i> Hanya anak didik yang sudah absensi dengan status <strong>hadir</strong> hari ini yang dapat dinilai.
+              </div>
             </div>
           </div>
 

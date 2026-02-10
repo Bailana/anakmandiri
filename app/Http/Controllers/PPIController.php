@@ -9,9 +9,12 @@ use App\Models\AnakDidik;
 use App\Models\Konsultan;
 use App\Models\Karyawan;
 use App\Models\ProgramKonsultan;
+use App\Models\ProgramPendidikan;
+use App\Models\Assessment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\ActivityService;
+use Carbon\Carbon;
 
 class PPIController extends Controller
 {
@@ -483,6 +486,194 @@ class PPIController extends Controller
       \DB::rollBack();
       return response()->json(['success' => false, 'message' => 'Gagal menyimpan perubahan'], 500);
     }
+  }
+
+  public function exportPdf(Request $request)
+  {
+    $request->validate([
+      'anak_didik_id' => 'required|exists:anak_didiks,id',
+      'periode_awal' => 'required|date_format:Y-m',
+      'periode_akhir' => 'required|date_format:Y-m',
+    ]);
+
+    $anakDidikId = $request->input('anak_didik_id');
+    $periodeAwalInput = $request->input('periode_awal'); // format: 2026-01
+    $periodeAkhirInput = $request->input('periode_akhir'); // format: 2026-02
+
+    // Get anak didik
+    $anakDidik = AnakDidik::with('guruFokus')->findOrFail($anakDidikId);
+
+    // Calculate period start and end dates
+    $periodeAwal = Carbon::createFromFormat('Y-m', $periodeAwalInput)->startOfMonth();
+    $periodeAkhir = Carbon::createFromFormat('Y-m', $periodeAkhirInput)->endOfMonth();
+
+    // Get all PPI records for this anak didik that overlap with the selected period
+    $ppiRecords = Ppi::where('anak_didik_id', $anakDidikId)
+      ->where(function ($q) use ($periodeAwal, $periodeAkhir) {
+        // PPI overlaps if: periode_mulai <= periodeAkhir AND periode_selesai >= periodeAwal
+        $q->where('periode_mulai', '<=', $periodeAkhir)
+          ->where('periode_selesai', '>=', $periodeAwal);
+      })
+      ->orderBy('periode_mulai')
+      ->get();
+
+    // Collect all PPI items with their program konsultan details
+    $programData = [];
+
+    foreach ($ppiRecords as $ppi) {
+      $items = PpiItem::where('ppi_id', $ppi->id)
+        ->with(['programKonsultan.konsultan'])
+        ->get();
+
+      foreach ($items as $item) {
+        $programKonsultan = $item->programKonsultan;
+
+        // Prepare display fields with sensible defaults
+        $dispKonsultanNama = '-';
+        $dispKonsultanSpec = '-';
+        $dispDeskripsi = '-';
+        $dispTujuan = '-';
+        $dispMetode = '-';
+
+        // If linked ProgramKonsultan exists, use its data first
+        if ($programKonsultan) {
+          if ($programKonsultan->konsultan) {
+            $dispKonsultanNama = $programKonsultan->konsultan->nama ?? '-';
+            $dispKonsultanSpec = $programKonsultan->konsultan->spesialisasi ?? '-';
+          }
+          $dispDeskripsi = $programKonsultan->keterangan ?? $programKonsultan->deskripsi ?? $programKonsultan->aktivitas ?? '-';
+          $dispTujuan = $programKonsultan->tujuan ?? '-';
+          $dispMetode = $programKonsultan->aktivitas ?? '-';
+        } else {
+          // Fallback: try resolve from ProgramPendidikan / ProgramKonsultan by kode/nama
+          $kode = null;
+          $nm = (string)($item->nama_program ?? '');
+          if (preg_match('/^([A-Za-z]{3})\s*-?\s*(\d{3})/i', $nm, $m)) {
+            $kode = strtoupper($m[1] . $m[2]);
+          }
+          // 1) Try ProgramPendidikan for this child
+          $pp = ProgramPendidikan::with('konsultan')
+            ->where('anak_didik_id', $anakDidikId)
+            ->where(function ($q) use ($kode, $nm) {
+              if ($kode) {
+                $q->orWhereRaw("REPLACE(UPPER(kode_program),'-','') = ?", [str_replace('-', '', strtoupper($kode))]);
+              }
+              // sanitize name (remove spaces, dots, hyphens)
+              $san = strtolower(preg_replace('/[\s\.-]+/', '', $nm));
+              if ($san !== '') {
+                $q->orWhereRaw("REPLACE(REPLACE(REPLACE(LOWER(nama_program),' ',''),'.',''),'-','') = ?", [$san]);
+              }
+            })
+            ->orderByDesc('id')
+            ->first();
+
+          if ($pp) {
+            if ($pp->konsultan) {
+              $dispKonsultanNama = $pp->konsultan->nama ?? '-';
+              $dispKonsultanSpec = $pp->konsultan->spesialisasi ?? '-';
+            }
+            $dispDeskripsi = $pp->keterangan ?? '-';
+            $dispTujuan = $pp->tujuan ?? '-';
+            $dispMetode = $pp->aktivitas ?? '-';
+          } else if ($kode) {
+            // 2) Try master ProgramKonsultan by kode (e.g., PENxxx)
+            $pk = ProgramKonsultan::with('konsultan')
+              ->whereRaw("REPLACE(UPPER(kode_program),'-','') = ?", [str_replace('-', '', strtoupper($kode))])
+              ->first();
+            if ($pk) {
+              if ($pk->konsultan) {
+                $dispKonsultanNama = $pk->konsultan->nama ?? '-';
+                $dispKonsultanSpec = $pk->konsultan->spesialisasi ?? '-';
+              }
+              $dispDeskripsi = $pk->keterangan ?? $pk->deskripsi ?? $pk->aktivitas ?? $dispDeskripsi;
+              $dispTujuan = $pk->tujuan ?? $dispTujuan;
+              $dispMetode = $pk->aktivitas ?? $dispMetode;
+            }
+          }
+          // 3) As a last resort: set konsultan to Pendidikan if kode starts with PEN
+          if ($dispKonsultanNama === '-' && $kode && str_starts_with($kode, 'PEN')) {
+            $edu = \App\Models\Konsultan::whereRaw('LOWER(spesialisasi) like ?', ['%pendidikan%'])->first();
+            if ($edu) {
+              $dispKonsultanNama = $edu->nama ?? 'Pendidikan';
+              $dispKonsultanSpec = $edu->spesialisasi ?? 'Pendidikan';
+            } else {
+              $dispKonsultanNama = 'Pendidikan';
+              $dispKonsultanSpec = 'Pendidikan';
+            }
+          }
+        }
+
+        // Get latest assessment for this program within the period (kept for potential future use)
+        $maxPenilaian = null;
+        
+        if ($programKonsultan && $programKonsultan->konsultan_id) {
+          // Query assessments by matching konsultan_id
+          // Check both tanggal_assessment (if set) and created_at (fallback)
+          $assessments = Assessment::where('anak_didik_id', $anakDidikId)
+            ->where('konsultan_id', $programKonsultan->konsultan_id)
+            ->where(function ($q) use ($periodeAwal, $periodeAkhir) {
+              // Include if tanggal_assessment is within range
+              $q->whereBetween('tanggal_assessment', [$periodeAwal, $periodeAkhir])
+                // OR if tanggal_assessment is null, use created_at within range
+                ->orWhere(function ($q2) use ($periodeAwal, $periodeAkhir) {
+                  $q2->whereNull('tanggal_assessment')
+                    ->whereBetween('created_at', [$periodeAwal, $periodeAkhir]);
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+          
+          foreach ($assessments as $assessment) {
+            // Extract numeric value from hasil_penilaian using regex
+            $penilaian = null;
+            $hasilPenilaian = $assessment->hasil_penilaian ?? '';
+            
+            // Try to extract first number from the string (e.g., "4", "Skor: 4", etc.)
+            if (preg_match('/\d+/', (string)$hasilPenilaian, $matches)) {
+              $penilaian = (int)$matches[0];
+            } elseif (is_numeric($hasilPenilaian)) {
+              $penilaian = (int)$hasilPenilaian;
+            }
+            
+            if ($penilaian !== null && ($maxPenilaian === null || $penilaian > $maxPenilaian)) {
+              $maxPenilaian = $penilaian;
+            }
+          }
+        }
+
+        $programData[] = [
+          'nama_program' => $item->nama_program,
+          'kategori' => $item->kategori,
+          'aktif' => $item->aktif,
+          'konsultan_nama' => $dispKonsultanNama,
+          'konsultan_spesialisasi' => $dispKonsultanSpec,
+          'deskripsi' => $dispDeskripsi,
+          'tujuan' => $dispTujuan,
+          'metode' => $dispMetode,
+          'durasi' => '-', // Field durasi tidak ada di tabel
+          'periode_ppi_mulai' => $ppi->periode_mulai,
+          'periode_ppi_selesai' => $ppi->periode_selesai,
+          'max_penilaian' => $maxPenilaian,
+        ];
+      }
+    }
+
+    // Group by nama_program to avoid duplicates
+    $programDataGrouped = collect($programData)->groupBy('nama_program')->map(function ($group) {
+      return $group->first(); // Take first occurrence
+    })->values()->all();
+
+    $data = [
+      'anakDidik' => $anakDidik,
+      'periodeAwal' => $periodeAwal,
+      'periodeAkhir' => $periodeAkhir,
+      'periodeBulan' => $periodeAwal->locale('id')->isoFormat('MMMM Y') . ' - ' . $periodeAkhir->locale('id')->isoFormat('MMMM Y'),
+      'programData' => $programDataGrouped,
+      'tanggalCetak' => Carbon::now()->locale('id')->isoFormat('dddd, D MMMM Y'),
+    ];
+
+    return view('content.ppi.export-pdf', $data);
   }
 
   // additional methods (riwayat, approve) can be added later

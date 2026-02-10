@@ -152,6 +152,7 @@
               <th>No</th>
               <th>Anak Didik</th>
               <th>Status Hari Ini</th>
+              <th class="text-center">Penjemputan</th>
               <th class="text-center">Hadir</th>
               <th class="text-center">Izin</th>
               <th class="text-center">Alfa</th>
@@ -183,6 +184,13 @@
                 @endif
               </td>
               <td class="text-center">
+                @if($todayAbsensi && $todayAbsensi->waktu_jemput)
+                <span class="badge bg-info"><i class="ri-check-line"></i></span>
+                @else
+                -
+                @endif
+              </td>
+              <td class="text-center">
                 <span class="badge bg-success">{{ $summary['hadir'] }}</span>
               </td>
               <td class="text-center">
@@ -210,7 +218,7 @@
             </tr>
             @empty
             <tr>
-              <td colspan="6" class="text-center py-5">
+              <td colspan="8" class="text-center py-5">
                 <div class="mb-3">
                   <i class="ri-search-line" style="font-size: 3rem; color: #ccc;"></i>
                 </div>
@@ -687,6 +695,9 @@
   };
 
   // Load riwayat absensi grouped by month
+  // Store current nama_anak for jemput modal
+  let currentNamaAnak = '';
+
   window.loadRiwayatAbsensi = function(btn) {
     const anakDidikId = btn.getAttribute('data-anak-didik-id');
     const listDiv = document.getElementById('riwayatAbsensiList');
@@ -699,6 +710,7 @@
         // Update modal title with nama anak
         if (res.nama_anak) {
           modalTitle.textContent = `Riwayat Absensi - ${res.nama_anak}`;
+          currentNamaAnak = res.nama_anak; // Store for jemput modal
         }
 
         if (!res.success || !res.riwayat || res.riwayat.length === 0) {
@@ -742,35 +754,53 @@
               fotoBadge = `<span class="badge bg-info ms-2"><i class="ri-image-line"></i><span class="badge-text"> ${item.foto_bukti.length} Foto</span></span>`;
             }
 
-            html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <div>${item.tanggal_formatted}</div>
-                  <div class="mt-1">${statusBadge}${kondisiBadge}${fotoBadge}</div>
-                </div>
-                <div>
-                  <!-- Desktop: show individual buttons -->
-                  <div class="d-none d-sm-inline-flex gap-2">
-                    <button class="btn btn-sm btn-outline-info" onclick="showAbsensiDetail(${item.id})" title="Lihat Detail">
-                      <i class="ri-eye-line"></i>
-                    </button>
-                    <a href="/absensi/${item.id}/edit" class="btn btn-sm btn-outline-primary" title="Edit">
-                      <i class="ri-edit-line"></i>
-                    </a>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteAbsensiFromRiwayat(${item.id}, ${anakDidikId})" title="Hapus">
-                      <i class="ri-delete-bin-line"></i>
-                    </button>
+            // Warning for missing pickup data
+            let pickupWarning = '';
+            let pickupButton = '';
+            if (item.needs_pickup_data) {
+              pickupWarning = `<div class="alert alert-warning mt-2 mb-0 py-2 px-2 d-flex align-items-center" style="font-size: 0.85rem;">
+                <i class="ri-alert-line me-2"></i>
+                <small>Catatan penjemputan belum diisi untuk tanggal ini</small>
+              </div>`;
+              pickupButton = `<button type="button" class="btn btn-sm btn-outline-warning" onclick="openJemputFromRiwayat(${item.id})" title="Catat Penjemputan">
+                <i class="ri-user-follow-line"></i>
+              </button>`;
+            }
+
+            html += `<li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1">
+                    <div>${item.tanggal_formatted}</div>
+                    <div class="mt-1">${statusBadge}${kondisiBadge}${fotoBadge}</div>
+                    ${pickupWarning}
                   </div>
-                  <!-- Mobile: dropdown menu (three-dot) -->
-                  <div class="d-inline-flex d-sm-none">
-                    <div class="dropdown">
-                      <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" id="absensiActionsToggle${item.id}" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
-                        <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
+                  <div class="flex-shrink-0">
+                    <!-- Desktop: show individual buttons -->
+                    <div class="d-none d-sm-inline-flex gap-2">
+                      ${pickupButton}
+                      <button class="btn btn-sm btn-outline-info" onclick="showAbsensiDetail(${item.id})" title="Lihat Detail">
+                        <i class="ri-eye-line"></i>
                       </button>
-                      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="absensiActionsToggle${item.id}">
-                        <li><button class="dropdown-item" type="button" onclick="showAbsensiDetail(${item.id})">Lihat Detail</button></li>
-                        <li><a class="dropdown-item" href="/absensi/${item.id}/edit">Edit</a></li>
-                        <li><button class="dropdown-item text-danger" type="button" onclick="deleteAbsensiFromRiwayat(${item.id}, ${anakDidikId})">Hapus</button></li>
-                      </ul>
+                      <a href="/absensi/${item.id}/edit" class="btn btn-sm btn-outline-primary" title="Edit">
+                        <i class="ri-edit-line"></i>
+                      </a>
+                      <button class="btn btn-sm btn-outline-danger" onclick="deleteAbsensiFromRiwayat(${item.id}, ${anakDidikId})" title="Hapus">
+                        <i class="ri-delete-bin-line"></i>
+                      </button>
+                    </div>
+                    <!-- Mobile: dropdown menu (three-dot) -->
+                    <div class="d-inline-flex d-sm-none">
+                      <div class="dropdown">
+                        <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" id="absensiActionsToggle${item.id}" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
+                          <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="absensiActionsToggle${item.id}">
+                          ${item.needs_pickup_data ? `<li><button class="dropdown-item text-warning" type="button" onclick="openJemputFromRiwayat(${item.id})">Penjemputan</button></li>` : ''}
+                          <li><button class="dropdown-item" type="button" onclick="showAbsensiDetail(${item.id})">Lihat Detail</button></li>
+                          <li><a class="dropdown-item" href="/absensi/${item.id}/edit">Edit</a></li>
+                          <li><button class="dropdown-item text-danger" type="button" onclick="deleteAbsensiFromRiwayat(${item.id}, ${anakDidikId})">Hapus</button></li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -854,6 +884,31 @@
     } catch (err) {
       showToast(err.message || 'Gagal menghapus data', 'danger');
     }
+  }
+
+  // Open jemput modal from riwayat modal
+  window.openJemputFromRiwayat = function(absensiId) {
+    // Close riwayat modal first
+    const riwayatModal = bootstrap.Modal.getInstance(document.getElementById('riwayatAbsensiModal'));
+    if (riwayatModal) {
+      riwayatModal.hide();
+    }
+
+    // Wait for modal to close, then open jemput modal
+    setTimeout(() => {
+      // Create a dummy button with required data attributes
+      const dummyBtn = document.createElement('button');
+      dummyBtn.setAttribute('data-absensi-id', absensiId);
+      dummyBtn.setAttribute('data-anak-nama', currentNamaAnak);
+
+      // Call the existing openJemputModal function
+      openJemputModal(dummyBtn);
+
+      // Show jemput modal
+      const jemputModalEl = document.getElementById('jemputModal');
+      const jemputModal = new bootstrap.Modal(jemputModalEl);
+      jemputModal.show();
+    }, 300);
   }
 
   // Show foto bukti modal
