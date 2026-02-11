@@ -180,7 +180,7 @@
                 <span class="badge bg-danger">Alfa</span>
                 @endif
                 @else
-                <span class="badge bg-danger">Belum Absensi</span>
+                <span class="badge bg-secondary">Belum Absensi</span>
                 @endif
               </td>
               <td class="text-center">

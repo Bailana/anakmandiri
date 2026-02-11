@@ -24,8 +24,13 @@ class AbsensiController extends Controller
   {
     $user = Auth::user();
 
-    // Get all students for the current teacher/therapist
+    // Get all students. For admin only show students that have a guru_fokus and are active.
     $anakDidikQuery = AnakDidik::query();
+
+    if ($user->role === 'admin') {
+      $anakDidikQuery->whereNotNull('guru_fokus_id')
+        ->where('status', 'aktif');
+    }
 
     if ($user->role === 'guru' || $user->role === 'terapis') {
       // Get employee data (prefer user_id linkage, fallback to name match)
@@ -159,13 +164,20 @@ class AbsensiController extends Controller
     }
 
     // Ambil daftar anak didik yang menjadi tanggung jawab guru/terapis ini
+    // Exclude anak didik yang sudah memiliki absensi untuk hari ini
+    $tz = 'Asia/Jakarta';
+    $today = \Carbon\Carbon::now($tz)->toDateString();
+    $alreadyAbsentedIds = Absensi::whereDate('tanggal', $today)->pluck('anak_didik_id')->toArray();
+
     $anakDidiks = AnakDidik::where('guru_fokus_id', $karyawan->id)
+      ->where('status', 'aktif')
+      ->whereNotIn('id', $alreadyAbsentedIds)
       ->orderBy('nama', 'asc')
       ->get();
 
     if ($anakDidiks->isEmpty()) {
       return redirect()->route('absensi.index')
-        ->with('error', 'Anda tidak memiliki anak didik yang ditugaskan.');
+        ->with('error', 'Seluruh absensi anak didik sudah tercatat dan tidak ada yang tersisa untuk hari ini.');
     }
 
     return view('content.absensi.create', [
