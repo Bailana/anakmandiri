@@ -76,9 +76,11 @@ class AbsensiController extends Controller
 
     // Don't paginate yet - get all matching students first
     $allAnakDidiks = $anakDidikQuery->orderBy('nama', 'asc')->get();
-
     // Get today's attendance for status column
-    $todayDate = now()->toDateString();
+    $tz = 'Asia/Jakarta';
+    $todayDate = \Carbon\Carbon::now($tz)->toDateString();
+
+    // NOTE: Auto-create logic moved to scheduled Artisan command `absensi:auto-alfa`.
     $todayAbsensis = Absensi::whereDate('tanggal', $todayDate)
       ->whereIn('anak_didik_id', $allAnakDidiks->pluck('id'))
       ->get()
@@ -174,69 +176,151 @@ class AbsensiController extends Controller
 
   /**
    * Store a newly created absensi
+   * PERBAIKAN: Validasi dipindah ke luar try-catch agar error handling Laravel bekerja
    */
   public function store(Request $request)
   {
+    // --- 1. PROSES VALIDASI (DI LUAR TRY-CATCH) ---
+    $user = Auth::user();
+
+    // Debug logging untuk diagnosa production issues
+    \Log::info('Absensi store request received', [
+      'user_id' => $user->id,
+      'is_ajax' => $request->ajax(),
+      'has_files' => $request->hasFile('foto_bukti') || $request->hasFile('signature_pengantar'),
+      'foto_bukti_count' => count($request->file('foto_bukti') ?? []),
+      'signature_exists' => $request->hasFile('signature_pengantar'),
+      'request_method' => $request->method(),
+      'content_length' => $request->server('CONTENT_LENGTH'),
+      'kondisi_fisik' => $request->kondisi_fisik,
+      'is_izin' => $request->is_izin,
+      'all_keys' => array_keys($request->all()),
+      'x_requested_with' => $request->header('X-Requested-With'),
+    ]);
+
+    // Rules dasar
+    $rules = [
+      'anak_didik_id' => 'required|exists:anak_didiks,id',
+      'is_izin' => 'nullable|boolean',
+    ];
+
+    // Logika Validasi Kondisional
+    if ($request->filled('is_izin')) {
+      // JIKA IZIN: Hanya butuh keterangan
+      $rules['keterangan'] = 'required|string|max:500';
+    } else {
+      // JIKA HADIR: Kondisi fisik, nama pengantar, dan SIGNATURE wajib
+      $rules['keterangan'] = 'nullable|string|max:500';
+      $rules['kondisi_fisik'] = 'required|in:baik,ada_tanda';
+      $rules['nama_pengantar'] = 'required|string|max:100';
+      $rules['signature_pengantar'] = 'required';
+    }
+
+    // Validasi tambahan jika kondisi fisik "ada_tanda" dan status Hadir
+    if (!$request->filled('is_izin') && $request->kondisi_fisik === 'ada_tanda') {
+      $rules['jenis_tanda_fisik'] = 'required|array';
+      $rules['jenis_tanda_fisik.*'] = 'required|in:lebam,luka_gores,luka_terbuka,bengkak,ruam,bekas_gigitan,luka_bakar,bekas_cakar,luka_lama';
+      $rules['keterangan_tanda_fisik'] = 'required|string|max:500';
+      $rules['foto_bukti'] = 'required|array|min:1';
+      $rules['foto_bukti.*'] = 'image|mimes:jpeg,png,jpg,gif|max:10240'; // Max 10MB per foto
+      $rules['lokasi_luka'] = 'required|string';
+    }
+
+    // Jalankan Validasi
+    // Jika gagal, otomatis redirect back + variabel $errors
     try {
-      $user = Auth::user();
-
-      // Validasi base - hanya anak_didik_id yang selalu wajib
-      $rules = [
-        'anak_didik_id' => 'required|exists:anak_didiks,id',
-        'is_izin' => 'nullable|boolean',
-      ];
-
-      // Jika izin dicentang, hanya keterangan yang wajib
-      if ($request->filled('is_izin')) {
-        $rules['keterangan'] = 'required|string|max:500';
-      } else {
-        // Jika tidak izin, maka kondisi fisik dan verifikasi wajib
-        $rules['keterangan'] = 'nullable|string|max:500';
-        $rules['kondisi_fisik'] = 'required|in:baik,ada_tanda';
-        $rules['nama_pengantar'] = 'required|string|max:100';
-        $rules['signature_pengantar'] = 'required|string';
-      }
-
-      // Jika ada tanda fisik, validasi jenis tanda fisik dan foto
-      if ($request->kondisi_fisik === 'ada_tanda') {
-        $rules['jenis_tanda_fisik.*'] = 'required|in:lebam,luka_gores,luka_terbuka,bengkak,ruam,bekas_gigitan,luka_bakar,bekas_cakar,luka_lama';
-        $rules['keterangan_tanda_fisik'] = 'required|string|max:500';
-        $rules['foto_bukti'] = 'required|array|min:1';
-        $rules['foto_bukti.*'] = 'image|mimes:jpeg,png,jpg,gif|max:5120';
-        $rules['lokasi_luka'] = 'required|string';
-      }
-
       $validated = $request->validate($rules);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+      \Log::warning('Absensi validation failed', [
+        'errors' => $e->errors(),
+        'user_id' => $user->id,
+      ]);
 
-      // Validasi bahwa guru hanya bisa mengabsensi anak didiknya sendiri
+      // Return JSON for AJAX requests
+      if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        return response()->json([
+          'success' => false,
+          'message' => 'Validasi gagal',
+          'errors' => $e->errors()
+        ], 422);
+      }
+
+      throw $e;
+    }
+
+    // --- 2. PROSES LOGIKA & PENYIMPANAN (DI DALAM TRY-CATCH) ---
+    try {
+      // Validasi Hak Akses Guru
       $anakDidik = AnakDidik::findOrFail($request->anak_didik_id);
       $karyawan = Karyawan::where('user_id', $user->id)->first();
       if (!$karyawan) {
         $karyawan = Karyawan::whereRaw('LOWER(nama) = ?', [strtolower($user->name ?? '')])->first();
       }
 
-      if (!$karyawan || $anakDidik->guru_fokus_id !== $karyawan->id) {
+      // Debug logging untuk permission check
+      \Log::info('Permission check', [
+        'user_id' => $user->id,
+        'user_name' => $user->name,
+        'user_role' => $user->role,
+        'karyawan_found' => $karyawan ? $karyawan->id : null,
+        'karyawan_nama' => $karyawan ? $karyawan->nama : null,
+        'anak_didik_id' => $anakDidik->id,
+        'anak_didik_nama' => $anakDidik->nama,
+        'guru_fokus_id' => $anakDidik->guru_fokus_id,
+        'match' => $karyawan && $anakDidik->guru_fokus_id == $karyawan->id,
+      ]);
+
+      if (!$karyawan || $anakDidik->guru_fokus_id != $karyawan->id) {
         if ($user->role !== 'admin') {
+          $errorMsg = 'Anda tidak berhak mengabsensi anak didik ini.';
+
+          \Log::warning('Permission denied for absensi', [
+            'user_id' => $user->id,
+            'karyawan_id' => $karyawan ? $karyawan->id : null,
+            'required_guru_fokus_id' => $anakDidik->guru_fokus_id,
+          ]);
+
+          if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return response()->json([
+              'success' => false,
+              'message' => $errorMsg
+            ], 403);
+          }
+
           return redirect()->back()
-            ->with('error', 'Anda tidak berhak mengabsensi anak didik ini.');
+            ->withInput()
+            ->with('error', $errorMsg);
         }
       }
 
-      // Set tanggal otomatis ke hari ini
+      // Cek Duplikat Absensi Hari Ini
       $tanggalHariIni = now()->toDateString();
-
-      // Cek apakah sudah ada absensi untuk hari yang sama
       $existingAbsensi = Absensi::where('anak_didik_id', $request->anak_didik_id)
         ->whereDate('tanggal', $tanggalHariIni)
         ->first();
 
       if ($existingAbsensi) {
+        \Log::warning('Duplicate attendance attempt', [
+          'anak_didik_id' => $request->anak_didik_id,
+          'user_id' => $user->id,
+          'tanggal' => $tanggalHariIni,
+        ]);
+
+        $errorMsg = 'Absensi untuk anak didik ini pada tanggal hari ini sudah ada.';
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+          return response()->json([
+            'success' => false,
+            'message' => $errorMsg
+          ], 400);
+        }
+
         return redirect()->back()
-          ->with('error', 'Absensi untuk anak didik ini pada tanggal hari ini sudah ada.');
+          ->withInput()
+          ->with('error', $errorMsg);
       }
 
-      // Prepare data untuk insert
-      // Status otomatis di-set ke 'hadir' saat form disubmit, atau 'izin' jika checkbox dicentang
+      // Persiapan Data Utama
       $status = $request->filled('is_izin') ? 'izin' : 'hadir';
 
       $data = [
@@ -244,15 +328,19 @@ class AbsensiController extends Controller
         'user_id' => $user->id,
         'tanggal' => $tanggalHariIni,
         'status' => $status,
-        'kondisi_fisik' => $request->kondisi_fisik,
+        'kondisi_fisik' => $request->kondisi_fisik, // Bisa null jika izin
         'keterangan' => $request->keterangan,
       ];
 
-      // Handle signature dan kondisi fisik hanya jika TIDAK izin
+      // Handle Detail Fisik & Signature (Hanya jika TIDAK izin)
       if (!$request->filled('is_izin')) {
-        // Jika ada tanda fisik, simpan detail tanda fisik dan foto
+
+        // Simpan Nama Pengantar
+        $data['nama_pengantar'] = $request->nama_pengantar;
+
+        // Proses Kondisi Ada Tanda
         if ($request->kondisi_fisik === 'ada_tanda') {
-          // Konversi array jenis_tanda_fisik ke string comma-separated
+          // Convert array jenis_tanda_fisik ke string comma-separated
           $jenisTandaFisikArray = $request->jenis_tanda_fisik ?? [];
           if (is_array($jenisTandaFisikArray)) {
             $data['jenis_tanda_fisik'] = implode(',', $jenisTandaFisikArray);
@@ -262,78 +350,176 @@ class AbsensiController extends Controller
 
           $data['keterangan_tanda_fisik'] = $request->keterangan_tanda_fisik;
 
-          // Handle lokasi_luka - pastikan selalu array
+          // Handle lokasi_luka dengan aman
           $lokasiLukaInput = $request->input('lokasi_luka');
-          if (is_string($lokasiLukaInput)) {
-            $lokasiLuka = @json_decode($lokasiLukaInput, true);
-            if (!is_array($lokasiLuka)) {
-              $lokasiLuka = [];
-            }
-          } else {
-            $lokasiLuka = is_array($lokasiLukaInput) ? $lokasiLukaInput : [];
+          $lokasiLuka = json_decode($lokasiLukaInput, true);
+          if (!is_array($lokasiLuka)) {
+            $lokasiLuka = [];
           }
           $data['lokasi_luka'] = $lokasiLuka;
 
-          // Save multiple fotos
+          // Save multiple photos - IMPROVED ERROR HANDLING
           if ($request->hasFile('foto_bukti')) {
             $fotoPaths = [];
             $files = $request->file('foto_bukti');
 
-            // Pastikan $files adalah array
             if (!is_array($files)) {
               $files = [$files];
             }
 
             foreach ($files as $file) {
               if ($file && $file->isValid()) {
-                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('absensi/bukti', $filename, 'public');
-                if ($path) {
-                  $fotoPaths[] = $path;
+                try {
+                  $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                  $path = $file->storeAs('absensi/bukti', $filename, 'public');
+                  if ($path) {
+                    $fotoPaths[] = $path;
+                  } else {
+                    \Log::error('Failed to store photo', [
+                      'filename' => $filename,
+                      'original_name' => $file->getClientOriginalName(),
+                    ]);
+                  }
+                } catch (\Exception $e) {
+                  \Log::error('Error storing photo file', [
+                    'error' => $e->getMessage(),
+                    'file' => $file->getClientOriginalName(),
+                  ]);
                 }
               }
             }
 
-            // Hanya set jika ada foto yang berhasil disimpan
             if (count($fotoPaths) > 0) {
               $data['foto_bukti'] = $fotoPaths;
               $data['waktu_foto'] = now();
+            } else {
+              \Log::error('No photos stored successfully for absensi');
+              return redirect()->back()
+                ->withInput()
+                ->with('error', 'Gagal menyimpan file foto. Pastikan file valid dan server memiliki akses write ke folder storage.');
             }
           }
-        }
+        } // End if ada_tanda
 
-        // Simpan signature dan nama pengantar
-        $data['nama_pengantar'] = $request->nama_pengantar;
-
-        // Save signature (base64 data)
-        if ($request->signature_pengantar) {
-          // Remove data:image/png;base64, prefix jika ada
-          $signatureData = $request->signature_pengantar;
-          if (strpos($signatureData, 'data:') === 0) {
-            // Decode base64 image dan save ke storage
-            $image = str_replace('data:image/png;base64,', '', $signatureData);
-            $image = str_replace(' ', '+', $image);
-            $fileName = 'absensi/signatures/' . uniqid() . '.png';
-            Storage::disk('public')->put($fileName, base64_decode($image));
-            $data['signature_pengantar'] = $fileName;
+        // Save Signature Pengantar (Base64 atau File)
+        if ($request->hasFile('signature_pengantar')) {
+          // Jika dikirim lewat AJAX sebagai Blob (File) - CARA BARU
+          try {
+            $file = $request->file('signature_pengantar');
+            if ($file && $file->isValid()) {
+              $filename = 'sig_' . time() . '_' . uniqid() . '.png';
+              $path = $file->storeAs('absensi/signatures', $filename, 'public');
+              if ($path) {
+                $data['signature_pengantar'] = $path;
+              } else {
+                \Log::error('Failed to store signature blob');
+                throw new \Exception('Gagal menyimpan signature ke storage');
+              }
+            }
+          } catch (\Exception $e) {
+            \Log::error('Error storing signature blob: ' . $e->getMessage());
+            return redirect()->back()
+              ->withInput()
+              ->with('error', 'Gagal menyimpan tanda tangan: ' . $e->getMessage());
+          }
+        } elseif ($request->filled('signature_pengantar')) {
+          // Fallback: Jika dikirim sebagai String Base64 (Cara Lama)
+          try {
+            $signatureData = $request->signature_pengantar;
+            if (strpos($signatureData, 'data:image') !== false) {
+              $image = preg_replace('/^data:image\/\w+;base64,/', '', $signatureData);
+              $image = str_replace(' ', '+', $image);
+              $fileName = 'absensi/signatures/' . uniqid() . '.png';
+              $decoded = base64_decode($image, true);
+              if ($decoded === false) {
+                throw new \Exception('Invalid base64 signature data');
+              }
+              Storage::disk('public')->put($fileName, $decoded);
+              $data['signature_pengantar'] = $fileName;
+            }
+          } catch (\Exception $e) {
+            \Log::error('Error storing base64 signature: ' . $e->getMessage());
+            return redirect()->back()
+              ->withInput()
+              ->with('error', 'Gagal menyimpan tanda tangan: ' . $e->getMessage());
           }
         }
-      }
+      } // End if not izin
 
+      // Simpan ke Database
       $absensi = Absensi::create($data);
+
+      \Log::info('Absensi created successfully', [
+        'absensi_id' => $absensi->id,
+        'anak_didik_id' => $absensi->anak_didik_id,
+        'user_id' => $user->id,
+        'status' => $status,
+      ]);
+
+      // Return JSON for AJAX requests
+      if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+          'success' => true,
+          'message' => 'Absensi berhasil ditambahkan.',
+          'redirect' => route('absensi.index')
+        ]);
+      }
 
       return redirect()->route('absensi.index')
         ->with('success', 'Absensi berhasil ditambahkan.');
+    } catch (\Illuminate\Validation\ValidationException $e) {
+      // This is already handled above, but keep for safety
+      \Log::warning('Absensi validation exception in try-catch', [
+        'errors' => $e->errors(),
+        'user_id' => $user->id ?? null,
+      ]);
+
+      if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+        return response()->json([
+          'success' => false,
+          'message' => 'Validasi gagal',
+          'errors' => $e->errors()
+        ], 422);
+      }
+
+      throw $e;
     } catch (\Exception $e) {
-      \Log::error('Error storing absensi: ' . $e->getMessage(), [
+      \Log::error('Error storing absensi', [
+        'message' => $e->getMessage(),
         'file' => $e->getFile(),
         'line' => $e->getLine(),
-        'trace' => $e->getTraceAsString()
+        'trace' => $e->getTraceAsString(),
+        'anak_didik_id' => $request->anak_didik_id ?? 'N/A',
+        'user_id' => $user->id ?? 'N/A',
       ]);
+
+      // Provide more helpful error messages
+      $errorMessage = 'Terjadi kesalahan sistem: ' . $e->getMessage();
+
+      if (
+        strpos($e->getMessage(), 'storage') !== false ||
+        strpos($e->getMessage(), 'disk') !== false ||
+        strpos($e->getMessage(), 'permission') !== false
+      ) {
+        $errorMessage = 'Error penyimpanan file. Hubungi administrator untuk cek permissions folder storage.';
+      } elseif (
+        strpos($e->getMessage(), 'database') !== false ||
+        strpos($e->getMessage(), 'SQLSTATE') !== false
+      ) {
+        $errorMessage = 'Error database. Pastikan koneksi database sudah benar.';
+      }
+
+      // Return JSON for AJAX requests
+      if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+          'success' => false,
+          'message' => $errorMessage
+        ], 500);
+      }
 
       return redirect()->back()
         ->withInput()
-        ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        ->with('error', $errorMessage);
     }
   }
 
@@ -344,14 +530,25 @@ class AbsensiController extends Controller
   {
     $absensi = Absensi::with('anakDidik')->findOrFail($id);
     $user = Auth::user();
+    // Validasi: pembuat absensi atau admin, OR guru yang menjadi guru_fokus anak tersebut
+    if ($absensi->user_id != $user->id && $user->role !== 'admin') {
+      $karyawanCurrent = Karyawan::where('user_id', $user->id)->first();
+      $canEditAsGuruFokus = false;
+      if ($karyawanCurrent && $absensi->anakDidik && $absensi->anakDidik->guru_fokus_id == $karyawanCurrent->id) {
+        $canEditAsGuruFokus = true;
+      }
 
-    // Validasi bahwa hanya pembuat absensi atau admin yang bisa edit
-    if ($absensi->user_id !== $user->id && $user->role !== 'admin') {
-      abort(403, 'Anda tidak berhak mengubah absensi ini.');
+      if (!$canEditAsGuruFokus) {
+        abort(403, 'Anda tidak berhak mengubah absensi ini.');
+      }
     }
 
-    // Cari karyawan berdasarkan user_id absensi (bukan user yang login)
+    // Cari karyawan untuk mengisi dropdown anak didik pada form edit.
+    // Prefer karyawan pemilik absensi; fallback ke karyawan yang sedang login.
     $karyawan = Karyawan::where('user_id', $absensi->user_id)->first();
+    if (!$karyawan) {
+      $karyawan = Karyawan::where('user_id', $user->id)->first();
+    }
 
     $anakDidiks = [];
     if ($karyawan) {
@@ -366,6 +563,7 @@ class AbsensiController extends Controller
       'jenisTandaFisik' => Absensi::getJenisTandaFisikOptions(),
     ]);
   }
+
   /**
    * Update an absensi
    */
@@ -375,9 +573,21 @@ class AbsensiController extends Controller
     $user = Auth::user();
 
     // Validasi bahwa hanya pembuat absensi atau admin yang bisa update
-    if ($absensi->user_id !== $user->id && $user->role !== 'admin') {
-      return redirect()->back()
-        ->with('error', 'Anda tidak berhak mengubah absensi ini.');
+    if ($absensi->user_id != $user->id && $user->role !== 'admin') {
+      // Izinkan juga guru yang merupakan guru_fokus dari anak tersebut (untuk auto-created alfa dengan user_id = null)
+      $karyawanCurrent = Karyawan::where('user_id', $user->id)->first();
+      $canEditAsGuruFokus = false;
+      if ($karyawanCurrent && $absensi->anak_didik_id) {
+        $anak = AnakDidik::find($absensi->anak_didik_id);
+        if ($anak && $anak->guru_fokus_id == $karyawanCurrent->id) {
+          $canEditAsGuruFokus = true;
+        }
+      }
+
+      if (!$canEditAsGuruFokus) {
+        return redirect()->back()
+          ->with('error', 'Anda tidak berhak mengubah absensi ini.');
+      }
     }
 
     $editType = $request->input('edit_type', 'absensi');
@@ -579,7 +789,7 @@ class AbsensiController extends Controller
     $user = Auth::user();
 
     // Validasi bahwa hanya pembuat absensi atau admin yang bisa delete
-    if ($absensi->user_id !== $user->id && $user->role !== 'admin') {
+    if ($absensi->user_id != $user->id && $user->role !== 'admin') {
       return response()->json([
         'success' => false,
         'message' => 'Anda tidak berhak menghapus absensi ini.'

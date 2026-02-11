@@ -12,9 +12,10 @@ class Kernel extends ConsoleKernel
    */
   protected function schedule(Schedule $schedule): void
   {
-    // Jalankan command untuk menandai siswa sebagai alfa setiap hari pada jam 4 sore (16:00)
-    $schedule->command('absensi:mark-alfa')
-      ->dailyAt('16:00')
+    // Jalankan command untuk menandai siswa sebagai alfa setiap hari kerja (Senin-Jumat) pada jam 17:30 WIB
+    $schedule->command('absensi:auto-alfa')
+      ->weekdays()
+      ->at('17:30')
       ->timezone('Asia/Jakarta');
   }
 

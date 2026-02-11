@@ -27,6 +27,47 @@
     border-radius: 8px;
   }
 
+  #cameraContainer {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Mobile-friendly camera controls */
+  .camera-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .camera-controls .btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+  }
+
+  /* Responsive adjustments for mobile */
+  @media (max-width: 768px) {
+    #cameraStream {
+      width: 100%;
+      height: auto;
+      max-height: 400px;
+    }
+
+    #cameraContainer {
+      max-width: 100%;
+    }
+
+    .camera-controls {
+      gap: 0.75rem;
+    }
+
+    .camera-controls .btn {
+      flex: 1 1 calc(50% - 0.375rem);
+      min-width: calc(50% - 0.375rem);
+    }
+  }
+
   .body-map-container {
     display: flex;
     gap: 2rem;
@@ -122,7 +163,7 @@
       <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="mb-0">Tambah Absensi Anak Didik</h5>
         <a href="{{ route('absensi.index') }}" class="btn btn-secondary btn-sm">
-          <i class="ri-arrow-left-line me-2"></i>Kembali
+          <i class="ri-arrow-left-line me-md-2"></i><span class="d-none d-md-inline">Kembali</span>
         </a>
       </div>
       <div class="card-body">
@@ -145,7 +186,8 @@
           <div class="row g-3 mb-4">
             <div class="col-12">
               <label for="anak_didik_id" class="form-label">Anak Didik <span class="text-danger">*</span></label>
-              <select class="form-select @error('anak_didik_id') is-invalid @enderror" id="anak_didik_id" name="anak_didik_id" required>
+              <select class="form-select @error('anak_didik_id') is-invalid @enderror" id="anak_didik_id"
+                name="anak_didik_id" required>
                 <option value="">-- Pilih Anak Didik --</option>
                 @foreach($anakDidiks as $anak)
                 <option value="{{ $anak->id }}" @selected(old('anak_didik_id')==$anak->id)>
@@ -160,7 +202,8 @@
 
             <div class="col-12">
               <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="is_izin" name="is_izin" value="1" @checked(old('is_izin'))>
+                <input class="form-check-input" type="checkbox" id="is_izin" name="is_izin" value="1"
+                  @checked(old('is_izin'))>
                 <label class="form-check-label" for="is_izin">
                   Anak didik izin hari ini
                 </label>
@@ -168,7 +211,8 @@
             </div>
 
             <div class="col-12" id="keteranganSection" style="display: {{ old('is_izin') ? 'block' : 'none' }};">
-              <label for="keterangan" class="form-label">Keterangan <span id="keterangan-required" class="text-danger" style="display: none;">*</span></label>
+              <label for="keterangan" class="form-label">Keterangan <span id="keterangan-required" class="text-danger"
+                  style="display: none;">*</span></label>
               <textarea class="form-control @error('keterangan') is-invalid @enderror" id="keterangan" name="keterangan"
                 rows="2" placeholder="Catatan tambahan...">{{ old('keterangan') }}</textarea>
               @error('keterangan')
@@ -186,17 +230,18 @@
 
             <div class="row g-3">
               <div class="col-12">
-                <label for="kondisi_fisik" class="form-label">Kondisi Fisik Anak Didik <span class="text-danger">*</span></label>
+                <label for="kondisi_fisik" class="form-label">Kondisi Fisik Anak Didik <span
+                    class="text-danger">*</span></label>
                 <div class="form-check mt-2">
-                  <input class="form-check-input kondisi-fisik-radio" type="radio" name="kondisi_fisik" id="kondisi_baik" value="baik"
-                    @checked(old('kondisi_fisik', 'baik' )=='baik' )>
+                  <input class="form-check-input kondisi-fisik-radio" type="radio" name="kondisi_fisik"
+                    id="kondisi_baik" value="baik" @checked(old('kondisi_fisik', 'baik' )=='baik' )>
                   <label class="form-check-label" for="kondisi_baik">
                     ✓ Kondisi Fisik Baik (Tidak ada tanda luka/lebam)
                   </label>
                 </div>
                 <div class="form-check mt-2">
-                  <input class="form-check-input kondisi-fisik-radio" type="radio" name="kondisi_fisik" id="kondisi_ada_tanda" value="ada_tanda"
-                    @checked(old('kondisi_fisik')=='ada_tanda' )>
+                  <input class="form-check-input kondisi-fisik-radio" type="radio" name="kondisi_fisik"
+                    id="kondisi_ada_tanda" value="ada_tanda" @checked(old('kondisi_fisik')=='ada_tanda' )>
                   <label class="form-check-label" for="kondisi_ada_tanda">
                     ⚠ Ada Tanda Fisik (Ada lebam/luka yang harus didokumentasikan)
                   </label>
@@ -209,7 +254,8 @@
           </div>
 
           <!-- Divider -->
-          <hr class="my-4" id="tandaFisikDivider" style="display: {{ old('kondisi_fisik') === 'ada_tanda' ? 'block' : 'none' }};">
+          <hr class="my-4" id="tandaFisikDivider"
+            style="display: {{ old('kondisi_fisik') === 'ada_tanda' ? 'block' : 'none' }};">
 
           <!-- Section 3: Detail Tanda Fisik (Conditional) -->
           <div id="tandaFisikSection" style="display: {{ old('kondisi_fisik') === 'ada_tanda' ? 'block' : 'none' }};">
@@ -225,8 +271,9 @@
                   @if($key !== 'baik')
                   <div class="col-md-6 col-lg-4">
                     <div class="form-check mb-2">
-                      <input class="form-check-input" type="checkbox" name="jenis_tanda_fisik[]" id="jenis_tanda_fisik_{{ $key }}" value="{{ $key }}"
-                        @checked(is_array(old('jenis_tanda_fisik')) && in_array($key, old('jenis_tanda_fisik')))>
+                      <input class="form-check-input" type="checkbox" name="jenis_tanda_fisik[]"
+                        id="jenis_tanda_fisik_{{ $key }}" value="{{ $key }}" @checked(is_array(old('jenis_tanda_fisik'))
+                        && in_array($key, old('jenis_tanda_fisik')))>
                       <label class="form-check-label" for="jenis_tanda_fisik_{{ $key }}">
                         {{ $label }}
                       </label>
@@ -241,9 +288,11 @@
               </div>
 
               <div class="col-12">
-                <label for="keterangan_tanda_fisik" class="form-label">Keterangan <span class="text-danger">*</span></label>
-                <textarea class="form-control @error('keterangan_tanda_fisik') is-invalid @enderror" id="keterangan_tanda_fisik" name="keterangan_tanda_fisik"
-                  rows="3" placeholder="Deskripsikan kondisi/tanda fisik yang ditemukan...">{{ old('keterangan_tanda_fisik') }}</textarea>
+                <label for="keterangan_tanda_fisik" class="form-label">Keterangan <span
+                    class="text-danger">*</span></label>
+                <textarea class="form-control @error('keterangan_tanda_fisik') is-invalid @enderror"
+                  id="keterangan_tanda_fisik" name="keterangan_tanda_fisik" rows="3"
+                  placeholder="Deskripsikan kondisi/tanda fisik yang ditemukan...">{{ old('keterangan_tanda_fisik') }}</textarea>
                 @error('keterangan_tanda_fisik')
                 <span class="invalid-feedback">{{ $message }}</span>
                 @enderror
@@ -253,26 +302,21 @@
             <!-- Body Map 3D -->
             <div class="mb-4">
               <label class="form-label">Lokasi Tanda Fisik di Tubuh <span class="text-danger">*</span></label>
-              <p class="text-muted"><small>Putar model 3D untuk melihat bagian tubuh, lalu pilih lokasi tanda fisik dari daftar di bawah</small></p>
+              <p class="text-muted"><small>Putar model 3D untuk melihat bagian tubuh, lalu pilih lokasi tanda fisik dari
+                  daftar di bawah</small></p>
 
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <!-- 3D Model Viewer -->
-                  <div style="width: 100%; height: 500px; border: 2px solid #ccc; border-radius: 8px; background: linear-gradient(to bottom, #f0f4ff 0%, #e8eefc 100%); position: relative;">
-                    <model-viewer id="bodyModel3D"
-                      src=""
-                      alt="3D Body Model"
-                      camera-controls
-                      shadow-intensity="1"
-                      exposure="1.0"
-                      camera-orbit="0deg 75deg 105%"
-                      min-camera-orbit="auto auto auto"
-                      max-camera-orbit="auto auto auto"
-                      interpolation-decay="200"
-                      interaction-prompt="none"
+                  <div
+                    style="width: 100%; height: 500px; border: 2px solid #ccc; border-radius: 8px; background: linear-gradient(to bottom, #f0f4ff 0%, #e8eefc 100%); position: relative;">
+                    <model-viewer id="bodyModel3D" src="" alt="3D Body Model" camera-controls shadow-intensity="1"
+                      exposure="1.0" camera-orbit="0deg 75deg 105%" min-camera-orbit="auto auto auto"
+                      max-camera-orbit="auto auto auto" interpolation-decay="200" interaction-prompt="none"
                       style="width: 100%; height: 100%;">
                     </model-viewer>
-                    <div id="model3DLoader" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.9); pointer-events: none;">
+                    <div id="model3DLoader"
+                      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.9); pointer-events: none;">
                       <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading 3D model...</span>
                       </div>
@@ -285,80 +329,119 @@
 
                 <div class="col-md-6">
                   <!-- Body Parts Selection -->
-                  <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background-color: #f9f9f9;">
+                  <div
+                    style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background-color: #f9f9f9;">
                     <h6 class="mb-3">Pilih Lokasi Tanda Fisik:</h6>
 
                     <!-- Kepala & Wajah -->
                     <div class="mb-3">
-                      <strong class="d-block mb-2 text-primary"><i class="ri-user-smile-line me-1"></i> Kepala & Wajah</strong>
+                      <strong class="d-block mb-2 text-primary"><i class="ri-user-smile-line me-1"></i> Kepala &
+                        Wajah</strong>
                       <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Kepala">Kepala</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Wajah">Wajah</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Telinga Kiri">Telinga Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Telinga Kanan">Telinga Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Leher">Leher</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Kepala">Kepala</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Wajah">Wajah</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Telinga Kiri">Telinga Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Telinga Kanan">Telinga Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Leher">Leher</button>
                       </div>
                     </div>
 
                     <!-- Badan Atas -->
                     <div class="mb-3">
-                      <strong class="d-block mb-2 text-primary"><i class="ri-heart-pulse-line me-1"></i> Badan Atas</strong>
+                      <strong class="d-block mb-2 text-primary"><i class="ri-heart-pulse-line me-1"></i> Badan
+                        Atas</strong>
                       <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Dada">Dada</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Perut">Perut</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Punggung Atas">Punggung Atas</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Punggung Bawah">Punggung Bawah</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Pinggang">Pinggang</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Dada">Dada</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Perut">Perut</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Punggung Atas">Punggung Atas</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Punggung Bawah">Punggung Bawah</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Pinggang">Pinggang</button>
                       </div>
                     </div>
 
                     <!-- Lengan Kiri -->
                     <div class="mb-3">
-                      <strong class="d-block mb-2 text-primary"><i class="ri-hand-heart-line me-1"></i> Lengan Kiri</strong>
+                      <strong class="d-block mb-2 text-primary"><i class="ri-hand-heart-line me-1"></i> Lengan
+                        Kiri</strong>
                       <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Bahu Kiri">Bahu Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Lengan Atas Kiri">Lengan Atas Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Siku Kiri">Siku Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Lengan Bawah Kiri">Lengan Bawah Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Pergelangan Tangan Kiri">Pergelangan Tangan Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Jari Tangan Kiri">Jari Tangan Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Bahu Kiri">Bahu Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Lengan Atas Kiri">Lengan Atas Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Siku Kiri">Siku Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Lengan Bawah Kiri">Lengan Bawah Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Pergelangan Tangan Kiri">Pergelangan Tangan Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Jari Tangan Kiri">Jari Tangan Kiri</button>
                       </div>
                     </div>
 
                     <!-- Lengan Kanan -->
                     <div class="mb-3">
-                      <strong class="d-block mb-2 text-primary"><i class="ri-hand-heart-line me-1"></i> Lengan Kanan</strong>
+                      <strong class="d-block mb-2 text-primary"><i class="ri-hand-heart-line me-1"></i> Lengan
+                        Kanan</strong>
                       <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Bahu Kanan">Bahu Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Lengan Atas Kanan">Lengan Atas Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Siku Kanan">Siku Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Lengan Bawah Kanan">Lengan Bawah Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Pergelangan Tangan Kanan">Pergelangan Tangan Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Jari Tangan Kanan">Jari Tangan Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Bahu Kanan">Bahu Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Lengan Atas Kanan">Lengan Atas Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Siku Kanan">Siku Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Lengan Bawah Kanan">Lengan Bawah Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Pergelangan Tangan Kanan">Pergelangan Tangan Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Jari Tangan Kanan">Jari Tangan Kanan</button>
                       </div>
                     </div>
 
                     <!-- Kaki Kiri -->
                     <div class="mb-3">
-                      <strong class="d-block mb-2 text-primary"><i class="ri-footprint-line me-1"></i> Kaki Kiri</strong>
+                      <strong class="d-block mb-2 text-primary"><i class="ri-footprint-line me-1"></i> Kaki
+                        Kiri</strong>
                       <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Paha Kiri">Paha Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Lutut Kiri">Lutut Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Betis Kiri">Betis Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Pergelangan Kaki Kiri">Pergelangan Kaki Kiri</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Jari Kaki Kiri">Jari Kaki Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Paha Kiri">Paha Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Lutut Kiri">Lutut Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Betis Kiri">Betis Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Pergelangan Kaki Kiri">Pergelangan Kaki Kiri</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Jari Kaki Kiri">Jari Kaki Kiri</button>
                       </div>
                     </div>
 
                     <!-- Kaki Kanan -->
                     <div class="mb-3">
-                      <strong class="d-block mb-2 text-primary"><i class="ri-footprint-line me-1"></i> Kaki Kanan</strong>
+                      <strong class="d-block mb-2 text-primary"><i class="ri-footprint-line me-1"></i> Kaki
+                        Kanan</strong>
                       <div class="d-flex flex-wrap gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Paha Kanan">Paha Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Lutut Kanan">Lutut Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Betis Kanan">Betis Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Pergelangan Kaki Kanan">Pergelangan Kaki Kanan</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn" data-part="Jari Kaki Kanan">Jari Kaki Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Paha Kanan">Paha Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Lutut Kanan">Lutut Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Betis Kanan">Betis Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Pergelangan Kaki Kanan">Pergelangan Kaki Kanan</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary body-part-btn"
+                          data-part="Jari Kaki Kanan">Jari Kaki Kanan</button>
                       </div>
                     </div>
                   </div>
@@ -375,47 +458,60 @@
             <!-- Foto Bukti -->
             <div class="mb-4">
               <label for="foto_bukti" class="form-label">Foto Bukti <span class="text-danger">*</span></label>
-              <p class="text-muted"><small>Ambil foto bagian yang ada tanda fisiknya. Foto akan disimpan dengan timestamp server sebagai bukti.</small></p>
+              <p class="text-muted"><small>Ambil foto bagian yang ada tanda fisiknya. Foto akan disimpan dengan
+                  timestamp server sebagai bukti.</small></p>
 
               <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-12">
+                  <!-- Input file tersembunyi untuk capture kamera di mobile -->
+                  <input type="file" id="cameraCapture" accept="image/*" capture="environment" style="display: none;"
+                    onchange="handleCameraCapture(this)">
+
+                  <!-- Input hidden untuk menyimpan foto dari kamera -->
+                  <input type="hidden" id="camera_photos_data" name="camera_photos_data">
+
                   <div id="cameraContainer" class="mb-3">
-                    <video id="cameraStream" width="100%" height="auto" style="display: none; border: 2px solid #ccc; border-radius: 8px;"></video>
+                    <video id="cameraStream" width="100%" height="auto" playsinline
+                      style="display: none; border: 2px solid #ccc; border-radius: 8px;"></video>
                     <canvas id="captureCanvas" style="display: none;"></canvas>
 
                     <div id="cameraPlaceholder" class="text-center p-5 border border-dashed rounded">
                       <i class="ri-camera-line" style="font-size: 3rem; color: #ccc;"></i>
-                      <p class="text-muted mt-2">Kamera tidak aktif</p>
+                      <p class="text-muted mt-2">Tekan tombol "Buka Kamera" untuk mengambil foto</p>
                     </div>
                   </div>
 
-                  <div class="d-flex gap-2 mb-3">
-                    <button type="button" id="startCameraBtn" class="btn btn-primary btn-sm" style="display: none;">
+                  <div class="camera-controls">
+                    <button type="button" id="startCameraBtn" class="btn btn-primary" style="display: none;">
                       <i class="ri-camera-2-line me-2"></i>Buka Kamera
                     </button>
-                    <button type="button" id="takeFotoBtn" class="btn btn-success btn-sm" style="display: none;">
+                    <button type="button" id="takeFotoBtn" class="btn btn-success" style="display: none;">
                       <i class="ri-camera-line me-2"></i>Ambil Foto
                     </button>
                     <button type="button" id="retakeFotoBtn" class="btn btn-warning btn-sm" style="display: none;">
-                      <i class="ri-refresh-line me-2"></i>Ambil Ulang
+                      <i class="ri-delete-bin-line me-1"></i>Hapus Foto
                     </button>
                     <button type="button" id="addMoreFotoBtn" class="btn btn-info btn-sm" style="display: none;">
-                      <i class="ri-add-line me-2"></i>Tambah Foto
+                      <i class="ri-camera-line me-1"></i>Tambah Foto
                     </button>
                   </div>
+
+                  <!-- Preview foto dari kamera -->
+                  <div id="cameraFotoPreview" class="mt-3"></div>
                 </div>
 
-                <div class="col-md-6">
-                  <p class="text-muted"><small>Atau upload file gambar (bisa lebih dari 1):</small></p>
-                  <input type="file" class="form-control @error('foto_bukti') is-invalid @enderror" id="foto_bukti" name="foto_bukti[]"
-                    accept="image/*" multiple onchange="previewUploadedImage(this)">
+                <div class="col-12">
+                  <hr class="my-3">
+                  <p class="text-muted"><small>Atau pilih file gambar dari galeri (bisa lebih dari 1):</small></p>
+                  <input type="file" class="form-control @error('foto_bukti') is-invalid @enderror" id="foto_bukti"
+                    name="foto_bukti[]" accept="image/*" multiple onchange="previewUploadedImage(this)">
                   @error('foto_bukti')
                   <span class="invalid-feedback">{{ $message }}</span>
                   @enderror
                 </div>
               </div>
 
-              <!-- Preview multiple fotos -->
+              <!-- Preview multiple fotos dari file upload -->
               <div id="fotoPreviewContainer" class="mt-3"></div>
             </div>
 
@@ -426,10 +522,12 @@
           <!-- Section 4: Tanda Tangan Orang Tua / Pengantar (UNTUK SEMUA KONDISI) -->
           <div id="verifikasiOrangTuaSection">
             <h6 class="mb-3"><i class="ri-pen-nib-line me-2"></i>Verifikasi Orang Tua / Pengantar</h6>
-            <p class="text-muted"><small>Orang tua/pengantar harus menandatangani bahwa anak sudah diantarkan ke sekolah</small></p>
+            <p class="text-muted"><small>Orang tua/pengantar harus menandatangani bahwa anak sudah diantarkan ke
+                sekolah</small></p>
 
             <div class="mb-4">
-              <label for="nama_pengantar" class="form-label">Nama Orang Tua / Pengantar <span class="text-danger">*</span></label>
+              <label for="nama_pengantar" class="form-label">Nama Orang Tua / Pengantar <span
+                  class="text-danger">*</span></label>
               <input type="text" class="form-control @error('nama_pengantar') is-invalid @enderror" id="nama_pengantar"
                 name="nama_pengantar" value="{{ old('nama_pengantar') }}" placeholder="Nama lengkap...">
               @error('nama_pengantar')
@@ -438,7 +536,8 @@
             </div>
 
             <div class="mb-4">
-              <label for="signature_pengantar" class="form-label">Tanda Tangan Orang Tua / Pengantar <span class="text-danger">*</span></label>
+              <label for="signature_pengantar" class="form-label">Tanda Tangan Orang Tua / Pengantar <span
+                  class="text-danger">*</span></label>
               <p class="text-muted"><small>Silakan tanda tangan di kotak berikut dengan jari atau stylus</small></p>
               <div style="border: 3px solid #007bff; border-radius: 8px; overflow: hidden; margin-bottom: 1rem;">
                 <canvas id="signaturePad"></canvas>
@@ -450,21 +549,18 @@
             </div>
 
             <div class="d-flex gap-2 align-items-center">
-              <button type="button" id="clearSignatureBtn" class="btn btn-sm btn-outline-secondary">
-                <i class="ri-delete-bin-line me-2"></i>Hapus Tanda Tangan
+              <button type="button" id="clearSignatureBtn" class="btn btn-sm btn-outline-danger">
+                <i class="ri-delete-bin-line me-md-2"></i><span class="d-none d-md-inline">Hapus Tanda Tangan</span>
               </button>
               <span class="text-muted"><small id="signatureStatus">Belum ada tanda tangan</small></span>
             </div>
           </div>
 
           <!-- Form Actions -->
-          <div class="mt-4 d-flex gap-2">
+          <div class="mt-4 d-flex justify-content-end">
             <button type="submit" class="btn btn-primary">
-              <i class="ri-save-line me-2"></i>Simpan Absensi
+              <i class="ri-save-line me-2"></i>Simpan
             </button>
-            <a href="{{ route('absensi.index') }}" class="btn btn-secondary">
-              <i class="ri-arrow-left-line me-2"></i>Batal
-            </a>
           </div>
         </form>
       </div>
@@ -484,6 +580,9 @@
   // Resolve model asset URLs via Laravel to handle subdirectory deployments
   const MODEL_FEMALE_URL = "{{ asset('assets/Female.glb') }}";
   const MODEL_MALE_URL = "{{ asset('assets/Male.glb') }}";
+
+  // ✅ GLOBAL: Camera photos array
+  window.cameraPhotos = [];
 
   // Debug: tampilkan URL yang akan dimuat
   console.log('🔍 Model URLs:', {
@@ -1062,7 +1161,8 @@
 
           // Update status
           if (statusElement) {
-            statusElement.innerHTML = '<span class="text-success">✓ Siap! Klik pada model untuk menangkap koordinat</span>';
+            statusElement.innerHTML =
+              '<span class="text-success">✓ Siap! Klik pada model untuk menangkap koordinat</span>';
           }
         } else {
           console.warn('⚠ positionAndNormalFromPoint API not available - Edit Mode may not work');
@@ -1183,8 +1283,13 @@
     const cameraStream = document.getElementById('cameraStream');
     const captureCanvas = document.getElementById('captureCanvas');
     const fotoInput = document.getElementById('foto_bukti');
+    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+    const cameraCaptureInput = document.getElementById('cameraCapture');
+    const cameraFotoPreview = document.getElementById('cameraFotoPreview');
     let stream = null;
-    let capturedPhotos = []; // Array untuk menyimpan foto yang ditangkap
+
+    // Detect if mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     // Show camera button when ada_tanda is selected
     document.getElementById('kondisi_ada_tanda').addEventListener('change', function() {
@@ -1198,7 +1303,95 @@
       startCameraBtn.style.display = 'inline-block';
     }
 
+    // Update camera photos preview
+    function updateCameraFotoPreview() {
+      cameraFotoPreview.innerHTML = '';
+
+      if (window.cameraPhotos.length === 0) {
+        return;
+      }
+
+      const title = document.createElement('h6');
+      title.className = 'mb-2';
+      title.innerHTML = '<i class="ri-camera-line me-2"></i>Foto dari Kamera (' + window.cameraPhotos.length + '):';
+      cameraFotoPreview.appendChild(title);
+
+      const row = document.createElement('div');
+      row.className = 'row g-2';
+
+      window.cameraPhotos.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const col = document.createElement('div');
+          col.className = 'col-6 col-md-3';
+          col.innerHTML = `
+            <div class="position-relative">
+              <img src="${e.target.result}" class="img-thumbnail w-100" style="height: 150px; object-fit: cover;">
+              <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="removeCameraPhoto(${index})">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+              <span class="badge bg-primary position-absolute bottom-0 start-0 m-1">Kamera ${index + 1}</span>
+            </div>
+          `;
+          row.appendChild(col);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      cameraFotoPreview.appendChild(row);
+    }
+
+    // Remove camera photo
+    window.removeCameraPhoto = function(index) {
+      window.cameraPhotos.splice(index, 1);
+      updateCameraFotoPreview();
+
+      if (window.cameraPhotos.length === 0) {
+        retakeFotoBtn.style.display = 'none';
+        addMoreFotoBtn.style.display = 'none';
+        cameraPlaceholder.style.display = 'block';
+        startCameraBtn.style.display = 'inline-block';
+      }
+    };
+
+    // Handle camera capture from mobile native camera
+    window.handleCameraCapture = function(input) {
+      if (input.files && input.files.length > 0) {
+        // Add captured photos to camera array (NOT to file input)
+        for (let i = 0; i < input.files.length; i++) {
+          window.cameraPhotos.push(input.files[i]);
+        }
+
+        // Update preview
+        updateCameraFotoPreview();
+
+        // Show control buttons
+        cameraPlaceholder.style.display = 'none';
+        retakeFotoBtn.style.display = 'inline-block';
+        addMoreFotoBtn.style.display = 'inline-block';
+        startCameraBtn.style.display = 'none';
+
+        // Clear the camera input for next capture
+        input.value = '';
+      }
+    };
+
     startCameraBtn.addEventListener('click', async function() {
+      // For mobile devices, trigger native camera via input file
+      if (isMobile) {
+        cameraCaptureInput.click();
+        return;
+      }
+
+      // For desktop, use getUserMedia to access webcam
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert(
+          'Fitur kamera tidak tersedia di browser Anda.\n\nPenyebab:\n- Halaman tidak menggunakan HTTPS\n- Browser tidak mendukung\n\nSolusi: Gunakan fitur Upload File di bawah untuk mengambil foto dari galeri.'
+        );
+        return;
+      }
+
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -1212,13 +1405,28 @@
         // Wait for video metadata to load, then play
         cameraStream.onloadedmetadata = function() {
           cameraStream.play();
-          document.getElementById('cameraPlaceholder').style.display = 'none';
+          cameraPlaceholder.style.display = 'none';
           cameraStream.style.display = 'block';
           startCameraBtn.style.display = 'none';
           takeFotoBtn.style.display = 'inline-block';
         };
       } catch (err) {
-        alert('Tidak bisa mengakses kamera: ' + err.message);
+        console.error('Camera error:', err);
+        let errorMsg = 'Tidak bisa mengakses kamera.';
+
+        if (err.name === 'NotAllowedError') {
+          errorMsg =
+            'Akses kamera ditolak.\n\nSilakan izinkan akses kamera di pengaturan browser Anda, lalu coba lagi.';
+        } else if (err.name === 'NotFoundError') {
+          errorMsg = 'Kamera tidak ditemukan pada perangkat Anda.';
+        } else if (err.name === 'NotReadableError') {
+          errorMsg =
+            'Kamera sedang digunakan oleh aplikasi lain.\n\nTutup aplikasi yang menggunakan kamera, lalu coba lagi.';
+        } else {
+          errorMsg = 'Error: ' + err.message;
+        }
+
+        alert(errorMsg + '\n\nAnda bisa menggunakan fitur Upload File untuk mengambil foto dari galeri.');
       }
     });
 
@@ -1237,20 +1445,15 @@
 
       // Convert canvas to blob
       captureCanvas.toBlob(function(blob) {
-        const file = new File([blob], 'foto_' + Date.now() + '.png', {
+        const file = new File([blob], 'foto_camera_' + Date.now() + '.png', {
           type: 'image/png'
         });
 
-        // Tambah file ke array capturedPhotos
-        capturedPhotos.push(file);
+        // Add to camera photos array (NOT to file input)
+        window.cameraPhotos.push(file);
 
-        // Update file input dengan semua foto
-        const dataTransfer = new DataTransfer();
-        capturedPhotos.forEach(f => dataTransfer.items.add(f));
-        fotoInput.files = dataTransfer.files;
-
-        // Update preview
-        updateFotoPreview();
+        // Update camera preview
+        updateCameraFotoPreview();
 
         // Show buttons
         cameraStream.style.display = 'none';
@@ -1264,60 +1467,23 @@
       });
     });
 
-    function updateFotoPreview() {
-      const container = document.getElementById('fotoPreviewContainer');
-      container.innerHTML = '';
-
-      if (capturedPhotos.length === 0) {
-        container.innerHTML = '';
+    addMoreFotoBtn.addEventListener('click', async function() {
+      // For mobile devices, trigger native camera via input file
+      if (isMobile) {
+        cameraCaptureInput.click();
         return;
       }
 
-      const row = document.createElement('div');
-      row.className = 'row g-2 mt-2';
-
-      capturedPhotos.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const col = document.createElement('div');
-          col.className = 'col-md-3';
-          col.innerHTML = `
-            <div class="position-relative">
-              <img src="${e.target.result}" class="img-thumbnail w-100" style="height: 200px; object-fit: cover;">
-              <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="removeCapturedPhoto(${index})">
-                <i class="ri-delete-bin-line"></i>
-              </button>
-            </div>
-          `;
-          row.appendChild(col);
-        };
-        reader.readAsDataURL(file);
-      });
-
-      container.appendChild(row);
-    }
-
-    window.removeCapturedPhoto = function(index) {
-      capturedPhotos.splice(index, 1);
-      const dataTransfer = new DataTransfer();
-      capturedPhotos.forEach(f => dataTransfer.items.add(f));
-      fotoInput.files = dataTransfer.files;
-      updateFotoPreview();
-
-      if (capturedPhotos.length === 0) {
-        addMoreFotoBtn.style.display = 'none';
-        retakeFotoBtn.style.display = 'none';
-        document.getElementById('cameraPlaceholder').style.display = 'block';
-        startCameraBtn.style.display = 'inline-block';
+      // For desktop, restart webcam
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('Fitur kamera tidak tersedia di browser Anda.');
+        return;
       }
-    };
 
-    addMoreFotoBtn.addEventListener('click', async function() {
-      // Reset camera and start again
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            facingMode: 'environment'
+            facingMode: 'user'
           },
           audio: false
         });
@@ -1329,99 +1495,312 @@
           cameraStream.style.display = 'block';
           takeFotoBtn.style.display = 'inline-block';
           addMoreFotoBtn.style.display = 'none';
-          retakeFotoBtn.style.display = 'none';
+          retakeFotoBtn.style.display = 'inline-block';
         };
       } catch (err) {
+        console.error('Camera error:', err);
         alert('Tidak bisa mengakses kamera: ' + err.message);
       }
     });
 
     retakeFotoBtn.addEventListener('click', async function() {
-      // Clear the captured photos
-      capturedPhotos = [];
-      fotoInput.value = '';
-      updateFotoPreview();
+      // Clear the camera photos
+      window.cameraPhotos = [];
+      cameraCaptureInput.value = '';
+      updateCameraFotoPreview();
 
-      // Reset camera
-      document.getElementById('cameraPlaceholder').style.display = 'block';
+      // Reset UI
+      cameraPlaceholder.style.display = 'block';
       retakeFotoBtn.style.display = 'none';
       addMoreFotoBtn.style.display = 'none';
       startCameraBtn.style.display = 'inline-block';
+
+      // Stop camera stream if active
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      cameraStream.style.display = 'none';
     });
 
-    // Handle form submit
+    // Handle form submit - combine camera photos and file upload
     document.getElementById('absensiForm').addEventListener('submit', function(e) {
-      // Only validate signature dan nama_pengantar jika TIDAK izin
+      console.log('📝 Form submit handler triggered');
+      console.log('📸 Camera photos count:', window.cameraPhotos.length);
+      console.log('🔍 is_izin checked:', izinCheckbox.checked);
+      console.log('🔍 Canvas empty:', window.isCanvasEmpty ? window.isCanvasEmpty() : 'undefined');
+
+      // ⚠️ CRITICAL: Add camera photos to file input BEFORE any validation/submit
+      // This ensures photos are included even if we fall back to normal form submit
+      if (window.cameraPhotos && window.cameraPhotos.length > 0) {
+        const fotoInput = document.getElementById('foto_bukti');
+        const dataTransfer = new DataTransfer();
+
+        // Add existing files from file input first
+        if (fotoInput.files && fotoInput.files.length > 0) {
+          for (let i = 0; i < fotoInput.files.length; i++) {
+            dataTransfer.items.add(fotoInput.files[i]);
+          }
+        }
+
+        // Add camera photos
+        window.cameraPhotos.forEach(file => {
+          dataTransfer.items.add(file);
+        });
+
+        // Set the combined files back to input
+        fotoInput.files = dataTransfer.files;
+        console.log('✅ Camera photos added to file input. Total files:', fotoInput.files.length);
+      }
+
+      // 1. Validasi Dasar Client Side
       if (!izinCheckbox.checked) {
-        // Validasi nama_pengantar
         if (!document.getElementById('nama_pengantar').value) {
           e.preventDefault();
           alert('Silakan masukkan nama orang tua/pengantar');
           return;
         }
-
-        // Check if signature pad is empty
         if (window.isCanvasEmpty()) {
           e.preventDefault();
-          alert('Silakan tanda tangan di kotak yang disediakan untuk konfirmasi');
+          alert('Silakan tanda tangan di kotak yang disediakan');
           return;
         }
 
-        // Save signature to hidden field
-        document.getElementById('signature_pengantar').value = window.getCanvasSignature();
+        // Check if "Ada Tanda" is selected and validate photos
+        const adaTandaRadio = document.getElementById('kondisi_ada_tanda');
+        if (adaTandaRadio && adaTandaRadio.checked) {
+          const fotoInput = document.getElementById('foto_bukti');
+          const hasFileUpload = fotoInput && fotoInput.files && fotoInput.files.length > 0;
+          const hasCameraPhotos = window.cameraPhotos && window.cameraPhotos.length > 0;
 
-        // Conditional validation for ada_tanda
-        if (document.getElementById('kondisi_ada_tanda').checked) {
-          // Validate required fields for ada_tanda only
-          const jenisTandaFisikChecked = document.querySelectorAll('input[name="jenis_tanda_fisik[]"]:checked');
-          if (jenisTandaFisikChecked.length === 0) {
-            e.preventDefault();
-            alert('Silakan pilih minimal satu jenis tanda fisik');
-            return;
-          }
+          console.log('📸 Validation: hasFileUpload=' + hasFileUpload + ', hasCameraPhotos=' + hasCameraPhotos);
 
-          if (selectedLocations.length === 0) {
+          if (!hasFileUpload && !hasCameraPhotos) {
             e.preventDefault();
-            alert('Silakan pilih lokasi tanda fisik di tubuh');
-            return;
-          }
-
-          if (!fotoInput.files.length) {
-            e.preventDefault();
-            alert('Silakan ambil foto bukti');
+            alert('Silakan ambil foto dari kamera atau upload file foto bukti tanda fisik');
             return;
           }
         }
       }
+
+      // 2. Jika Tidak Izin (Ada Tanda Tangan), Kita Manipulasi Pengiriman
+      if (!izinCheckbox.checked && !window.isCanvasEmpty()) {
+        e.preventDefault(); // Stop submit standar browser
+
+        console.log('🔄 Starting AJAX form submission...');
+
+        // Ambil tombol submit agar tidak diklik 2x
+        const btnSubmit = this.querySelector('button[type="submit"]');
+        const originalText = btnSubmit.innerHTML;
+        btnSubmit.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Menyimpan...';
+        btnSubmit.disabled = true;
+
+        // Konversi Base64 ke Blob (File)
+        const dataURL = window.getCanvasSignature();
+        fetch(dataURL)
+          .then(res => res.blob())
+          .then(blob => {
+            console.log('✅ Signature blob created');
+
+            // Buat FormData BARU (custom, bukan dari form element)
+            const formData = new FormData();
+
+            // 1. Add CSRF token
+            formData.append('_token', document.querySelector('input[name="_token"]').value);
+
+            // 2. Add basic fields dari form
+            const form = document.getElementById('absensiForm');
+            const formElements = form.querySelectorAll('input, select, textarea');
+
+            // Track checkbox arrays
+            const checkboxArrays = {};
+
+            formElements.forEach(el => {
+              if (el.name && el.name !== '_token' && el.name !== 'foto_bukti[]' && el.name !== 'signature_pengantar') {
+                // Skip file inputs dan signature
+                if (el.type === 'checkbox') {
+                  // Handle checkbox arrays (e.g., jenis_tanda_fisik[])
+                  if (el.name.endsWith('[]')) {
+                    if (el.checked) {
+                      if (!checkboxArrays[el.name]) {
+                        checkboxArrays[el.name] = [];
+                      }
+                      checkboxArrays[el.name].push(el.value);
+                    }
+                  } else {
+                    // Regular checkbox
+                    if (el.checked) {
+                      formData.append(el.name, el.value);
+                    }
+                  }
+                } else if (el.type === 'radio') {
+                  if (el.checked) {
+                    formData.append(el.name, el.value);
+                  }
+                } else if (el.name !== 'signature_pengantar' && el.name !== 'camera_photos_data') {
+                  // Skip hidden signature field and camera data
+                  if (el.value) {
+                    formData.append(el.name, el.value);
+                  }
+                }
+              }
+            });
+
+            // Add checkbox arrays
+            Object.keys(checkboxArrays).forEach(name => {
+              checkboxArrays[name].forEach(value => {
+                formData.append(name, value);
+              });
+            });
+
+            // 3. Add signature blob
+            formData.append('signature_pengantar', blob, 'signature_pengantar.png');
+            console.log('✅ Signature added to FormData');
+
+            // 4. Add FILE INPUT photos (includes both gallery uploads AND camera photos after merge)
+            const fotoInput = document.getElementById('foto_bukti');
+            if (fotoInput && fotoInput.files && fotoInput.files.length > 0) {
+              console.log('📁 Adding all photos from file input:', fotoInput.files.length);
+              for (let i = 0; i < fotoInput.files.length; i++) {
+                formData.append('foto_bukti[]', fotoInput.files[i]);
+              }
+            }
+
+            // ✅ Camera photos already merged into fotoInput.files above
+            // No need to add them separately - that would cause duplicates!
+
+            console.log('📦 FormData ready, sending to server...');
+
+            // Debug: Log FormData contents
+            console.log('🔍 FormData contents:');
+            for (let pair of formData.entries()) {
+              if (pair[1] instanceof File) {
+                console.log(`  ${pair[0]}: [File] ${pair[1].name} (${pair[1].size} bytes)`);
+              } else {
+                console.log(`  ${pair[0]}: ${pair[1]}`);
+              }
+            }
+
+            // Kirim via AJAX
+            fetch("{{ route('absensi.store') }}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'Accept': 'application/json',
+                  'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+              })
+              .then(response => {
+                console.log('📡 Response received:', response.status);
+                console.log('📡 Response URL:', response.url);
+
+                // Try to parse as JSON first
+                return response.json().then(data => {
+                  console.log('📦 Response data:', data);
+
+                  if (response.ok && data.success) {
+                    // Success - redirect to index
+                    console.log('✅ Success! Redirecting to:', data.redirect);
+                    window.location.href = data.redirect || "{{ route('absensi.index') }}";
+                  } else if (!response.ok && data.errors) {
+                    // Validation errors (422)
+                    console.error('❌ Validation errors:', data.errors);
+                    btnSubmit.innerHTML = originalText;
+                    btnSubmit.disabled = false;
+
+                    let errorMsg = 'Gagal Validasi:\n\n';
+                    Object.keys(data.errors).forEach(field => {
+                      errorMsg += `• ${field}: ${data.errors[field].join(', ')}\n`;
+                    });
+                    alert(errorMsg);
+                  } else {
+                    // Other error from server
+                    console.error('❌ Server error:', data.message);
+                    btnSubmit.innerHTML = originalText;
+                    btnSubmit.disabled = false;
+                    alert(data.message || 'Gagal menyimpan data. Silakan coba lagi.');
+                  }
+                }).catch(err => {
+                  // Not JSON, check if redirected
+                  console.warn('⚠️ Response is not JSON:', err.message);
+
+                  if (response.redirected) {
+                    console.log('✅ Redirect detected (non-JSON), navigating to:', response.url);
+
+                    // Check if redirected back to create page (indicates error)
+                    if (response.url.includes('/absensi/create')) {
+                      console.error('⚠️ Redirected back to create page - likely validation error');
+                      btnSubmit.innerHTML = originalText;
+                      btnSubmit.disabled = false;
+                      alert('Ada kesalahan validasi. Halaman akan di-reload untuk menampilkan error.');
+                      // Reload to show error messages
+                      window.location.reload();
+                      return;
+                    }
+
+                    window.location.href = response.url;
+                  } else if (response.ok) {
+                    // Response 200+ but no redirect and not JSON (unexpected)
+                    console.warn('⚠️ Unexpected response format');
+                    btnSubmit.innerHTML = originalText;
+                    btnSubmit.disabled = false;
+                    alert('Server response tidak seperti yang diharapkan. Silakan refresh halaman.');
+                  } else {
+                    // Error response
+                    console.error('❌ HTTP error:', response.status);
+                    btnSubmit.innerHTML = originalText;
+                    btnSubmit.disabled = false;
+                    alert('Terjadi kesalahan server. Status: ' + response.status);
+                  }
+                });
+              })
+              .catch(err => {
+                console.error('❌ Fetch error:', err);
+                btnSubmit.innerHTML = originalText;
+                btnSubmit.disabled = false;
+                alert('Terjadi kesalahan jaringan: ' + err.message + '\nPastikan koneksi internet Anda stabil.');
+              });
+          })
+          .catch(err => {
+            console.error('❌ Signature blob error:', err);
+            btnSubmit.innerHTML = originalText;
+            btnSubmit.disabled = false;
+            alert('Gagal memproses tanda tangan: ' + err.message);
+          });
+      }
+      // Jika Izin (Tidak ada signature), biarkan submit biasa
     });
 
-    // Preview uploaded image (handle multiple)
+    // Preview uploaded image (handle multiple) - ONLY for file uploads, not camera
     window.previewUploadedImage = function(input) {
       if (input.files && input.files.length > 0) {
         const container = document.getElementById('fotoPreviewContainer');
         container.innerHTML = '';
 
-        // Reset capturedPhotos and add uploaded files
-        capturedPhotos = [];
-        for (let i = 0; i < input.files.length; i++) {
-          capturedPhotos.push(input.files[i]);
-        }
+        const title = document.createElement('h6');
+        title.className = 'mb-2 mt-2';
+        title.innerHTML = '<i class="ri-folder-image-line me-2"></i>File dari Galeri (' + input.files.length +
+          '):';
+        container.appendChild(title);
 
         // Display all previews
         const row = document.createElement('div');
-        row.className = 'row g-2 mt-2';
+        row.className = 'row g-2';
 
         for (let i = 0; i < input.files.length; i++) {
           const reader = new FileReader();
+          const fileIndex = i;
           reader.onload = function(e) {
             const col = document.createElement('div');
-            col.className = 'col-md-3';
+            col.className = 'col-6 col-md-3';
             col.innerHTML = `
               <div class="position-relative">
-                <img src="${e.target.result}" class="img-thumbnail w-100" style="height: 200px; object-fit: cover;">
-                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="removeUploadedPhoto(${i})">
+                <img src="${e.target.result}" class="img-thumbnail w-100" style="height: 150px; object-fit: cover;">
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" onclick="removeUploadedPhoto(${fileIndex})">
                   <i class="ri-delete-bin-line"></i>
                 </button>
+                <span class="badge bg-success position-absolute bottom-0 start-0 m-1">File ${fileIndex + 1}</span>
               </div>
             `;
             row.appendChild(col);
@@ -1430,13 +1809,6 @@
         }
 
         container.appendChild(row);
-
-        // Hide camera controls
-        document.getElementById('cameraPlaceholder').style.display = 'none';
-        startCameraBtn.style.display = 'none';
-        takeFotoBtn.style.display = 'none';
-        addMoreFotoBtn.style.display = 'inline-block';
-        retakeFotoBtn.style.display = 'inline-block';
 
         // Stop camera if running
         if (stream) {
@@ -1450,17 +1822,23 @@
     };
 
     window.removeUploadedPhoto = function(index) {
-      capturedPhotos.splice(index, 1);
-      const dataTransfer = new DataTransfer();
-      capturedPhotos.forEach(f => dataTransfer.items.add(f));
-      fotoInput.files = dataTransfer.files;
-      updateFotoPreview();
+      // Create new FileList without the removed file
+      const dt = new DataTransfer();
+      const files = Array.from(fotoInput.files);
 
-      if (capturedPhotos.length === 0) {
-        addMoreFotoBtn.style.display = 'none';
-        retakeFotoBtn.style.display = 'none';
-        document.getElementById('cameraPlaceholder').style.display = 'block';
-        startCameraBtn.style.display = 'inline-block';
+      files.forEach((file, i) => {
+        if (i !== index) {
+          dt.items.add(file);
+        }
+      });
+
+      fotoInput.files = dt.files;
+
+      // Update preview
+      if (fotoInput.files.length > 0) {
+        previewUploadedImage(fotoInput);
+      } else {
+        document.getElementById('fotoPreviewContainer').innerHTML = '';
       }
     };
 
