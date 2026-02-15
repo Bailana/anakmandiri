@@ -230,23 +230,24 @@ class AssessmentController extends Controller
     $validated = $request->validate([
       'anak_didik_id' => 'required|exists:anak_didiks,id',
       'konsultan_id' => 'nullable|exists:konsultans,id',
-      'program_id' => 'nullable|exists:programs,id',
-      'kategori' => 'required|in:bina_diri,akademik,motorik,perilaku,vokasi',
-      'perkembangan' => 'nullable|integer|min:1|max:4',
+      'tanggal_assessment' => 'required|date',
       'aktivitas' => 'nullable|string',
       'hasil_penilaian' => 'nullable|string',
       'rekomendasi' => 'nullable|string',
       'saran' => 'nullable|string',
-      'tanggal_assessment' => 'nullable|date',
       'kemampuan' => 'nullable|array',
       'kemampuan.*.judul' => 'nullable|string',
       'kemampuan.*.skala' => 'nullable|in:1,2,3,4,5',
+      'programs' => 'required|array|min:1',
+      'programs.*.program_id' => 'nullable|exists:programs,id',
+      'programs.*.kategori' => 'required|in:bina_diri,akademik,motorik,perilaku,vokasi',
+      'programs.*.perkembangan' => 'nullable|integer|min:1|max:4',
     ]);
 
-    // Validasi: anak didik harus sudah absensi dengan status hadir hari ini
-    $today = Carbon::today()->format('Y-m-d');
+    // Validasi: anak didik harus sudah absensi dengan status hadir pada tanggal penilaian
+    $dateToCheck = isset($validated['tanggal_assessment']) ? Carbon::parse($validated['tanggal_assessment'])->toDateString() : Carbon::today()->toDateString();
     $absensi = \App\Models\Absensi::where('anak_didik_id', $validated['anak_didik_id'])
-      ->whereDate('tanggal', $today)
+      ->whereDate('tanggal', $dateToCheck)
       ->first();
 
     if (!$absensi || $absensi->status !== 'hadir') {
@@ -264,13 +265,35 @@ class AssessmentController extends Controller
       $validated['user_id'] = $user->id;
     }
 
-    $assessment = Assessment::create($validated);
+    // Create one Assessment per program entry
+    $created = [];
+    $programs = $validated['programs'] ?? [];
+    foreach ($programs as $p) {
+      $data = [
+        'anak_didik_id' => $validated['anak_didik_id'],
+        'konsultan_id' => $validated['konsultan_id'] ?? null,
+        'program_id' => $p['program_id'] ?? null,
+        'kategori' => $p['kategori'],
+        'perkembangan' => isset($p['perkembangan']) && $p['perkembangan'] !== '' ? $p['perkembangan'] : null,
+        'aktivitas' => $validated['aktivitas'] ?? null,
+        'hasil_penilaian' => $validated['hasil_penilaian'] ?? null,
+        'rekomendasi' => $validated['rekomendasi'] ?? null,
+        'saran' => $validated['saran'] ?? null,
+        'tanggal_assessment' => $validated['tanggal_assessment'] ?? null,
+        'kemampuan' => $validated['kemampuan'],
+      ];
 
-    // Log aktivitas ketika user dengan role 'guru' menambahkan penilaian
-    if ($user && $user->role === 'guru') {
-      $anak = AnakDidik::find($validated['anak_didik_id']);
-      $desc = 'Membuat penilaian untuk anak: ' . ($anak ? $anak->nama : 'ID ' . $validated['anak_didik_id']);
-      ActivityService::logCreate('Assessment', $assessment->id, $desc);
+      if ($user) $data['user_id'] = $user->id;
+
+      $a = Assessment::create($data);
+      $created[] = $a;
+
+      // Log aktivitas per penilaian apabila user role guru
+      if ($user && $user->role === 'guru') {
+        $anak = AnakDidik::find($validated['anak_didik_id']);
+        $desc = 'Membuat penilaian untuk anak: ' . ($anak ? $anak->nama : 'ID ' . $validated['anak_didik_id']);
+        ActivityService::logCreate('Assessment', $a->id, $desc);
+      }
     }
 
     return redirect()->route('assessment.index')->with('success', 'Penilaian berhasil ditambahkan');
