@@ -201,7 +201,7 @@
               </td>
               <td>
                 <div class="d-flex gap-1">
-                  @if($todayAbsensi && !$todayAbsensi->waktu_jemput)
+                  @if($todayAbsensi && !$todayAbsensi->waktu_jemput && !in_array(($todayAbsensi->status ?? ''), ['alfa', 'izin']))
                   <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal"
                     data-bs-target="#jemputModal" data-absensi-id="{{ $todayAbsensi->id }}"
                     data-anak-nama="{{ $anakDidik->nama }}" onclick="openJemputModal(this)" title="Catat Penjemputan">
@@ -718,53 +718,82 @@
           return;
         }
 
-        // Build HTML for each month group
-        let html = '';
-        res.riwayat.forEach(monthGroup => {
-          html += `<div class="mb-4">
-              <div class="fw-bold bg-light p-2 rounded border mb-2">
-                <i class="ri-calendar-line me-1"></i> ${monthGroup.month}
-              </div>
-              <ul class="list-group">`;
+        // Cache riwayat for client-side filtering
+        window._riwayatCache = window._riwayatCache || {};
+        window._riwayatCache[anakDidikId] = res.riwayat;
 
-          monthGroup.items.forEach(item => {
-            // Determine status badge
+        // Build filter controls: month select + status select (two columns, 50% each)
+        let filterHtml = `<div class="row g-2 mb-3">
+          <div class="col-12 col-md-6">
+            <label class="form-label mb-1" style="font-size:0.8rem">Bulan</label>
+            <select id="riwayatMonthSelect" class="form-select form-select-sm w-100"></select>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label mb-1" style="font-size:0.8rem">Status</label>
+            <select id="riwayatStatusSelect" class="form-select form-select-sm w-100">
+              <option value="all">Semua</option>
+              <option value="hadir">Hadir</option>
+              <option value="izin">Izin</option>
+              <option value="alfa">Alfa</option>
+            </select>
+          </div>
+        </div>`;
+
+        // Insert filters + container for list
+        listDiv.innerHTML = filterHtml + '<div id="riwayatAbsensiContent"></div>';
+
+        const monthSelect = document.getElementById('riwayatMonthSelect');
+        const statusSelect = document.getElementById('riwayatStatusSelect');
+        const contentDiv = document.getElementById('riwayatAbsensiContent');
+
+        // Populate month select from available groups
+        res.riwayat.forEach(group => {
+          const opt = document.createElement('option');
+          opt.value = group.month_key;
+          opt.text = group.month;
+          monthSelect.appendChild(opt);
+        });
+
+        // Default to first month (most recent)
+        if (res.riwayat.length) monthSelect.value = res.riwayat[0].month_key;
+
+        function renderFiltered() {
+          const selMonth = monthSelect.value;
+          const selStatus = statusSelect.value;
+          const riwayat = window._riwayatCache[anakDidikId] || [];
+
+          // Find month group
+          const group = riwayat.find(g => g.month_key === selMonth);
+          if (!group || !Array.isArray(group.items) || group.items.length === 0) {
+            contentDiv.innerHTML = '<div class="text-center text-muted">Belum ada riwayat untuk pilihan ini.</div>';
+            return;
+          }
+
+          let html = '<ul class="list-group">';
+          group.items.forEach(item => {
+            if (selStatus !== 'all' && item.status !== selStatus) return;
+
             let statusBadge = '';
-            if (item.status === 'hadir') {
-              statusBadge = '<span class="badge bg-success">Hadir</span>';
-            } else if (item.status === 'izin') {
-              statusBadge = '<span class="badge bg-warning text-dark">Izin</span>';
-            } else {
-              statusBadge = '<span class="badge bg-danger">Alfa</span>';
-            }
+            if (item.status === 'hadir') statusBadge = '<span class="badge bg-success">Hadir</span>';
+            else if (item.status === 'izin') statusBadge = '<span class="badge bg-warning text-dark">Izin</span>';
+            else statusBadge = '<span class="badge bg-danger">Alfa</span>';
 
-            // Determine kondisi fisik badge - hanya tampil jika bukan izin
             let kondisiBadge = '';
             if (item.status !== 'izin') {
-              if (item.kondisi_fisik === 'ada_tanda') {
-                kondisiBadge = `<span class="badge bg-danger ms-2"><i class="ri-alert-line"></i><span class="badge-text"> ${item.jenis_tanda_fisik_label || 'Ada Tanda Fisik'}</span></span>`;
-              } else if (item.kondisi_fisik === 'baik') {
-                kondisiBadge = '<span class="badge bg-success ms-2"><i class="ri-check-line"></i><span class="badge-text"> Baik</span></span>';
-              }
+              if (item.kondisi_fisik === 'ada_tanda') kondisiBadge = `<span class="badge bg-danger ms-2"><i class="ri-alert-line"></i><span class="badge-text"> ${item.jenis_tanda_fisik_label || 'Ada Tanda Fisik'}</span></span>`;
+              else if (item.kondisi_fisik === 'baik') kondisiBadge = '<span class="badge bg-success ms-2"><i class="ri-check-line"></i><span class="badge-text"> Baik</span></span>';
             }
 
-            // Badge foto bukti - tampilkan jika ada foto
             let fotoBadge = '';
             if (item.foto_bukti && Array.isArray(item.foto_bukti) && item.foto_bukti.length > 0) {
               fotoBadge = `<span class="badge bg-info ms-2"><i class="ri-image-line"></i><span class="badge-text"> ${item.foto_bukti.length} Foto</span></span>`;
             }
 
-            // Warning for missing pickup data
             let pickupWarning = '';
             let pickupButton = '';
             if (item.needs_pickup_data) {
-              pickupWarning = `<div class="alert alert-warning mt-2 mb-0 py-2 px-2 d-flex align-items-center" style="font-size: 0.85rem;">
-                <i class="ri-alert-line me-2"></i>
-                <small>Catatan penjemputan belum diisi untuk tanggal ini</small>
-              </div>`;
-              pickupButton = `<button type="button" class="btn btn-sm btn-outline-warning" onclick="openJemputFromRiwayat(${item.id})" title="Catat Penjemputan">
-                <i class="ri-user-follow-line"></i>
-              </button>`;
+              pickupWarning = `<div class="alert alert-warning mt-2 mb-0 py-2 px-2 d-flex align-items-center" style="font-size: 0.85rem;"><i class="ri-alert-line me-2"></i><small>Catatan penjemputan belum diisi untuk tanggal ini</small></div>`;
+              pickupButton = `<button type="button" class="btn btn-sm btn-outline-warning" onclick="openJemputFromRiwayat(${item.id})" title="Catat Penjemputan"><i class="ri-user-follow-line"></i></button>`;
             }
 
             html += `<li class="list-group-item">
@@ -775,25 +804,15 @@
                     ${pickupWarning}
                   </div>
                   <div class="flex-shrink-0">
-                    <!-- Desktop: show individual buttons -->
                     <div class="d-none d-sm-inline-flex gap-2">
                       ${pickupButton}
-                      <button class="btn btn-sm btn-outline-info" onclick="showAbsensiDetail(${item.id})" title="Lihat Detail">
-                        <i class="ri-eye-line"></i>
-                      </button>
-                      <a href="/absensi/${item.id}/edit" class="btn btn-sm btn-outline-primary" title="Edit">
-                        <i class="ri-edit-line"></i>
-                      </a>
-                      <button class="btn btn-sm btn-outline-danger" onclick="deleteAbsensiFromRiwayat(${item.id}, ${anakDidikId})" title="Hapus">
-                        <i class="ri-delete-bin-line"></i>
-                      </button>
+                      <button class="btn btn-sm btn-outline-info" onclick="showAbsensiDetail(${item.id})" title="Lihat Detail"><i class="ri-eye-line"></i></button>
+                      <a href="/absensi/${item.id}/edit" class="btn btn-sm btn-outline-primary" title="Edit"><i class="ri-edit-line"></i></a>
+                      <button class="btn btn-sm btn-outline-danger" onclick="deleteAbsensiFromRiwayat(${item.id}, ${anakDidikId})" title="Hapus"><i class="ri-delete-bin-line"></i></button>
                     </div>
-                    <!-- Mobile: dropdown menu (three-dot) -->
                     <div class="d-inline-flex d-sm-none">
                       <div class="dropdown">
-                        <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" id="absensiActionsToggle${item.id}" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
-                          <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
-                        </button>
+                        <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" id="absensiActionsToggle${item.id}" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;"><i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i></button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="absensiActionsToggle${item.id}">
                           ${item.needs_pickup_data ? `<li><button class="dropdown-item text-warning" type="button" onclick="openJemputFromRiwayat(${item.id})">Penjemputan</button></li>` : ''}
                           <li><button class="dropdown-item" type="button" onclick="showAbsensiDetail(${item.id})">Lihat Detail</button></li>
@@ -807,10 +826,14 @@
               </li>`;
           });
 
-          html += '</ul></div>';
-        });
+          html += '</ul>';
+          contentDiv.innerHTML = html;
+        }
 
-        listDiv.innerHTML = html;
+        monthSelect.addEventListener('change', renderFiltered);
+        statusSelect.addEventListener('change', renderFiltered);
+        // Initial render
+        renderFiltered();
       })
       .catch(() => {
         listDiv.innerHTML = '<div class="text-danger text-center">Gagal memuat data.</div>';

@@ -31,7 +31,7 @@
     try {
       if (typeof renderSelectedProgram === 'function') renderSelectedProgram(anakId, programId);
     } catch (e) {
-      console.error('selectProgramAndClose render error', e);
+      _a_error('selectProgramAndClose render error', e);
     }
     try {
       const modalEl = document.getElementById('riwayatObservasiModal');
@@ -42,19 +42,34 @@
     }
   };
 
+  // Debug flag: set `window.ASSESSMENT_DEBUG = true` in console to enable logs temporarily
+  if (typeof window.ASSESSMENT_DEBUG === 'undefined') window.ASSESSMENT_DEBUG = false;
+  window._a_log = function() {
+    if (window.ASSESSMENT_DEBUG && console && console.log) console.log.apply(console, arguments);
+  };
+  window._a_debug = function() {
+    if (window.ASSESSMENT_DEBUG && console && console.debug) console.debug.apply(console, arguments);
+  };
+  window._a_warn = function() {
+    if (window.ASSESSMENT_DEBUG && console && console.warn) console.warn.apply(console, arguments);
+  };
+  window._a_error = function() {
+    if (window.ASSESSMENT_DEBUG && console && console.error) console.error.apply(console, arguments);
+  };
+
   window.showRiwayatObservasi = async function(anakDidikId) {
-    console.debug('showRiwayatObservasi called for', anakDidikId);
+    _a_debug('showRiwayatObservasi called for', anakDidikId);
     let modal;
     try {
       modal = new bootstrap.Modal(document.getElementById('riwayatObservasiModal'));
     } catch (err) {
-      console.warn('Bootstrap Modal constructor failed, trying jQuery fallback', err);
+      _a_warn('Bootstrap Modal constructor failed, trying jQuery fallback', err);
       try {
         if (window.jQuery) {
           $('#riwayatObservasiModal').modal('show');
         }
       } catch (e) {
-        console.error('Failed to show modal via fallback', e);
+        _a_error('Failed to show modal via fallback', e);
       }
     }
     const wrapper = document.getElementById('riwayatObservasiTableWrapper');
@@ -62,7 +77,7 @@
     try {
       if (modal && typeof modal.show === 'function') modal.show();
     } catch (e) {
-      console.error('modal.show failed', e);
+      _a_error('modal.show failed', e);
     }
 
     // Fetch program history (program-anak) and display programs from first to last
@@ -76,6 +91,20 @@
 
       // helpers for kategori: normalize key, display label, and badge class
       const normalizeKey = (k) => String(k || '').toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+      // normalize program name for lookups: strip leading "KODE - " if present, trim and lowercase
+      const normalizeProgramName = (s) => {
+        let str = String(s || '').trim();
+        if (!str) return '';
+        // if contains ' - ' and left part looks like a kode (no spaces, short), remove left part
+        if (str.indexOf(' - ') !== -1) {
+          const parts = str.split(' - ');
+          const left = parts[0] || '';
+          if (/^[A-Za-z0-9\-\.]{1,10}$/.test(left)) {
+            str = parts.slice(1).join(' - ').trim();
+          }
+        }
+        return str.toLowerCase();
+      };
       const displayLabelFor = (k) => {
         const key = normalizeKey(k);
         switch (key) {
@@ -110,13 +139,19 @@
             return 'bg-dark';
         }
       };
-      // Build history index: map program id or name -> array of dates
+      // Build history index: map programAnak id AND program name -> array of dates
+      // (store both `id:...` and `name:...` keys so matching works when program IDs differ)
       const historyIndex = {};
       data.riwayat.forEach(group => {
         (group.items || []).forEach(it => {
-          const key = it.id ? `id:${it.id}` : `name:${String(it.nama_program || '').trim().toLowerCase()}`;
-          historyIndex[key] = historyIndex[key] || [];
-          historyIndex[key].push(it.created_at || null);
+          const nameKeyHist = `name:${normalizeProgramName(it.nama_program)}`;
+          if (it.id) {
+            const idKey = `id:${it.id}`;
+            historyIndex[idKey] = historyIndex[idKey] || [];
+            historyIndex[idKey].push(it.created_at || null);
+          }
+          historyIndex[nameKeyHist] = historyIndex[nameKeyHist] || [];
+          historyIndex[nameKeyHist].push(it.created_at || null);
         });
       });
 
@@ -130,7 +165,7 @@
           const phJson = await phRes.json().catch(() => null);
           if (phJson && phJson.success && Array.isArray(phJson.programs)) {
             phJson.programs.forEach(p => {
-              const name = String(p.nama_program || '').trim().toLowerCase();
+              const name = normalizeProgramName(p.nama_program || '');
               if (!name) return;
               const dps = Array.isArray(p.datapoints) ? p.datapoints : [];
               if (dps.length === 0) return;
@@ -146,7 +181,7 @@
           }
         }
       } catch (e) {
-        console.debug('program-history fetch failed', e);
+        // program-history fetch failed (debug log removed)
       }
 
       // Fetch PPI programs per known kategori (same categories used in create page)
@@ -200,7 +235,7 @@
           Object.values(groupMap).forEach(g => {
             g.items.forEach(p => {
               if (p.id) nameToKat[`id:${p.id}`] = g.raw;
-              if (p.nama_program) nameToKat[String(p.nama_program).trim().toLowerCase()] = g.raw;
+              if (p.nama_program) nameToKat[normalizeProgramName(p.nama_program)] = g.raw;
             });
           });
 
@@ -208,8 +243,8 @@
           data.riwayat.forEach(group => {
             (group.items || []).forEach(it => {
               const idKey = it.id ? `id:${it.id}` : null;
-              const nameKey = String(it.nama_program || '').trim().toLowerCase();
-              const mappedRawKat = it.kategori || (idKey && nameToKat[idKey]) || nameToKat[nameKey] || 'Lainnya';
+              const nameKeyNorm = normalizeProgramName(it.nama_program || '');
+              const mappedRawKat = it.kategori || (idKey && nameToKat[idKey]) || nameToKat[nameKeyNorm] || 'Lainnya';
               const g = ensureGroup(mappedRawKat);
               const exists = g.items.find(x => (x.id && it.id && x.id == it.id) || (x.nama_program && it.nama_program && x.nama_program === it.nama_program));
               if (!exists) g.items.push({
@@ -241,23 +276,22 @@
             html += '<div class="list-group">';
             g.items.forEach(p => {
               const name = p.nama_program || '-';
-              const keyId = p.id ? `id:${p.id}` : `name:${String((p.nama_program||'').trim().toLowerCase())}`;
-              const dates = historyIndex[keyId] || [];
-              const dateText = (function() {
-                const nameKey = String(name || '').trim().toLowerCase();
-                if (scoreIndex && typeof scoreIndex[nameKey] !== 'undefined') {
-                  // show as integer if whole number else one decimal
-                  const s = scoreIndex[nameKey];
-                  return 'Skor: ' + (Number.isInteger(s) ? s : (Math.round(s * 10) / 10));
-                }
-                return dates.length ? dates[0] : '-';
-              })();
-              const pid = String(p.id || p.nama_program || '').replace(/'/g, "\\'");
+              const keyId = p.id ? `id:${p.id}` : `name:${normalizeProgramName(p.nama_program || '')}`;
+              const nameKey2 = `name:${normalizeProgramName(p.nama_program || '')}`;
+              const dates = historyIndex[keyId] || historyIndex[nameKey2] || [];
+              const nameKeyLookup = normalizeProgramName(name || '');
+              const hasScore = scoreIndex && typeof scoreIndex[nameKeyLookup] !== 'undefined';
+              const scoreText = hasScore ? (function() {
+                const s = scoreIndex[nameKeyLookup];
+                return 'Skor: ' + (Number.isInteger(s) ? s : (Math.round(s * 10) / 10));
+              })() : null;
+              const metaHtml = hasScore ? `<div class="text-muted small">${scoreText}</div>` : `<span class="badge bg-warning text-dark" title="Tidak ada penilaian pada program ini."><i class="ri-alert-line me-1"></i><span class="d-inline d-sm-none">Tidak ada penilaian</span><span class="d-none d-sm-inline">Tidak ada penilaian pada program ini.</span></span>`;
+              const pid = String(p.nama_program || p.id || '').replace(/'/g, "\\'");
               html += `
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
                     <div class="fw-semibold">${name}</div>
-                    <div class="text-muted small">${dateText}</div>
+                    ${metaHtml}
                   </div>
                   <div>
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectProgramAndClose(${anakDidikId}, '${pid}')" title="Lihat"><i class="ri-bar-chart-line"></i></button>
@@ -272,7 +306,7 @@
 
         wrapper.innerHTML = html;
       } catch (err) {
-        console.error('Failed to load ppi programs', err);
+        _a_error('Failed to load ppi programs', err);
         // Fallback: if we have riwayat data, build groups from it so modal still shows programs
         try {
           if (data && Array.isArray(data.riwayat) && data.riwayat.length) {
@@ -313,22 +347,21 @@
                 html += '<div class="list-group">';
                 g.items.forEach(p => {
                   const name = p.nama_program || '-';
-                  const keyId = p.id ? `id:${p.id}` : `name:${String((p.nama_program || '').trim().toLowerCase())}`;
-                  const dates = historyIndex[keyId] || [];
-                  const dateText = (function() {
-                    const nameKey = String(name || '').trim().toLowerCase();
-                    if (scoreIndex && typeof scoreIndex[nameKey] !== 'undefined') {
-                      const s = scoreIndex[nameKey];
-                      return 'Skor: ' + (Number.isInteger(s) ? s : (Math.round(s * 10) / 10));
-                    }
-                    return dates.length ? dates[0] : '-';
-                  })();
-                  const pid = String(p.id || p.nama_program || '').replace(/'/g, "\\'");
+                  const keyId = p.id ? `id:${p.id}` : `name:${normalizeProgramName(p.nama_program || '')}`;
+                  const nameKey3 = `name:${normalizeProgramName(p.nama_program || '')}`;
+                  const dates = historyIndex[keyId] || historyIndex[nameKey3] || [];
+                  const nameKeyNorm = normalizeProgramName(name || '');
+                  const hasScore = scoreIndex && typeof scoreIndex[nameKeyNorm] !== 'undefined';
+                  const metaHtml = hasScore ? (function() {
+                    const s = scoreIndex[nameKeyNorm];
+                    return `<div class="text-muted small">Skor: ${Number.isInteger(s) ? s : (Math.round(s * 10) / 10)}</div>`;
+                  })() : `<span class="badge bg-warning text-dark" title="Tidak ada penilaian pada program ini."><i class="ri-alert-line me-1"></i><span class="d-inline d-sm-none">Tidak ada penilaian</span><span class="d-none d-sm-inline">Tidak ada penilaian pada program ini.</span></span>`;
+                  const pid = String(p.nama_program || p.id || '').replace(/'/g, "\\'");
                   html += `
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
                     <div class="fw-semibold">${name}</div>
-                    <div class="text-muted small">${dateText}</div>
+                    ${metaHtml}
                   </div>
                   <div>
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectProgramAndClose(${anakDidikId}, '${pid}')" title="Lihat"><i class="ri-bar-chart-line"></i></button>
@@ -344,13 +377,13 @@
             return;
           }
         } catch (e) {
-          console.debug('Fallback rendering from riwayat failed', e);
+          _a_debug('Fallback rendering from riwayat failed', e);
         }
 
         wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Gagal memuat daftar program.</div>';
       }
     } catch (err) {
-      console.error('Failed to load riwayat penilaian', err);
+      _a_error('Failed to load riwayat penilaian', err);
       wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Gagal memuat data.</div>';
     }
   }
@@ -361,21 +394,21 @@
     if (!btn) return;
     const anakId = btn.dataset.anakId;
     const anakName = btn.dataset.anakName || '';
-    console.debug('btn-riwayat clicked', anakId, anakName);
+    _a_debug('btn-riwayat clicked', anakId, anakName);
     if (window.showRiwayatObservasi) {
       try {
         window.showRiwayatObservasi(anakId);
       } catch (err) {
-        console.error('error calling showRiwayatObservasi', err);
+        _a_error('error calling showRiwayatObservasi', err);
       }
     } else {
-      console.warn('showRiwayatObservasi not defined yet');
+      _a_warn('showRiwayatObservasi not defined yet');
     }
     if (window.renderChartsForAnak) {
       try {
         window.renderChartsForAnak(anakId, anakName);
       } catch (err) {
-        console.error(err);
+        _a_error(err);
       }
     }
   });
@@ -612,7 +645,7 @@
     try {
       await _loadScript('https://cdn.jsdelivr.net/npm/apexcharts');
     } catch (e) {
-      console.error('Failed loading ApexCharts', e);
+      _a_error('Failed loading ApexCharts', e);
       if (titleEl) titleEl.textContent = 'Gagal memuat grafik.';
       return;
     }
@@ -632,7 +665,35 @@
         return;
       }
 
-      const prog = json.programs.find(p => String(p.id) === String(programIdOrName) || p.nama_program === programIdOrName);
+      // tolerant matching: programIdOrName may be an id or a label like "PEN120 - D17...."
+      const rawProgramId = String(programIdOrName || '');
+      const strippedProgramId = rawProgramId.replace(/^id:/i, '').replace(/^name:/i, '').trim();
+      const normProgId = (window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName(strippedProgramId) : String(strippedProgramId || '').toLowerCase();
+      // try id match first
+      let prog = json.programs.find(p => String(p.id) === String(strippedProgramId));
+      if (!prog) {
+        // try normalized exact name
+        prog = json.programs.find(p => ((window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName(p.nama_program) : String(p.nama_program || '').toLowerCase()) === normProgId);
+      }
+      if (!prog) {
+        // try contains
+        prog = json.programs.find(p => ((window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName(p.nama_program) : String(p.nama_program || '').toLowerCase()).indexOf(normProgId) !== -1 || normProgId.indexOf(((window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName(p.nama_program) : String(p.nama_program || '').toLowerCase())) !== -1);
+      }
+      if (!prog) {
+        // fuzzy alphanumeric match: strip non-alnum and compare
+        const normalizeAlnum = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normAl = normalizeAlnum(normProgId);
+        if (normAl) {
+          prog = json.programs.find(p => {
+            try {
+              const pAl = normalizeAlnum(p.nama_program || '');
+              return pAl === normAl || pAl.indexOf(normAl) !== -1 || normAl.indexOf(pAl) !== -1;
+            } catch (e) {
+              return false;
+            }
+          });
+        }
+      }
       if (!prog) {
         if (titleEl) titleEl.textContent = 'Program tidak ditemukan.';
         return;
@@ -701,7 +762,7 @@
       renderChartWithFilter(monthFilterEl ? monthFilterEl.value : '');
 
     } catch (err) {
-      console.error('renderProgramChart failed', err);
+      _a_error('renderProgramChart failed', err);
       if (titleEl) titleEl.textContent = 'Gagal memuat grafik.';
     }
   }
@@ -909,7 +970,7 @@
       });
       return b;
     } catch (err) {
-      console.debug('showBootstrapToast failed', err);
+      _a_debug('showBootstrapToast failed', err);
       return null;
     }
   }
@@ -920,13 +981,53 @@
   window.selectProgramAndClose = async function(anakId, programId) {
     // Pre-check: fetch program history and ensure the selected program has datapoints
     try {
+      // ensure we have a normalize helper available locally
+      const normalizeProgramName = (window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName : function(s) {
+        let str = String(s || '').trim();
+        if (!str) return '';
+        if (str.indexOf(' - ') !== -1) {
+          const parts = str.split(' - ');
+          const left = parts[0] || '';
+          if (/^[A-Za-z0-9\-\.]{1,10}$/.test(left)) {
+            str = parts.slice(1).join(' - ').trim();
+          }
+        }
+        return str.toLowerCase();
+      };
       const res = await fetch(`/assessment/${anakId}/program-history`, {
         credentials: 'same-origin'
       });
       if (res && res.ok) {
         const json = await res.json().catch(() => null);
         const programs = json && Array.isArray(json.programs) ? json.programs : [];
-        const prog = programs.find(p => String(p.id) === String(programId) || p.nama_program === programId);
+        // Robust matching: try id, normalized exact name, contains, and strip common prefixes like 'id:' or 'name:'
+        const rawProgramId = String(programId || '');
+        const strippedProgramId = rawProgramId.replace(/^id:/i, '').replace(/^name:/i, '').trim();
+        const normProgId = normalizeProgramName(strippedProgramId);
+        // debug logs removed
+        let prog = programs.find(p => String(p.id) === String(strippedProgramId));
+        if (!prog) {
+          prog = programs.find(p => normalizeProgramName(p.nama_program) === normProgId);
+        }
+        if (!prog) {
+          prog = programs.find(p => normalizeProgramName(p.nama_program).indexOf(normProgId) !== -1 || normProgId.indexOf(normalizeProgramName(p.nama_program)) !== -1);
+        }
+        // extra fuzzy match: compare only alphanumeric characters (strip dots, spaces, hyphens)
+        if (!prog) {
+          const normalizeAlnum = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normAl = normalizeAlnum(normProgId);
+          prog = programs.find(p => {
+            try {
+              const pAl = normalizeAlnum(p.nama_program || '');
+              if (!pAl || !normAl) return false;
+              return pAl === normAl || pAl.indexOf(normAl) !== -1 || normAl.indexOf(pAl) !== -1;
+            } catch (e) {
+              return false;
+            }
+          });
+          // debug logs removed
+        }
+        // debug logs removed
         if (!prog || !Array.isArray(prog.datapoints) || prog.datapoints.length === 0) {
           // show Bootstrap toast (fallback for toastr/alert)
           if (typeof showBootstrapToast === 'function') {
@@ -943,7 +1044,7 @@
         }
       }
     } catch (e) {
-      console.debug('program-history pre-check failed', e);
+      // program-history pre-check failed (debug log removed)
       // On error, continue to show modal so the existing chart error handling can run
     }
     try {
@@ -961,7 +1062,7 @@
         try {
           renderProgramChart(anakId, programId);
         } catch (err) {
-          console.error(err);
+          _a_error(err);
         }
         chartModalEl.removeEventListener('shown.bs.modal', onShown);
       };
@@ -980,7 +1081,7 @@
       chartModalEl.addEventListener('hidden.bs.modal', onHidden);
       chartModal.show();
     } catch (e) {
-      console.error(e);
+      _a_error(e);
     }
   };
 </script>

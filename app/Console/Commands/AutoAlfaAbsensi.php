@@ -17,14 +17,14 @@ class AutoAlfaAbsensi extends Command
    *
    * @var string
    */
-  protected $signature = 'absensi:auto-alfa';
+  protected $signature = 'absensi:auto-alfa {--force : Bypass cutoff and force creation for testing}';
 
   /**
    * The console command description.
    *
    * @var string
    */
-  protected $description = 'Create automatic "alfa" absensi for students who have not been marked present by cutoff (17:30 WIB)';
+  protected $description = 'Create automatic "alfa" absensi for students who have not been marked present by cutoff (17:30 WIB). Use --force to bypass cutoff for testing.';
 
   /**
    * Execute the console command.
@@ -35,17 +35,22 @@ class AutoAlfaAbsensi extends Command
     try {
       $now = Carbon::now($tz);
       $today = $now->toDateString();
+      $force = (bool) $this->option('force');
+
+      Log::info('AutoAlfaAbsensi run start', ['now' => $now->toDateTimeString(), 'tz' => $tz, 'force' => $force]);
 
       // Safety: ensure command is executed at or after cutoff time
       $cutoff = Carbon::today($tz)->setTime(17, 30, 0);
-      if ($now->lt($cutoff)) {
+      if (!$force && $now->lt($cutoff)) {
         $this->info('Current time is before cutoff; skipping auto-alfa.');
+        Log::info('AutoAlfaAbsensi skipped before cutoff', ['now' => $now->toDateTimeString(), 'cutoff' => $cutoff->toDateTimeString()]);
         return 0;
       }
 
       $candidates = AnakDidik::whereNotNull('guru_fokus_id')
         ->where('status', 'aktif')
         ->get();
+      Log::info('AutoAlfaAbsensi candidates fetched', ['count' => $candidates->count()]);
       // Determine system user id to store on auto-created records.
       // Set AUTO_ALFA_USER_ID in .env (e.g. the admin user id). If missing or invalid, fallback to NULL.
       $rawSystemUser = env('AUTO_ALFA_USER_ID', null);
@@ -87,7 +92,8 @@ class AutoAlfaAbsensi extends Command
           $userIdToUse = $systemUserId;
         }
 
-        // Use firstOrCreate to avoid duplicates
+        // Use firstOrCreate to avoid duplicates; if an existing record is present but
+        // status is not a final value (e.g. not 'hadir' or 'izin'), set it to 'alfa'.
         $absensi = Absensi::firstOrCreate(
           [
             'anak_didik_id' => $cand->id,
@@ -103,6 +109,17 @@ class AutoAlfaAbsensi extends Command
         if ($absensi->wasRecentlyCreated) {
           $createdCount++;
           Log::info('Auto-created alfa absensi', ['anak_didik_id' => $cand->id, 'tanggal' => $today, 'user_id' => $userIdToUse]);
+        } else {
+          // If record exists, ensure we don't overwrite valid statuses like 'hadir' or 'izin'.
+          $current = strtolower(trim((string) $absensi->status));
+          if (!in_array($current, ['hadir', 'izin', 'alfa'])) {
+            $absensi->status = 'alfa';
+            $absensi->keterangan = $absensi->keterangan ?: 'Auto alfa: belum absen pada cutoff 17:30 WIB';
+            $absensi->user_id = $absensi->user_id ?: $userIdToUse;
+            $absensi->save();
+            $createdCount++;
+            Log::info('Auto-updated existing absensi to alfa', ['anak_didik_id' => $cand->id, 'tanggal' => $today, 'previous_status' => $current, 'user_id' => $absensi->user_id]);
+          }
         }
       }
 

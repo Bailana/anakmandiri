@@ -449,19 +449,39 @@ class AssessmentController extends Controller
       $guruUserId = null;
     }
 
-    // organize assessments by program id (or 'general') then by date
+    // organize assessments by program id when available, otherwise by normalized program name
     $byProgDate = [];
     $progMeta = [];
+    // helper to normalize program-like names (strip leading codes like PEN120 -)
+    $normalizeName = function ($s) {
+      $str = trim((string)($s ?? ''));
+      if ($str === '') return '';
+      // remove leading code like 'PEN120 - ' or 'PEN120 -'
+      $str = preg_replace('/^[A-Za-z0-9\-\.]{1,10}\s*-\s*/', '', $str);
+      return strtolower($str);
+    };
+
     foreach ($assessments as $a) {
-      $pid = $a->program_id ?? 'general';
-      $progName = $a->program ? $a->program->nama_program : ($a->program_id ? ('Program #' . $a->program_id) : 'Umum');
+      // determine grouping key: prefer program_id if present, otherwise use normalized program name
+      if ($a->program_id) {
+        $pid = 'id:' . $a->program_id;
+        $progName = $a->program ? $a->program->nama_program : ('Program #' . $a->program_id);
+        $kategori = $a->program ? $a->program->kategori : null;
+      } else {
+        $nameSource = $a->program ? $a->program->nama_program : ($a->hasil_penilaian ?? $a->aktivitas ?? 'Umum');
+        $norm = $normalizeName($nameSource);
+        $pid = 'name:' . ($norm !== '' ? $norm : 'umum');
+        $progName = $a->program ? $a->program->nama_program : ($a->hasil_penilaian ?? $a->aktivitas ?? 'Umum');
+        $kategori = $a->program ? $a->program->kategori : null;
+      }
+
       $dateKey = $a->tanggal_assessment ? (string)$a->tanggal_assessment->toDateString() : ($a->created_at ? (string)$a->created_at->toDateString() : null);
       if (!$dateKey) continue;
       if (!isset($byProgDate[$pid])) $byProgDate[$pid] = [];
       if (!isset($byProgDate[$pid][$dateKey])) $byProgDate[$pid][$dateKey] = [];
       $byProgDate[$pid][$dateKey][] = $a;
       if (!isset($progMeta[$pid])) {
-        $progMeta[$pid] = ['nama_program' => $progName, 'kategori' => $a->program ? $a->program->kategori : null];
+        $progMeta[$pid] = ['nama_program' => $progName, 'kategori' => $kategori];
       }
     }
 
