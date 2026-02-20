@@ -19,6 +19,7 @@ class ProgramAnak extends Model
     'status',
     'rekomendasi',
     'keterangan',
+    'jenis_vokasi',
     'created_by',
     'created_by_name',
     'is_suggested',
@@ -28,6 +29,7 @@ class ProgramAnak extends Model
     'periode_mulai' => 'date',
     'periode_selesai' => 'date',
     'is_suggested' => 'boolean',
+    'jenis_vokasi' => 'array',
   ];
 
   public function anakDidik()

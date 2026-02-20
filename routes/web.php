@@ -193,6 +193,32 @@ Route::middleware(['auth'])->group(function () {
     Route::get('program-anak/program-konsultan/konsultan/{id}/list-json', [App\Http\Controllers\ProgramAnakController::class, 'listProgramKonsultan'])->name('program-anak.program-konsultan.list');
   });
 
+  // Vokasi Routes (modeled after program-anak)
+  Route::middleware(['auth', 'role:admin,konsultan'])->group(function () {
+    Route::post('vokasi/program-konsultan', [App\Http\Controllers\VokasiController::class, 'storeProgramKonsultan'])->name('vokasi.program-konsultan.store');
+    Route::get('vokasi/psikologi-latest/{anakId}', [App\Http\Controllers\VokasiController::class, 'latestPsikologiForAnak'])->name('vokasi.psikologi-latest');
+    Route::get('vokasi/daftar-program', [App\Http\Controllers\VokasiController::class, 'daftarProgramKonsultan'])->name('vokasi.daftar-program');
+    Route::get('vokasi/next-kode/{jenis}', [App\Http\Controllers\VokasiController::class, 'nextKodeForJenis'])->name('vokasi.next-kode');
+    Route::put('vokasi/program-konsultan/{id}', [App\Http\Controllers\VokasiController::class, 'updateProgramKonsultan'])->name('vokasi.program-konsultan.update');
+    Route::delete('vokasi/program-konsultan/{id}', [App\Http\Controllers\VokasiController::class, 'destroyProgramKonsultan'])->name('vokasi.program-konsultan.destroy');
+    Route::put('vokasi/{anakDidikId}/konsultan/{konsultanId}/date/{date}/suggest', [App\Http\Controllers\VokasiController::class, 'setSuggestForGroup'])->name('vokasi.suggest.group');
+    Route::resource('vokasi', App\Http\Controllers\VokasiController::class)->except(['index', 'show']);
+    // Admin helper: add anak didik to vokasi via modal
+    Route::post('vokasi/add-anak', [App\Http\Controllers\VokasiController::class, 'storeAnakDidik'])->name('vokasi.add-anak');
+  });
+
+  Route::middleware(['auth', 'role:admin,konsultan,guru,terapis'])->group(function () {
+    Route::resource('vokasi', App\Http\Controllers\VokasiController::class)->only(['index', 'show']);
+    Route::get('vokasi/program-konsultan/konsultan/{id}/list-json', [App\Http\Controllers\VokasiController::class, 'listProgramKonsultan'])->name('vokasi.program-konsultan.list');
+    Route::get('vokasi/riwayat-program/{anakId}', [App\Http\Controllers\VokasiController::class, 'riwayatProgram'])->name('vokasi.riwayat');
+    Route::get('vokasi/riwayat-program/{anakId}/konsultan/{konsultanId}', [App\Http\Controllers\VokasiController::class, 'riwayatProgramByKonsultan'])->name('vokasi.riwayat.konsultan');
+    Route::get('vokasi/riwayat-program/{anakId}/konsultan/{konsultanId}/date/{date}', [App\Http\Controllers\VokasiController::class, 'riwayatProgramByKonsultanAndDate'])->name('vokasi.riwayat.konsultan.date');
+    Route::get('vokasi/{id}/json', [App\Http\Controllers\VokasiController::class, 'showJson'])->name('vokasi.show.json');
+    Route::put('vokasi/{id}/update-json', [App\Http\Controllers\VokasiController::class, 'updateJson'])->name('vokasi.update.json');
+    Route::delete('vokasi/{id}/delete-json', [App\Http\Controllers\VokasiController::class, 'destroyJson'])->name('vokasi.delete.json');
+    Route::get('vokasi/{anakId}/all-json', [App\Http\Controllers\VokasiController::class, 'showAllForAnak'])->name('vokasi.all.json');
+  });
+
   // PPI Routes - Program Pembelajaran Individual (admin, guru & konsultan)
   Route::middleware(['auth', 'role:admin,guru,konsultan'])->group(function () {
     Route::get('ppi', [App\Http\Controllers\PPIController::class, 'index'])->name('ppi.index');

@@ -52,13 +52,19 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="dokumen-tab" data-bs-toggle="tab" data-bs-target="#dokumen"
                 type="button" role="tab" aria-controls="dokumen" aria-selected="false">
-                <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
+                <i class="ri-file-list-3-line me-2"></i>Kelengkapan Dokumen
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="vokasi-tab" data-bs-toggle="tab" data-bs-target="#vokasi"
+                type="button" role="tab" aria-controls="vokasi" aria-selected="false">
+                <i class="ri-award-line me-2"></i>Vokasi
               </button>
             </li>
           </ul>
         </div>
 
-        <form id="anakDidikCreateForm" action="{{ route('anak-didik.store') }}" method="POST" enctype="multipart/form-data">
+        <form id="anakDidikCreateForm" action="{{ route('anak-didik.store') }}" method="POST" enctype="multipart/form-data" novalidate>
           @csrf
 
           <!-- Tab Content -->
@@ -457,6 +463,72 @@
                     <i class="ri-arrow-left-line me-2"></i>Sebelumnya
                   </button>
                   <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('data-pendidikan-tab').click()" aria-label="Sebelumnya">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-outline-primary d-none d-sm-inline" onclick="document.getElementById('vokasi-tab').click()">
+                    Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-primary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('vokasi-tab').click()" aria-label="Selanjutnya">
+                    <i class="ri-arrow-right-line"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vokasi Tab -->
+            <div class="tab-pane fade" id="vokasi" role="tabpanel" aria-labelledby="vokasi-tab">
+              <div class="alert alert-info mb-4" role="alert">
+                <i class="ri-information-line me-2"></i>
+                <strong>Vokasi:</strong> Pilih jenis vokasi yang relevan untuk anak didik.
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_painting" name="jenis_vokasi[]" value="Painting" {{ (is_array(old('jenis_vokasi')) && in_array('Painting', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_painting">Painting</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_cooking" name="jenis_vokasi[]" value="Cooking" {{ (is_array(old('jenis_vokasi')) && in_array('Cooking', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_cooking">Cooking</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_craft" name="jenis_vokasi[]" value="Craft" {{ (is_array(old('jenis_vokasi')) && in_array('Craft', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_craft">Craft</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_computer" name="jenis_vokasi[]" value="Computer" {{ (is_array(old('jenis_vokasi')) && in_array('Computer', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_computer">Computer</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_gardening" name="jenis_vokasi[]" value="Gardening" {{ (is_array(old('jenis_vokasi')) && in_array('Gardening', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_gardening">Gardening</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_beauty" name="jenis_vokasi[]" value="Beauty" {{ (is_array(old('jenis_vokasi')) && in_array('Beauty', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_beauty">Beauty</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_autowash" name="jenis_vokasi[]" value="Auto Wash" {{ (is_array(old('jenis_vokasi')) && in_array('Auto Wash', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_autowash">Auto Wash</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_housekeeping" name="jenis_vokasi[]" value="House Keeping" {{ (is_array(old('jenis_vokasi')) && in_array('House Keeping', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_housekeeping">House Keeping</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between mt-4">
+                <div>
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('dokumen-tab').click()">
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('dokumen-tab').click()" aria-label="Sebelumnya">
                     <i class="ri-arrow-left-line"></i>
                   </button>
                 </div>

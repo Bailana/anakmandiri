@@ -113,6 +113,8 @@ class AnakDidikController extends Controller
     }
     $validated = $request->validate([
       'guru_fokus_id' => 'nullable|exists:karyawans,id',
+      'jenis_vokasi' => 'nullable|array',
+      'jenis_vokasi.*' => 'string|max:100',
       'nama' => 'required|string|max:255',
       'nis' => 'nullable|digits_between:1,20|unique:anak_didiks',
       'jenis_kelamin' => 'required|in:laki-laki,perempuan',
@@ -145,6 +147,8 @@ class AnakDidikController extends Controller
       'surat_pernyataan' => 'nullable|boolean',
     ]);
 
+    // Persist selected vokasi into anak_didiks.vokasi_diikuti as array (or null)
+    $validated['vokasi_diikuti'] = $request->input('jenis_vokasi') ?: null;
     $validated['status'] = 'aktif';
     $anakDidik = AnakDidik::create($validated);
 
@@ -223,6 +227,8 @@ class AnakDidikController extends Controller
 
     $validated = $request->validate([
       'guru_fokus_id' => 'nullable|exists:karyawans,id',
+      'jenis_vokasi' => 'nullable|array',
+      'jenis_vokasi.*' => 'string|max:100',
       'nama' => 'required|string|max:255',
       'nis' => 'nullable|digits_between:1,20|unique:anak_didiks,nis,' . $id,
       'jenis_kelamin' => 'required|in:laki-laki,perempuan',
@@ -255,6 +261,9 @@ class AnakDidikController extends Controller
       'surat_pernyataan' => 'nullable|boolean',
       'status' => 'required|in:aktif,nonaktif,keluar',
     ]);
+
+    // persist vokasi selections
+    $validated['vokasi_diikuti'] = $request->input('jenis_vokasi') ?: null;
 
     $anakDidik->update($validated);
 

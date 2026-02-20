@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class AnakDidik extends Model
 {
     protected $fillable = [
+        'vokasi_diikuti',
         'guru_fokus_id',
         'nama',
         'nis',
@@ -49,6 +50,7 @@ class AnakDidik extends Model
     protected $casts = [
         'tanggal_lahir' => 'date',
         'tanggal_pendaftaran' => 'date',
+        'vokasi_diikuti' => 'array',
         'kk' => 'boolean',
         'ktp_orang_tua' => 'boolean',
         'akta_kelahiran' => 'boolean',

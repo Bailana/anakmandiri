@@ -96,6 +96,16 @@
       ]
     },
     {
+      "url": "vokasi",
+      "name": "Vokasi",
+      "icon": "menu-icon icon-base ri ri-briefcase-line",
+      "slug": "vokasi.index",
+      "roles": [
+        "admin",
+        "guru"
+      ]
+    },
+    {
       "url": "program-anak",
       "name": "Program Anak",
       "icon": "menu-icon icon-base ri ri-graduation-cap-line",

@@ -55,9 +55,15 @@
             </button>
           </li>
           <li class="nav-item" role="presentation">
+            <button class="nav-link" id="vokasi-tab" data-bs-toggle="tab" data-bs-target="#vokasi"
+              type="button" role="tab" aria-controls="vokasi" aria-selected="false">
+              <i class="ri-award-line me-2"></i>Vokasi
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
             <button class="nav-link" id="dokumen-tab" data-bs-toggle="tab" data-bs-target="#dokumen"
               type="button" role="tab" aria-controls="dokumen" aria-selected="false">
-              <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
+              <i class="ri-file-list-3-line me-2"></i>Kelengkapan Dokumen
             </button>
           </li>
         </ul>
@@ -204,6 +210,59 @@
               <div class="col-md-12">
                 <label class="form-label">Tanggal Pendaftaran</label>
                 <input type="text" class="form-control" value="{{ $anakDidik->tanggal_pendaftaran ? $anakDidik->tanggal_pendaftaran->format('d-m-Y') : '-' }}" readonly>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vokasi Tab -->
+          <div class="tab-pane fade" id="vokasi" role="tabpanel" aria-labelledby="vokasi-tab">
+            @php
+            $selectedJenis = $anakDidik->vokasi_diikuti ?? [];
+            if (is_string($selectedJenis)) {
+            $decoded = json_decode($selectedJenis, true);
+            $selectedJenis = is_array($decoded) ? $decoded : [];
+            }
+            @endphp
+            <div class="alert alert-info mb-4" role="alert">
+              <i class="ri-information-line me-2"></i>
+              <strong>Vokasi:</strong> Jenis vokasi yang dipilih untuk anak didik.
+            </div>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_painting_s" disabled value="Painting" {{ (is_array($selectedJenis) && in_array('Painting', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_painting_s">Painting</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_cooking_s" disabled value="Cooking" {{ (is_array($selectedJenis) && in_array('Cooking', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_cooking_s">Cooking</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_craft_s" disabled value="Craft" {{ (is_array($selectedJenis) && in_array('Craft', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_craft_s">Craft</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_computer_s" disabled value="Computer" {{ (is_array($selectedJenis) && in_array('Computer', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_computer_s">Computer</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_gardening_s" disabled value="Gardening" {{ (is_array($selectedJenis) && in_array('Gardening', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_gardening_s">Gardening</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_beauty_s" disabled value="Beauty" {{ (is_array($selectedJenis) && in_array('Beauty', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_beauty_s">Beauty</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_autowash_s" disabled value="Auto Wash" {{ (is_array($selectedJenis) && in_array('Auto Wash', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_autowash_s">Auto Wash</label>
+                </div>
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_housekeeping_s" disabled value="House Keeping" {{ (is_array($selectedJenis) && in_array('House Keeping', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_housekeeping_s">House Keeping</label>
+                </div>
               </div>
             </div>
           </div>

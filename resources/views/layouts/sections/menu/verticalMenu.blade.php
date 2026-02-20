@@ -33,6 +33,22 @@ use Illuminate\Support\Facades\Route;
         $showMenu = false;
         }
         }
+        // Allow konsultan with spesialisasi 'pendidikan' to see certain menus (override roles array)
+        if (isset($menu->slug) && $menu->slug === 'vokasi.index' && auth()->check() && auth()->user()->role === 'konsultan') {
+        $k = \App\Models\Konsultan::where('user_id', auth()->id())->first();
+        if (!$k && auth()->user()->email) {
+        $k = \App\Models\Konsultan::where('email', auth()->user()->email)->first();
+        }
+        if (!$k && auth()->user()->name) {
+        $k = \App\Models\Konsultan::where('nama', 'like', "%".auth()->user()->name."%")->first();
+        }
+        $sp = $k ? strtolower(trim($k->spesialisasi)) : null;
+        if ($sp === 'pendidikan') {
+        $showMenu = true;
+        } else {
+        $showMenu = false;
+        }
+        }
         // Allow role 'terapis' and 'guru' to access certain menus even if menu roles don't include it
         if (isset($menu->slug) && auth()->check() && in_array(auth()->user()->role, ['terapis','guru'])) {
         $role = auth()->user()->role;
@@ -86,6 +102,31 @@ use Illuminate\Support\Facades\Route;
         $k = \App\Models\Konsultan::where('user_id', auth()->id())->first();
         if (!$k && auth()->user()->email) {
         $k = \App\Models\Konsultan::where('email', auth()->user()->email)->first();
+        }
+        // Tampilkan menu Vokasi hanya untuk admin, guru, atau konsultan dengan spesialisasi 'Pendidikan'
+        if (isset($menu->slug) && $menu->slug === 'vokasi.index') {
+        if (!auth()->check()) {
+        $showMenu = false;
+        } else {
+        $role = auth()->user()->role;
+        if (in_array($role, ['admin', 'guru'])) {
+        // tetap tampil
+        } elseif ($role === 'konsultan') {
+        $k = \App\Models\Konsultan::where('user_id', auth()->id())->first();
+        if (!$k && auth()->user()->email) {
+        $k = \App\Models\Konsultan::where('email', auth()->user()->email)->first();
+        }
+        if (!$k && auth()->user()->name) {
+        $k = \App\Models\Konsultan::where('nama', 'like', "%".auth()->user()->name."%")->first();
+        }
+        $sp = $k ? strtolower($k->spesialisasi) : null;
+        if ($sp !== 'pendidikan') {
+        $showMenu = false;
+        }
+        } else {
+        $showMenu = false;
+        }
+        }
         }
         if (!$k && auth()->user()->name) {
         $k = \App\Models\Konsultan::where('nama', 'like', "%".auth()->user()->name."%")->first();

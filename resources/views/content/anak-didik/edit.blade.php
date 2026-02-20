@@ -60,7 +60,13 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="dokumen-tab" data-bs-toggle="tab" data-bs-target="#dokumen"
                 type="button" role="tab" aria-controls="dokumen" aria-selected="false">
-                <i class="ri-file-check-line me-2"></i>Kelengkapan Dokumen
+                <i class="ri-file-list-3-line me-2"></i>Kelengkapan Dokumen
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="vokasi-tab" data-bs-toggle="tab" data-bs-target="#vokasi"
+                type="button" role="tab" aria-controls="vokasi" aria-selected="false">
+                <i class="ri-award-line me-2"></i>Vokasi
               </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -69,7 +75,7 @@
           </ul>
         </div>
 
-        <form id="anakDidikEditForm" action="{{ route('anak-didik.update', $anakDidik->id) }}" method="POST" enctype="multipart/form-data">
+        <form id="anakDidikEditForm" action="{{ route('anak-didik.update', $anakDidik->id) }}" method="POST" enctype="multipart/form-data" novalidate>
           @csrf
           @method('PUT')
 
@@ -113,12 +119,8 @@
                   @enderror
                 </div>
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Email</label>
-                  <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                    placeholder="example@email.com" value="{{ old('email', $anakDidik->email) }}">
-                  @error('email')
-                  <span class="invalid-feedback">{{ $message }}</span>
-                  @enderror
+                  <label class="form-label">Guru Vokasi</label>
+                  <input type="text" class="form-control" value="-" readonly>
                 </div>
               </div>
 
@@ -478,8 +480,9 @@
                   </div>
                 </div>
               </div>
-              <div class="d-flex mt-4 align-items-center flex-nowrap">
-                <div class="me-2">
+
+              <div class="d-flex justify-content-between mt-4">
+                <div>
                   <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('data-pendidikan-tab').click()">
                     <i class="ri-arrow-left-line me-2"></i>Sebelumnya
                   </button>
@@ -487,18 +490,89 @@
                     <i class="ri-arrow-left-line"></i>
                   </button>
                 </div>
+                <div>
+                  <button type="button" class="btn btn-outline-primary d-none d-sm-inline" onclick="document.getElementById('vokasi-tab').click()">
+                    Selanjutnya<i class="ri-arrow-right-line ms-2"></i>
+                  </button>
+                  <button type="button" class="btn btn-outline-primary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('vokasi-tab').click()" aria-label="Selanjutnya">
+                    <i class="ri-arrow-right-line"></i>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Program Terapi removed -->
+            <!-- Vokasi Tab -->
+            <div class="tab-pane fade" id="vokasi" role="tabpanel" aria-labelledby="vokasi-tab">
+              @php
+              $selectedJenis = old('jenis_vokasi', $anakDidik->vokasi_diikuti ?? []);
+              if (is_string($selectedJenis)) {
+              $decoded = json_decode($selectedJenis, true);
+              $selectedJenis = is_array($decoded) ? $decoded : [];
+              }
+              @endphp
+              <div class="alert alert-info mb-4" role="alert">
+                <i class="ri-information-line me-2"></i>
+                <strong>Vokasi:</strong> Pilih jenis vokasi yang relevan untuk anak didik.
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_painting_e" name="jenis_vokasi[]" value="Painting" {{ (is_array($selectedJenis) && in_array('Painting', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_painting_e">Painting</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_cooking_e" name="jenis_vokasi[]" value="Cooking" {{ (is_array($selectedJenis) && in_array('Cooking', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_cooking_e">Cooking</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_craft_e" name="jenis_vokasi[]" value="Craft" {{ (is_array($selectedJenis) && in_array('Craft', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_craft_e">Craft</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_computer_e" name="jenis_vokasi[]" value="Computer" {{ (is_array($selectedJenis) && in_array('Computer', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_computer_e">Computer</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_gardening_e" name="jenis_vokasi[]" value="Gardening" {{ (is_array($selectedJenis) && in_array('Gardening', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_gardening_e">Gardening</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_beauty_e" name="jenis_vokasi[]" value="Beauty" {{ (is_array($selectedJenis) && in_array('Beauty', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_beauty_e">Beauty</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_autowash_e" name="jenis_vokasi[]" value="Auto Wash" {{ (is_array($selectedJenis) && in_array('Auto Wash', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_autowash_e">Auto Wash</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_housekeeping_e" name="jenis_vokasi[]" value="House Keeping" {{ (is_array($selectedJenis) && in_array('House Keeping', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_housekeeping_e">House Keeping</label>
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex mt-4">
+                <div class="me-2">
+                  <button type="button" class="btn btn-outline-secondary d-none d-sm-inline" onclick="document.getElementById('dokumen-tab').click()">
+                    <i class="ri-arrow-left-line me-2"></i>Sebelumnya
+                  </button>
+                  <button type="button" class="btn btn-outline-secondary d-inline d-sm-none rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('dokumen-tab').click()" aria-label="Sebelumnya">
+                    <i class="ri-arrow-left-line"></i>
+                  </button>
+                </div>
                 <div class="ms-auto d-flex align-items-center gap-2 flex-nowrap" style="min-width:0;">
                   <a href="{{ route('anak-didik.index') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="ri-close-line me-2"></i>Batal
                   </a>
-                  <button id="anakDidikEditSaveBtn" type="submit" class="btn btn-primary btn-sm">
+                  <button id="anakDidikEditSaveBtnBottom" type="submit" class="btn btn-primary btn-sm">
                     <i class="ri-save-line me-2"></i>Simpan
                   </button>
                 </div>
               </div>
             </div>
-
-            <!-- Program Terapi removed -->
           </div>
 
         </form>
