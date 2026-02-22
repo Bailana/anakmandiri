@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Absensi;
 use App\Models\AnakDidik;
 use App\Models\Karyawan;
+use App\Models\GuruAnakDidik;
+use App\Models\GuruAnakDidikApproval;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -44,7 +46,20 @@ class AbsensiController extends Controller
         $anakDidikQuery->whereRaw('1 = 0');
       } else {
         // Get all students assigned to this teacher
-        $anakDidikQuery->where('guru_fokus_id', $karyawan->id);
+        // Also include anak didik yang sudah dicatat absensinya oleh guru ini hari ini
+        $tz = 'Asia/Jakarta';
+        $todayDate = \Carbon\Carbon::now($tz)->toDateString();
+        $extraIds = Absensi::whereDate('tanggal', $todayDate)
+          ->where('user_id', $user->id)
+          ->pluck('anak_didik_id')
+          ->toArray();
+
+        $anakDidikQuery->where(function ($q) use ($karyawan, $extraIds) {
+          $q->where('guru_fokus_id', $karyawan->id);
+          if (!empty($extraIds)) {
+            $q->orWhereIn('id', $extraIds);
+          }
+        });
       }
     }
 
@@ -164,16 +179,41 @@ class AbsensiController extends Controller
     }
 
     // Ambil daftar anak didik yang menjadi tanggung jawab guru/terapis ini
+    // Termasuk anak yang diberikan akses sementara via permintaan yang disetujui
     // Exclude anak didik yang sudah memiliki absensi untuk hari ini
     $tz = 'Asia/Jakarta';
     $today = \Carbon\Carbon::now($tz)->toDateString();
     $alreadyAbsentedIds = Absensi::whereDate('tanggal', $today)->pluck('anak_didik_id')->toArray();
 
-    $anakDidiks = AnakDidik::where('guru_fokus_id', $karyawan->id)
+    // assigned via GuruAnakDidik (permanent assignments by admin)
+    $assignedIds = GuruAnakDidik::where('user_id', $user->id)
       ->where('status', 'aktif')
-      ->whereNotIn('id', $alreadyAbsentedIds)
-      ->orderBy('nama', 'asc')
-      ->get();
+      ->pluck('anak_didik_id')
+      ->toArray();
+
+    // temporary approved access requests - support multiple positive status labels and recent approvals
+    $positiveStatuses = ['approved', 'accepted', 'disetujui', 'approve', 'approved_by_admin', 'accepted_by_admin'];
+    $approvedIds = GuruAnakDidikApproval::where('requester_user_id', $user->id)
+      ->whereIn('status', $positiveStatuses)
+      ->whereNotNull('approved_at')
+      ->where('approved_at', '>=', now()->subMinutes(600))
+      ->pluck('anak_didik_id')
+      ->toArray();
+
+    // anak didik yang merekam guru_fokus = current karyawan
+    $fokusIds = AnakDidik::where('guru_fokus_id', $karyawan->id)->pluck('id')->toArray();
+
+    $ids = array_values(array_unique(array_merge($assignedIds, $approvedIds, $fokusIds)));
+
+    if (count($ids) > 0) {
+      $anakDidiks = AnakDidik::whereIn('id', $ids)
+        ->where('status', 'aktif')
+        ->whereNotIn('id', $alreadyAbsentedIds)
+        ->orderBy('nama', 'asc')
+        ->get();
+    } else {
+      $anakDidiks = collect();
+    }
 
     if ($anakDidiks->isEmpty()) {
       return redirect()->route('absensi.index')
@@ -282,27 +322,47 @@ class AbsensiController extends Controller
         'match' => $karyawan && $anakDidik->guru_fokus_id == $karyawan->id,
       ]);
 
-      if (!$karyawan || $anakDidik->guru_fokus_id != $karyawan->id) {
-        if ($user->role !== 'admin') {
-          $errorMsg = 'Anda tidak berhak mengabsensi anak didik ini.';
-
-          \Log::warning('Permission denied for absensi', [
-            'user_id' => $user->id,
-            'karyawan_id' => $karyawan ? $karyawan->id : null,
-            'required_guru_fokus_id' => $anakDidik->guru_fokus_id,
-          ]);
-
-          if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
-            return response()->json([
-              'success' => false,
-              'message' => $errorMsg
-            ], 403);
-          }
-
-          return redirect()->back()
-            ->withInput()
-            ->with('error', $errorMsg);
+      // Check access: allow admin, direct guru_fokus match, permanent assignment, or recent approved request
+      $hasAccess = false;
+      if ($user->role === 'admin') {
+        $hasAccess = true;
+      } else {
+        // direct guru_fokus match
+        if ($karyawan && $anakDidik->guru_fokus_id == $karyawan->id) {
+          $hasAccess = true;
         }
+
+        // check permanent assignment or recent approved access
+        if (!$hasAccess) {
+          try {
+            $hasAccess = \App\Http\Controllers\GuruAnakDidikController::canAccessChild($user->id, $anakDidik->id);
+          } catch (\Throwable $ex) {
+            // fallback: be conservative and deny access on error
+            \Log::error('Error checking GuruAnakDidikController::canAccessChild: ' . $ex->getMessage());
+            $hasAccess = false;
+          }
+        }
+      }
+
+      if (!$hasAccess) {
+        $errorMsg = 'Anda tidak berhak mengabsensi anak didik ini.';
+
+        \Log::warning('Permission denied for absensi', [
+          'user_id' => $user->id,
+          'karyawan_id' => $karyawan ? $karyawan->id : null,
+          'required_guru_fokus_id' => $anakDidik->guru_fokus_id,
+        ]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+          return response()->json([
+            'success' => false,
+            'message' => $errorMsg
+          ], 403);
+        }
+
+        return redirect()->back()
+          ->withInput()
+          ->with('error', $errorMsg);
       }
 
       // Cek Duplikat Absensi Hari Ini

@@ -1074,14 +1074,15 @@
     const absensiId = button.getAttribute('data-absensi-id');
     const anakNama = button.getAttribute('data-anak-nama');
 
-    document.getElementById('jemput_absensi_id').value = absensiId;
-    document.getElementById('jemputAnakNama').textContent = anakNama;
-
-    // Reset form
+    // Reset form first to ensure no stale values; then set current absensi id and name
     document.getElementById('jemputForm').reset();
     jemputCapturedPhotos = [];
     document.getElementById('jemputPhotoPreview').innerHTML = '';
     document.getElementById('jemputPreviewContainer').style.display = 'none';
+
+    // Now set the absensi id and display name (reset would have cleared any previous value)
+    document.getElementById('jemput_absensi_id').value = absensiId;
+    document.getElementById('jemputAnakNama').textContent = anakNama;
   };
 
   // Initialize signature pad after modal is shown
@@ -1270,8 +1271,10 @@
           'X-CSRF-TOKEN': token,
           'Accept': 'application/json'
         },
+        credentials: 'same-origin',
         body: formData
       });
+
 
       const data = await response.json();
 
