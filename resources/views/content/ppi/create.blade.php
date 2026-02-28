@@ -161,8 +161,10 @@
     function renderProgramSelectOptions() {
       const selects = Array.from(document.querySelectorAll('.nama-program-select'));
       const selectedKeys = selectedProgramKeysFromRows();
+      const selectedAnakId = document.getElementById('anak_didik_id') ? document.getElementById('anak_didik_id').value : '';
       const selectedStart = document.getElementById('periode_mulai') ? document.getElementById('periode_mulai').value : '';
       const selectedEnd = document.getElementById('periode_selesai') ? document.getElementById('periode_selesai').value : '';
+      const shouldAskPeriodFirst = !!selectedAnakId && (!selectedStart || !selectedEnd);
 
       selects.forEach(s => {
         // preserve current value and hidden id for this row
@@ -172,6 +174,18 @@
         const prevHidden = hidden ? hidden.value : '';
         const currentOpt = s.options[s.selectedIndex];
         const ownKey = currentOpt ? (currentOpt.getAttribute('data-key') || prevValue) : prevValue;
+
+        if (shouldAskPeriodFirst) {
+          s.innerHTML = '<option value="">Pilih Program</option>';
+          const periodOption = document.createElement('option');
+          periodOption.value = '';
+          periodOption.disabled = true;
+          periodOption.textContent = 'Tentukan periode terlebih dahulu';
+          s.appendChild(periodOption);
+          s.selectedIndex = 0;
+          if (hidden) hidden.value = '';
+          return;
+        }
 
         s.innerHTML = '<option value="">Pilih Program</option>';
         let visibleOptionCount = 0;
