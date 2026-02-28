@@ -93,6 +93,8 @@ class ProgramAnakController extends Controller
         'tujuan' => $it->tujuan,
         'aktivitas' => $it->aktivitas,
         'program_konsultan_id' => $it->program_konsultan_id,
+        'periode_mulai' => $it->periode_mulai ? (method_exists($it->periode_mulai, 'toDateString') ? $it->periode_mulai->toDateString() : (string)$it->periode_mulai) : null,
+        'periode_selesai' => $it->periode_selesai ? (method_exists($it->periode_selesai, 'toDateString') ? $it->periode_selesai->toDateString() : (string)$it->periode_selesai) : null,
         'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
         'is_suggested' => $it->is_suggested ? 1 : 0,
         'konsultan_spesialisasi' => $spes,
@@ -126,6 +128,8 @@ class ProgramAnakController extends Controller
         'tujuan' => $it->tujuan,
         'aktivitas' => $it->aktivitas,
         'program_konsultan_id' => $it->program_konsultan_id ?? null,
+        'periode_mulai' => $it->periode_mulai ? $it->periode_mulai->toDateString() : null,
+        'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
         'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
         'is_suggested' => $it->is_suggested ? 1 : 0,
         'konsultan' => ($it->programKonsultan && $it->programKonsultan->konsultan) ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null] : null,
@@ -327,6 +331,22 @@ class ProgramAnakController extends Controller
   public function daftarProgramKonsultan()
   {
     $query = ProgramKonsultan::with('konsultan');
+    // Exclude vokasi programs here because vokasi has its own daftar-program page.
+    // Use the same vokasi prefixes as VokasiController for deterministic exclusion.
+    $vokasiPrefixes = ['PAI', 'COK', 'CRF', 'COM', 'GAR', 'BEA', 'AUT', 'HOU', 'VOK'];
+
+    // Exclude any program whose konsultan.spesialisasi contains 'vokasi'
+    $query->whereDoesntHave('konsultan', function ($q) {
+      $q->where('spesialisasi', 'like', '%vokasi%');
+    });
+
+    // Also exclude programs whose kode_program starts with any vokasi prefix (normalized)
+    $query->where(function ($q) use ($vokasiPrefixes) {
+      foreach ($vokasiPrefixes as $pref) {
+        // ensure normalized comparison by stripping non-alphanumeric characters
+        $q->whereRaw("COALESCE(UPPER(LEFT(REPLACE(REPLACE(REPLACE(kode_program,'-',''),' ',''),'.',''),3)),'') NOT LIKE ?", [$pref . '%']);
+      }
+    });
     if (auth()->check() && auth()->user()->role === 'konsultan') {
       $user = auth()->user();
       $spec = \App\Models\Konsultan::where('user_id', $user->id)->value('spesialisasi');

@@ -49,7 +49,8 @@ class PPIController extends Controller
       if ($k && strtolower(trim($k->spesialisasi ?? '')) === 'pendidikan') $isKonsultanPendidikan = true;
     }
 
-    $allAnakForAccess = $anakQuery->get();
+    // get full list used for access checks and dropdowns, ordered by name
+    $allAnakForAccess = (clone $anakQuery)->orderBy('nama')->get();
     $accessibleIds = [];
     foreach ($allAnakForAccess as $a) {
       $hasAccess = false;
@@ -82,15 +83,15 @@ class PPIController extends Controller
 
     // (status removed) no longer building latest status per anak
 
-    // isFokusMap: whether current user is guru_fokus for each anak
+    // isFokusMap: whether current user is guru_fokus for each anak (paginated list)
     $isFokusMap = [];
     foreach ($anakList as $a) {
       $isFokusMap[$a->id] = ($user && $user->role === 'guru' && isset($karyawanId) && $karyawanId && $a->guru_fokus_id == $karyawanId) ? true : false;
     }
 
-    // build access map: whether current user can view riwayat for each anak
+    // build access map for ALL anak (not just paginated) so dropdowns can show full list
     $accessMap = [];
-    foreach ($anakList as $a) {
+    foreach ($allAnakForAccess as $a) {
       $hasAccess = false;
       // Admin can always view
       if ($user && $user->role === 'admin') {
@@ -160,7 +161,7 @@ class PPIController extends Controller
       }
     }
 
-    return view('content.ppi.index', compact('anakList', 'search', 'guruOptions', 'guru_fokus', 'accessMap', 'canApprovePPI', 'isKonsultanPendidikan', 'isFokusMap', 'expiryMap'));
+    return view('content.ppi.index', compact('anakList', 'search', 'guruOptions', 'guru_fokus', 'accessMap', 'canApprovePPI', 'isKonsultanPendidikan', 'isFokusMap', 'expiryMap', 'allAnakForAccess'));
   }
 
   public function create()
@@ -342,18 +343,42 @@ class PPIController extends Controller
   }
 
   /**
-   * Set 'aktif' flag on a PpiItem (admin only)
+   * Set 'aktif' flag on a PpiItem (admin & guru with access)
    */
   public function setItemAktif(Request $request, $id)
   {
     $user = Auth::user();
-    if (!$user || $user->role !== 'admin') {
-      return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
-    }
+    if (!$user) return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
 
-    $ppiItem = PpiItem::find($id);
+    $ppiItem = PpiItem::with('ppi')->find($id);
     if (!$ppiItem) {
       return response()->json(['success' => false, 'message' => 'Item tidak ditemukan'], 404);
+    }
+
+    $allowed = false;
+    if ($user->role === 'admin') {
+      $allowed = true;
+    } elseif ($user->role === 'guru') {
+      $ppi = $ppiItem->ppi;
+      $anakId = $ppi ? $ppi->anak_didik_id : null;
+      if ($anakId) {
+        $anak = AnakDidik::find($anakId);
+        $k = Karyawan::where('nama', $user->name)->first();
+        $karyawanId = $k ? $k->id : null;
+
+        if ($karyawanId && $anak && intval($anak->guru_fokus_id) === intval($karyawanId)) {
+          $allowed = true;
+        }
+
+        if (!$allowed) {
+          $can = \App\Http\Controllers\GuruAnakDidikController::canAccessChild($user->id, $anakId);
+          if ($can) $allowed = true;
+        }
+      }
+    }
+
+    if (!$allowed) {
+      return response()->json(['success' => false, 'message' => 'Anda tidak berhak mengubah status program ini'], 403);
     }
 
     $aktif = $request->input('aktif');
@@ -674,6 +699,139 @@ class PPIController extends Controller
     ];
 
     return view('content.ppi.export-pdf', $data);
+  }
+
+  public function exportLessonPlanPdf($id)
+  {
+    $user = Auth::user();
+    $ppi = Ppi::with(['items.programKonsultan.konsultan', 'anak.guruFokus'])->findOrFail($id);
+
+    $allowed = false;
+    if ($user && $user->role === 'admin') {
+      $allowed = true;
+    } elseif ($user && $user->role === 'konsultan') {
+      $k = Konsultan::where('user_id', $user->id)->orWhere('email', $user->email)->first();
+      if ($k && strtolower(trim($k->spesialisasi ?? '')) === 'pendidikan') {
+        $allowed = true;
+      }
+    } elseif ($user && $user->role === 'guru') {
+      $anakId = $ppi->anak_didik_id;
+      $can = \App\Http\Controllers\GuruAnakDidikController::canAccessChild($user->id, $anakId);
+      if ($can) $allowed = true;
+
+      $k = Karyawan::where('nama', $user->name)->first();
+      $karyawanId = $k ? $k->id : null;
+      if ($karyawanId && $ppi->anak && $ppi->anak->guru_fokus_id == $karyawanId) {
+        $allowed = true;
+      }
+    }
+
+    if (!$allowed) {
+      abort(403, 'Anda tidak memiliki akses untuk mencetak lesson plan ini.');
+    }
+
+    $activeItems = $ppi->items->filter(function ($it) {
+      return intval($it->aktif ?? 0) === 1;
+    })->values();
+
+    $programData = [];
+    foreach ($activeItems as $item) {
+      $pk = $item->programKonsultan;
+
+      $dispKode = '-';
+      $dispNama = $item->nama_program ?? '-';
+      $dispKategori = $item->kategori ?? '-';
+      $dispKonsultanNama = '-';
+      $dispKonsultanSpec = '-';
+      $dispTujuan = '-';
+      $dispAktivitas = '-';
+      $dispKeterangan = '-';
+
+      if ($pk) {
+        $dispKode = $pk->kode_program ?? '-';
+        $dispNama = $pk->nama_program ?? $dispNama;
+        $dispTujuan = $pk->tujuan ?? '-';
+        $dispAktivitas = $pk->aktivitas ?? '-';
+        $dispKeterangan = $pk->keterangan ?? '-';
+        if ($pk->konsultan) {
+          $dispKonsultanNama = $pk->konsultan->nama ?? '-';
+          $dispKonsultanSpec = $pk->konsultan->spesialisasi ?? '-';
+        }
+      } else {
+        $kode = null;
+        $nm = (string)($item->nama_program ?? '');
+        if (preg_match('/^([A-Za-z]{2,3})\s*-?\s*(\d{2,4})/i', $nm, $m)) {
+          $kode = strtoupper($m[1] . $m[2]);
+        }
+
+        $pp = ProgramPendidikan::with('konsultan')
+          ->where('anak_didik_id', $ppi->anak_didik_id)
+          ->where(function ($q) use ($kode, $nm) {
+            if ($kode) {
+              $q->orWhereRaw("REPLACE(UPPER(kode_program),'-','') = ?", [str_replace('-', '', strtoupper($kode))]);
+            }
+            $san = strtolower(preg_replace('/[\s\.-]+/', '', $nm));
+            if ($san !== '') {
+              $q->orWhereRaw("REPLACE(REPLACE(REPLACE(LOWER(nama_program),' ',''),'.',''),'-','') = ?", [$san]);
+            }
+          })
+          ->orderByDesc('id')
+          ->first();
+
+        if ($pp) {
+          $dispKode = $pp->kode_program ?? '-';
+          $dispNama = $pp->nama_program ?? $dispNama;
+          $dispTujuan = $pp->tujuan ?? '-';
+          $dispAktivitas = $pp->aktivitas ?? '-';
+          $dispKeterangan = $pp->keterangan ?? '-';
+          if ($pp->konsultan) {
+            $dispKonsultanNama = $pp->konsultan->nama ?? '-';
+            $dispKonsultanSpec = $pp->konsultan->spesialisasi ?? '-';
+          }
+        } else if ($kode) {
+          $mk = ProgramKonsultan::with('konsultan')
+            ->whereRaw("REPLACE(UPPER(kode_program),'-','') = ?", [str_replace('-', '', strtoupper($kode))])
+            ->first();
+
+          if ($mk) {
+            $dispKode = $mk->kode_program ?? '-';
+            $dispNama = $mk->nama_program ?? $dispNama;
+            $dispTujuan = $mk->tujuan ?? '-';
+            $dispAktivitas = $mk->aktivitas ?? '-';
+            $dispKeterangan = $mk->keterangan ?? '-';
+            if ($mk->konsultan) {
+              $dispKonsultanNama = $mk->konsultan->nama ?? '-';
+              $dispKonsultanSpec = $mk->konsultan->spesialisasi ?? '-';
+            }
+          }
+        }
+      }
+
+      $programData[] = [
+        'id' => $item->id,
+        'kode_program' => $dispKode,
+        'nama_program' => $dispNama,
+        'kategori' => $dispKategori,
+        'konsultan_nama' => $dispKonsultanNama,
+        'konsultan_spesialisasi' => $dispKonsultanSpec,
+        'tujuan' => $dispTujuan,
+        'aktivitas' => $dispAktivitas,
+        'keterangan' => $dispKeterangan,
+        'notes' => $item->notes ?? null,
+      ];
+    }
+
+    $data = [
+      'ppi' => $ppi,
+      'anakDidik' => $ppi->anak,
+      'programData' => $programData,
+      'tanggalPpi' => $ppi->created_at ? $ppi->created_at->locale('id')->isoFormat('dddd, D MMMM Y') : '-',
+      'periodeMulai' => $ppi->periode_mulai ? Carbon::parse($ppi->periode_mulai)->locale('id')->isoFormat('D MMMM Y') : '-',
+      'periodeSelesai' => $ppi->periode_selesai ? Carbon::parse($ppi->periode_selesai)->locale('id')->isoFormat('D MMMM Y') : '-',
+      'tanggalCetak' => Carbon::now()->locale('id')->isoFormat('dddd, D MMMM Y'),
+    ];
+
+    return view('content.ppi.export-lesson-plan-pdf', $data);
   }
 
   // additional methods (riwayat, approve) can be added later

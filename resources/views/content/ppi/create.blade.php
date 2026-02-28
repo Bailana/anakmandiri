@@ -101,6 +101,7 @@
       return [$k->id => strtolower($k->spesialisasi ?? '')];
     })->toArray()));
     const pendidikanCache = {};
+    let allProgramOptions = [];
 
     function addOptionToSelect(sel, value, label, dataAttrs = {}) {
       const opt = document.createElement('option');
@@ -112,17 +113,85 @@
       sel.appendChild(opt);
     }
 
-    function populateSelectsFromArray(optionsArray) {
+    function selectedProgramKeysFromRows() {
+      const selected = new Set();
       const selects = Array.from(document.querySelectorAll('.nama-program-select'));
+      selects.forEach(s => {
+        if (!s.value) return;
+        const opt = s.options[s.selectedIndex];
+        const key = opt ? (opt.getAttribute('data-key') || s.value) : s.value;
+        if (key) selected.add(key);
+      });
+      return selected;
+    }
+
+    function toMonthKey(dateStr) {
+      if (!dateStr) return '';
+      const raw = String(dateStr).split('T')[0].split(' ')[0];
+      if (/^\d{4}-\d{2}/.test(raw)) return raw.slice(0, 7);
+      const d = new Date(raw);
+      if (isNaN(d)) return '';
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+
+    function isOptionWithinSelectedPeriod(optionData) {
+      const selectedStart = document.getElementById('periode_mulai') ? document.getElementById('periode_mulai').value : '';
+      const selectedEnd = document.getElementById('periode_selesai') ? document.getElementById('periode_selesai').value : '';
+      if (!selectedStart || !selectedEnd) return true;
+
+      const selectedStartMonth = toMonthKey(selectedStart);
+      const selectedEndMonth = toMonthKey(selectedEnd);
+      if (!selectedStartMonth || !selectedEndMonth) return true;
+
+      const optionStartMonth = toMonthKey(optionData && optionData.periode_mulai ? optionData.periode_mulai : '');
+      const optionEndMonth = toMonthKey(optionData && optionData.periode_selesai ? optionData.periode_selesai : '');
+
+      let programStart = optionStartMonth;
+      let programEnd = optionEndMonth;
+
+      if (!programStart && programEnd) programStart = programEnd;
+      if (!programEnd && programStart) programEnd = programStart;
+      if (!programStart && !programEnd) return false;
+
+      return programStart <= selectedEndMonth && programEnd >= selectedStartMonth;
+    }
+
+    function renderProgramSelectOptions() {
+      const selects = Array.from(document.querySelectorAll('.nama-program-select'));
+      const selectedKeys = selectedProgramKeysFromRows();
+      const selectedStart = document.getElementById('periode_mulai') ? document.getElementById('periode_mulai').value : '';
+      const selectedEnd = document.getElementById('periode_selesai') ? document.getElementById('periode_selesai').value : '';
+
       selects.forEach(s => {
         // preserve current value and hidden id for this row
         const tr = s.closest('tr');
         const hidden = tr ? tr.querySelector('.program-konsultan-id') : null;
         const prevValue = s.value || '';
         const prevHidden = hidden ? hidden.value : '';
+        const currentOpt = s.options[s.selectedIndex];
+        const ownKey = currentOpt ? (currentOpt.getAttribute('data-key') || prevValue) : prevValue;
 
         s.innerHTML = '<option value="">Pilih Program</option>';
-        optionsArray.forEach(opt => addOptionToSelect(s, opt.value, opt.label, opt.data));
+        let visibleOptionCount = 0;
+        allProgramOptions.forEach(opt => {
+          const optionKey = (opt.data && opt.data.key) ? opt.data.key : (opt.value || '');
+          const isChosenByAnotherRow = selectedKeys.has(optionKey) && optionKey !== ownKey;
+          const isInPeriod = isOptionWithinSelectedPeriod(opt.data || {});
+          if (!isChosenByAnotherRow && isInPeriod) {
+            addOptionToSelect(s, opt.value, opt.label, opt.data);
+            visibleOptionCount++;
+          }
+        });
+
+        if (visibleOptionCount === 0) {
+          const emptyOption = document.createElement('option');
+          emptyOption.value = '';
+          emptyOption.disabled = true;
+          emptyOption.textContent = (selectedStart && selectedEnd) ? 'Tidak ada program pada range periode ini' : 'Tidak ada program tersedia';
+          s.appendChild(emptyOption);
+        }
 
         // try restore by value first
         if (prevValue) {
@@ -153,6 +222,7 @@
       if (!selects.length) return;
       const anakId = document.getElementById('anak_didik_id').value || '';
       if (!anakId) {
+        allProgramOptions = [];
         selects.forEach(s => s.innerHTML = '<option value="">Pilih Program</option>');
         return;
       }
@@ -171,14 +241,19 @@
             if (!optionsMap.has(label)) {
               // Only assign a program_konsultan id when it's explicitly provided by the API
               const pkId = p.program_konsultan_id ? p.program_konsultan_id : '';
+              const optionValue = p.nama_program || p.nama || '';
+              const optionKey = pkId ? ('pk:' + pkId) : ('nm:' + optionValue + '|' + label);
               optionsMap.set(label, {
                 value: p.nama_program || p.nama || '',
                 label: label,
                 data: {
                   id: pkId,
+                  key: optionKey,
                   kode: p.kode_program || '',
                   tujuan: p.tujuan || '',
-                  aktivitas: p.aktivitas || ''
+                  aktivitas: p.aktivitas || '',
+                  periode_mulai: p.periode_mulai || '',
+                  periode_selesai: p.periode_selesai || ''
                 }
               });
             }
@@ -207,14 +282,19 @@
             if (!optionsMap.has(label)) {
               // prefer program_konsultan_id when provided by API; fallback to program-anak id
               const pkId = it.program_konsultan_id ? it.program_konsultan_id : (it.id ? it.id : '');
+              const optionValue = it.nama_program || it.nama || '';
+              const optionKey = pkId ? ('pk:' + pkId) : ('nm:' + optionValue + '|' + label);
               optionsMap.set(label, {
                 value: it.nama_program || it.nama || '',
                 label: label,
                 data: {
                   id: pkId,
+                  key: optionKey,
                   kode: it.kode_program || '',
                   tujuan: it.tujuan || '',
-                  aktivitas: it.aktivitas || ''
+                  aktivitas: it.aktivitas || '',
+                  periode_mulai: it.periode_mulai || '',
+                  periode_selesai: it.periode_selesai || ''
                 }
               });
             }
@@ -224,8 +304,8 @@
         }
       }
 
-      const optionEntries = Array.from(optionsMap.values());
-      populateSelectsFromArray(optionEntries);
+      allProgramOptions = Array.from(optionsMap.values());
+      renderProgramSelectOptions();
     }
 
     let ppiRowIdx = document.querySelectorAll('#ppiProgramTbody tr').length || 1;
@@ -257,14 +337,17 @@
     `;
       tbody.appendChild(tr);
       ppiRowIdx++;
-      refreshPPIProgramOptions();
+      renderProgramSelectOptions();
     }
 
     document.addEventListener('click', function(e) {
       const btn = e.target && e.target.closest ? e.target.closest('.btn-hapus-ppi-baris') : null;
       if (btn) {
         const tr = btn.closest('tr');
-        if (tr) tr.remove();
+        if (tr) {
+          tr.remove();
+          renderProgramSelectOptions();
+        }
       }
     });
 
@@ -279,6 +362,7 @@
         const opt = sel.options[sel.selectedIndex];
         const id = opt ? (opt.getAttribute('data-id') || '') : '';
         if (hidden) hidden.value = id;
+        renderProgramSelectOptions();
       }
     });
 
@@ -286,6 +370,10 @@
     if (addBtn) addBtn.addEventListener('click', addPpiRow);
     const anak = document.getElementById('anak_didik_id');
     if (anak) anak.addEventListener('change', refreshPPIProgramOptions);
+    const periodeMulai = document.getElementById('periode_mulai');
+    const periodeSelesai = document.getElementById('periode_selesai');
+    if (periodeMulai) periodeMulai.addEventListener('change', renderProgramSelectOptions);
+    if (periodeSelesai) periodeSelesai.addEventListener('change', renderProgramSelectOptions);
     refreshPPIProgramOptions();
   });
 </script>

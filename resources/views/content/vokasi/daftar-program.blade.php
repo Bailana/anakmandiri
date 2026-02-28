@@ -458,17 +458,7 @@
 				</select>
 			</div>
 
-			@if(auth()->check() && auth()->user()->role === 'admin')
-			<div style="min-width:180px;">
-				<select name="filter_konsultan" class="form-select">
-					<option value="" {{ request('filter_konsultan') == '' ? 'selected' : '' }}>Semua Konsultan</option>
-					<option value="Psikologi" {{ request('filter_konsultan') == 'Psikologi' ? 'selected' : '' }}>Psikologi</option>
-					<option value="Pendidikan" {{ request('filter_konsultan') == 'Pendidikan' ? 'selected' : '' }}>Pendidikan</option>
-					<option value="Wicara" {{ request('filter_konsultan') == 'Wicara' ? 'selected' : '' }}>Wicara</option>
-					<option value="Sensori Integrasi" {{ request('filter_konsultan') == 'Sensori Integrasi' ? 'selected' : '' }}>Sensori Integrasi</option>
-				</select>
-			</div>
-			@endif
+
 
 			<button type="submit" class="btn btn-outline-primary" title="Cari">
 				<i class="ri-search-line"></i>
@@ -718,6 +708,7 @@
 						@foreach(['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping'] as $jv)
 						<option value="{{ $jv }}">{{ $jv }}</option>
 						@endforeach
+						
 					</select>
 				</div>
 

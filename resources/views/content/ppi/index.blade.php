@@ -236,7 +236,7 @@
             <label class="form-label">Anak Didik <span class="text-danger">*</span></label>
             <select name="anak_didik_id" class="form-select" required>
               <option value="">Pilih Anak Didik</option>
-              @foreach($anakList as $anak)
+              @foreach($allAnakForAccess as $anak)
               @if(isset($accessMap[$anak->id]) && $accessMap[$anak->id])
               <option value="{{ $anak->id }}">{{ $anak->nama }}</option>
               @endif
@@ -493,6 +493,7 @@
                     <!-- Desktop: show individual small buttons -->
                     <div class="d-none d-sm-inline-flex align-items-center">
                       <button class="btn btn-sm btn-outline-info me-1" onclick="viewPpiDetail(this)" data-ppi-id="${item.id}" title="Lihat"><i class='ri-eye-line'></i></button>
+                      <button class="btn btn-sm btn-outline-danger me-1" onclick="printPpiLessonPlan(${item.id})" title="Cetak Lesson Plan"><i class='ri-file-pdf-line'></i></button>
                       `;
             if (isFokus) {
               html += `
@@ -518,6 +519,7 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ppiActionsToggle${item.id}">
                           <li><button class="dropdown-item" type="button" onclick="viewPpiDetail(this)" data-ppi-id="${item.id}">Lihat</button></li>
+                          <li><button class="dropdown-item" type="button" onclick="printPpiLessonPlan(${item.id})">Cetak Lesson Plan</button></li>
                           `;
             if (isFokus) {
               html += `
@@ -602,6 +604,11 @@
       }).catch(() => alert('Terjadi kesalahan jaringan'));
     }
 
+    window.printPpiLessonPlan = function(ppiId) {
+      if (!ppiId) return;
+      window.open('/ppi/' + encodeURIComponent(ppiId) + '/lesson-plan-pdf', '_blank');
+    }
+
     window.viewPpiDetail = async function(btn, id) {
       try {
         // support calling as (btn) or (btn, id)
@@ -672,22 +679,16 @@
                 .program_konsultan.nama_program : (item.nama_program || '—');
               // determine aktif checked state (support 1/0, true/false, '1')
               const wajibChecked = (item.aktif == 1 || item.aktif === true || item.aktif === '1') ? 'checked' : '';
-              let adminToggleHtml = '';
-              if (window.CURRENT_USER_ROLE === 'admin') {
-                adminToggleHtml = `
+              let toggleHtml = '';
+              if (window.CURRENT_USER_ROLE === 'admin' || window.CURRENT_USER_ROLE === 'guru') {
+                toggleHtml = `
                   <div class="d-inline-flex align-items-center ms-2">
                     <div class="form-check form-switch m-0">
                       <input class="form-check-input ppi-wajib-toggle" type="checkbox" data-item-id="${item.id}" ${wajibChecked} aria-label="Wajib">
                     </div>
                   </div>`;
               }
-              // for guru users (guru fokus), show a read-only red "Wajib" badge when aktif
-              let guruBadgeHtml = '';
-              if (window.CURRENT_USER_ROLE === 'guru' && (item.aktif == 1 || item.aktif === true || item.aktif === '1')) {
-                guruBadgeHtml = `<span class="d-inline-block rounded-circle bg-success" title="Wajib" role="img" aria-label="Wajib" style="width:16px;height:16px;vertical-align:middle;"></span>`;
-              }
-
-              const rightHtml = adminToggleHtml || guruBadgeHtml || '';
+              const rightHtml = toggleHtml || '';
 
               html += `<li class="list-group-item">`;
               // layout: left content grows, right control stays no-shrink at the far right

@@ -827,6 +827,18 @@
         }
         // res.riwayat is an array of groups: {name, konsultan_id, spesialisasi, items: [...]}
         let html = '';
+
+        function formatTanggalIndo(dateValue) {
+          if (!dateValue) return '-';
+          const raw = dateValue.toString().split('T')[0].split(' ')[0];
+          const dt = new Date(raw + 'T00:00:00');
+          if (isNaN(dt)) return raw;
+          return dt.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+          });
+        }
         res.riwayat.forEach(group => {
           html += `<div class="mb-3">
               <div class="fw-bold bg-light p-2 rounded border mb-2"><i class='ri-user-line me-1'></i> ${group.name}</div>
@@ -847,16 +859,25 @@
             if (seenDates.has(dateKey)) return; // skip duplicate date
             seenDates.add(dateKey);
 
-            // determine if any item on this date was suggested
-            const anySuggestedForDate = group.items.some(it => {
+            const itemsForDate = (group.items || []).filter(it => {
               let ik = '';
               if (it.created_at) {
                 ik = (it.created_at.indexOf('T') !== -1) ? it.created_at.split('T')[0] : it.created_at.split(' ')[0];
               } else {
                 ik = 'id_' + it.id;
               }
-              return ik === dateKey && (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true);
+              return ik === dateKey;
             });
+
+            // determine if any item on this date was suggested
+            const anySuggestedForDate = itemsForDate.some(it => (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true));
+
+            // period range for this date (ambil min periode_mulai dan max periode_selesai di tanggal tersebut)
+            const periodStarts = itemsForDate.map(it => (it.periode_mulai || '').toString().split('T')[0].split(' ')[0]).filter(Boolean).sort();
+            const periodEnds = itemsForDate.map(it => (it.periode_selesai || '').toString().split('T')[0].split(' ')[0]).filter(Boolean).sort();
+            const periodStart = periodStarts.length ? periodStarts[0] : null;
+            const periodEnd = periodEnds.length ? periodEnds[periodEnds.length - 1] : null;
+            const periodText = (periodStart || periodEnd) ? `Periode: ${formatTanggalIndo(periodStart || periodEnd)} s/d ${formatTanggalIndo(periodEnd || periodStart)}` : '';
 
             // format date and weekday for display
             let dt = item.created_at ? new Date(item.created_at) : null;
@@ -908,12 +929,6 @@
             try {
               if (!badgeLabel) {
                 // restrict detection to items on the same dateKey
-                const itemsForDate = (group.items || []).filter(it => {
-                  let ik = '';
-                  if (it.created_at) ik = (it.created_at.indexOf('T') !== -1) ? it.created_at.split('T')[0] : it.created_at.split(' ')[0];
-                  else ik = 'id_' + it.id;
-                  return ik === dateKey;
-                });
                 const psykDetected = itemsForDate.some(it => {
                   const suggested = (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true);
                   if (!suggested) return false;
@@ -934,7 +949,10 @@
             // show therapy-type badge only when any program on that date is suggested
             const badgeHtml = (anySuggestedForDate && badgeLabel) ? (' <span class="badge ' + badgeClass + ' ms-2">' + badgeLabel + '</span>') : '';
             html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                <div><b>${hari}</b>, ${tanggal}${badgeHtml}</div>
+                <div>
+                  <div><b>${hari}</b>, ${tanggal}${badgeHtml}</div>
+                  ${periodText ? `<div class="small text-muted">${periodText}</div>` : ''}
+                </div>
                 <div>
                   <button class="btn btn-sm btn-outline-info" onclick="showProgramsByKonsultanAndDate(${anakDidikId}, ${konsultanId}, '${dateKey}')" title="Lihat Program dari Konsultan"><i class="ri-eye-line"></i></button>
                 </div>
