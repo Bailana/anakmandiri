@@ -318,7 +318,24 @@
         }
       }
 
-      allProgramOptions = Array.from(optionsMap.values());
+      allProgramOptions = Array.from(optionsMap.values()).sort((a, b) => {
+        const aCode = ((a && a.data && a.data.kode) ? String(a.data.kode) : '').trim();
+        const bCode = ((b && b.data && b.data.kode) ? String(b.data.kode) : '').trim();
+        if (aCode && bCode) {
+          return aCode.localeCompare(bCode, 'id', {
+            numeric: true,
+            sensitivity: 'base'
+          });
+        }
+        if (aCode && !bCode) return -1;
+        if (!aCode && bCode) return 1;
+        const aLabel = ((a && a.label) ? String(a.label) : '').trim();
+        const bLabel = ((b && b.label) ? String(b.label) : '').trim();
+        return aLabel.localeCompare(bLabel, 'id', {
+          numeric: true,
+          sensitivity: 'base'
+        });
+      });
       renderProgramSelectOptions();
     }
 

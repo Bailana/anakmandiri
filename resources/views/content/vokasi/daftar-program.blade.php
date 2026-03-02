@@ -102,19 +102,13 @@
 								</div>
 
 								<div class="row">
-									<div class="col-md-4">
-										<div class="mb-3">
-											<div class="text-muted small mb-1">Tujuan</div>
-											<div id="viewTujuan" class="text-body-secondary">-</div>
-										</div>
-									</div>
-									<div class="col-md-4">
+									<div class="col-md-6">
 										<div class="mb-3">
 											<div class="text-muted small mb-1">Aktivitas</div>
 											<div id="viewAktivitas" class="text-body-secondary">-</div>
 										</div>
 									</div>
-									<div class="col-md-4">
+									<div class="col-md-6">
 										<div class="mb-3">
 											<div class="text-muted small mb-1">Keterangan</div>
 											<div id="viewKeterangan" class="text-body-secondary">-</div>
@@ -189,7 +183,6 @@
 							btn.addEventListener('click', function() {
 								document.getElementById('viewKode').textContent = decodeHtmlEntities(this.dataset.kode) || '-';
 								document.getElementById('viewNama').textContent = decodeHtmlEntities(this.dataset.nama) || '-';
-								document.getElementById('viewTujuan').textContent = decodeHtmlEntities(this.dataset.tujuan) || '-';
 								document.getElementById('viewAktivitas').textContent = decodeHtmlEntities(this.dataset.aktivitas) || '-';
 								document.getElementById('viewKeterangan').textContent = decodeHtmlEntities(this.dataset.keterangan) || '-';
 
@@ -370,8 +363,7 @@
 													};
 													if (tds[1]) tds[1].textContent = resp.program.kode_program || '-';
 													if (tds[2]) tds[2].textContent = resp.program.nama_program || '-';
-													if (tds[3]) tds[3].textContent = truncate(resp.program.tujuan || '', 100);
-													if (tds[4]) tds[4].textContent = truncate(resp.program.aktivitas || '', 100);
+													if (tds[3]) tds[3].textContent = truncate(resp.program.aktivitas || '', 100);
 													// update action buttons' data attributes
 													const viewBtn = row.querySelector('.btn-view-program');
 													const editBtn = row.querySelector('.btn-edit-program');
@@ -480,7 +472,6 @@
 							<th>No</th>
 							<th>Kode</th>
 							<th>Nama Program</th>
-							<th>Tujuan</th>
 							<th>Aktivitas</th>
 							<th>Konsultan</th>
 							@if(auth()->check())
@@ -494,7 +485,6 @@
 							<td>{{ ($programs->currentPage() - 1) * $programs->perPage() + $i + 1 }}</td>
 							<td class="text-heading mb-0 fw-medium">{{ $p->kode_program ?? '-' }}</td>
 							<td>{{ $p->nama_program }}</td>
-							<td>{{ Str::limit($p->tujuan ?: '-', 100) }}</td>
 							<td>{{ Str::limit($p->aktivitas ?: '-', 100) }}</td>
 							<td>{{ optional($p->konsultan)->nama ?? optional($p->konsultan)->spesialisasi ?? '-' }}</td>
 							@if(auth()->check())
@@ -635,7 +625,7 @@
 						</tr>
 						@empty
 						<tr>
-							<td colspan="{{ auth()->check() ? 7 : 6 }}" class="text-center">Tidak ada data ditemukan.</td>
+							<td colspan="{{ auth()->check() ? 6 : 5 }}" class="text-center">Tidak ada data ditemukan.</td>
 						</tr>
 						@endforelse
 					</tbody>
@@ -708,7 +698,7 @@
 						@foreach(['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping'] as $jv)
 						<option value="{{ $jv }}">{{ $jv }}</option>
 						@endforeach
-						
+
 					</select>
 				</div>
 
@@ -719,10 +709,6 @@
 				<div class="mb-3">
 					<label class="form-label">Nama Program</label>
 					<input type="text" name="nama_program" class="form-control" required>
-				</div>
-				<div class="mb-3">
-					<label class="form-label">Tujuan</label>
-					<textarea name="tujuan" class="form-control" rows="3"></textarea>
 				</div>
 				<div class="mb-3">
 					<label class="form-label">Aktivitas</label>
