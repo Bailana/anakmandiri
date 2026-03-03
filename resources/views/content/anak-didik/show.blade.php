@@ -228,7 +228,7 @@
               <strong>Vokasi:</strong> Jenis vokasi yang dipilih untuk anak didik.
             </div>
             <div class="row">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <div class="form-check mb-3">
                   <input type="checkbox" class="form-check-input" id="jenis_painting_s" disabled value="Painting" {{ (is_array($selectedJenis) && in_array('Painting', $selectedJenis)) ? 'checked' : '' }}>
                   <label class="form-check-label" for="jenis_painting_s">Painting</label>
@@ -246,7 +246,7 @@
                   <label class="form-check-label" for="jenis_computer_s">Computer</label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <div class="form-check mb-3">
                   <input type="checkbox" class="form-check-input" id="jenis_gardening_s" disabled value="Gardening" {{ (is_array($selectedJenis) && in_array('Gardening', $selectedJenis)) ? 'checked' : '' }}>
                   <label class="form-check-label" for="jenis_gardening_s">Gardening</label>
@@ -262,6 +262,12 @@
                 <div class="form-check mb-3">
                   <input type="checkbox" class="form-check-input" id="jenis_housekeeping_s" disabled value="House Keeping" {{ (is_array($selectedJenis) && in_array('House Keeping', $selectedJenis)) ? 'checked' : '' }}>
                   <label class="form-check-label" for="jenis_housekeeping_s">House Keeping</label>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-check mb-3">
+                  <input type="checkbox" class="form-check-input" id="jenis_spiritual_s" disabled value="Spiritual" {{ (is_array($selectedJenis) && in_array('Spiritual', $selectedJenis)) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="jenis_spiritual_s">Spiritual</label>
                 </div>
               </div>
             </div>

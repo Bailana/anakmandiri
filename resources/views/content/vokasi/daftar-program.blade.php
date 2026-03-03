@@ -444,7 +444,7 @@
 			<div style="min-width:180px;">
 				<select name="filter_jenis_vokasi" class="form-select">
 					<option value="" {{ request('filter_jenis_vokasi') == '' ? 'selected' : '' }}>Semua Jenis Vokasi</option>
-					@foreach(['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping'] as $jv)
+					@foreach(['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping','Spiritual'] as $jv)
 					<option value="{{ $jv }}" {{ request('filter_jenis_vokasi') == $jv ? 'selected' : '' }}>{{ $jv }}</option>
 					@endforeach
 				</select>
@@ -556,7 +556,8 @@
 											'Gardening': 'GAR',
 											'Beauty': 'BEA',
 											'Auto Wash': 'AUT',
-											'House Keeping': 'HOU'
+											'House Keeping': 'HOU',
+											'Spiritual': 'SPR'
 										};
 										const jenisEl = document.getElementById('modalJenisVokasi');
 										const kodeInput = document.querySelector('#modalAddProgramMaster input[name="kode_program"]');
@@ -695,7 +696,7 @@
 					<label class="form-label">Jenis Vokasi</label>
 					<select id="modalJenisVokasi" name="jenis_vokasi" class="form-select" onchange="(async function(v){const inp=document.querySelector('#modalAddProgramMaster input[name=\'kode_program\']'); if(!v){ inp.value=''; return;} try{ inp.value='...'; const res=await fetch('{{ url('vokasi/next-kode') }}' + '/' + encodeURIComponent(v)); const j = await res.json(); if (j && j.next) inp.value = j.next; else if (j && j.prefix && j.nextNumber) inp.value = j.prefix + String(j.nextNumber).padStart(j.pad||3,'0'); else inp.value = v.toUpperCase().replace(/[^A-Z]/g,'').slice(0,3); } catch(e) { inp.value = v.toUpperCase().replace(/[^A-Z]/g,'').slice(0,3); } })(this.value)">
 						<option value="">Pilih Jenis Vokasi</option>
-						@foreach(['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping'] as $jv)
+						@foreach(['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping','Spiritual'] as $jv)
 						<option value="{{ $jv }}">{{ $jv }}</option>
 						@endforeach
 
@@ -726,4 +727,5 @@
 		</form>
 	</div>
 </div>
+
 @endif

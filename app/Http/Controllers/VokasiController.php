@@ -141,7 +141,7 @@ class VokasiController extends Controller
     // load anak didik list and program masters for admin modal dropdowns
     $anakDidiks = AnakDidik::orderBy('nama')->get();
     // only load program masters that belong to vokasi prefixes
-    $vokasiPrefixes = ['PAI', 'COK', 'CRF', 'COM', 'GAR', 'BEA', 'AUT', 'HOU', 'VOK'];
+    $vokasiPrefixes = ['PAI', 'COK', 'CRF', 'COM', 'GAR', 'BEA', 'AUT', 'HOU', 'SPR', 'VOK'];
     $pmQuery = ProgramKonsultan::orderBy('kode_program');
     $pmQuery->where(function ($q) use ($vokasiPrefixes) {
       foreach ($vokasiPrefixes as $idx => $pref) {
@@ -232,7 +232,7 @@ class VokasiController extends Controller
   public function riwayatProgram($anakDidikId)
   {
     // Return program entries that belong to known vokasi prefixes (normalize kode_program when matching)
-    $vokasiPrefixes = ['PAI', 'COK', 'CRF', 'COM', 'GAR', 'BEA', 'AUT', 'HOU', 'VOK'];
+    $vokasiPrefixes = ['PAI', 'COK', 'CRF', 'COM', 'GAR', 'BEA', 'AUT', 'HOU', 'SPR', 'VOK'];
     $items = ProgramAnak::with(['programKonsultan.konsultan', 'programKonsultan'])
       ->where('anak_didik_id', $anakDidikId)
       ->where(function ($q) use ($vokasiPrefixes) {
@@ -450,7 +450,7 @@ class VokasiController extends Controller
     $konsultans = \App\Models\Konsultan::all();
     // load program master grouped by konsultan for populating dropdowns in the form
     // include all known vokasi prefixes so kode dropdowns can show per-jenis vokasi masters
-    $vokasiPrefixes = ['PAI', 'COK', 'CRF', 'COM', 'GAR', 'BEA', 'AUT', 'HOU', 'VOK'];
+    $vokasiPrefixes = ['PAI', 'COK', 'CRF', 'COM', 'GAR', 'BEA', 'AUT', 'HOU', 'SPR', 'VOK'];
     $pmQuery = ProgramKonsultan::orderBy('kode_program');
     $pmQuery->where(function ($q) use ($vokasiPrefixes) {
       foreach ($vokasiPrefixes as $idx => $pref) {
@@ -497,6 +497,7 @@ class VokasiController extends Controller
       'Beauty' => 'BEA',
       'Auto Wash' => 'AUT',
       'House Keeping' => 'HOU',
+      'Spiritual' => 'SPR',
     ];
     $prefix = isset($mapping[$jenis]) ? $mapping[$jenis] : strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $jenis), 0, 3));
 
@@ -578,6 +579,7 @@ class VokasiController extends Controller
         'Beauty' => 'BEA',
         'Auto Wash' => 'AUT',
         'House Keeping' => 'HOU',
+        'Spiritual' => 'SPR',
       ];
       $prefix = isset($mapping[$jenis]) ? $mapping[$jenis] : strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $jenis ?? ''), 0, 3));
 
@@ -678,6 +680,7 @@ class VokasiController extends Controller
       'Beauty' => 'BEA',
       'Auto Wash' => 'AUT',
       'House Keeping' => 'HOU',
+      'Spiritual' => 'SPR',
     ];
     $selectedJenis = request('filter_jenis_vokasi');
     if ($selectedJenis) {

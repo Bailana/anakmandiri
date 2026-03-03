@@ -517,7 +517,7 @@
                 <strong>Vokasi:</strong> Pilih jenis vokasi yang relevan untuk anak didik.
               </div>
               <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" id="jenis_painting_e" name="jenis_vokasi[]" value="Painting" {{ (is_array($selectedJenis) && in_array('Painting', $selectedJenis)) ? 'checked' : '' }}>
                     <label class="form-check-label" for="jenis_painting_e">Painting</label>
@@ -535,7 +535,7 @@
                     <label class="form-check-label" for="jenis_computer_e">Computer</label>
                   </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" id="jenis_gardening_e" name="jenis_vokasi[]" value="Gardening" {{ (is_array($selectedJenis) && in_array('Gardening', $selectedJenis)) ? 'checked' : '' }}>
                     <label class="form-check-label" for="jenis_gardening_e">Gardening</label>
@@ -551,6 +551,12 @@
                   <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" id="jenis_housekeeping_e" name="jenis_vokasi[]" value="House Keeping" {{ (is_array($selectedJenis) && in_array('House Keeping', $selectedJenis)) ? 'checked' : '' }}>
                     <label class="form-check-label" for="jenis_housekeeping_e">House Keeping</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_spiritual_e" name="jenis_vokasi[]" value="Spiritual" {{ (is_array($selectedJenis) && in_array('Spiritual', $selectedJenis)) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_spiritual_e">Spiritual</label>
                   </div>
                 </div>
               </div>

@@ -485,7 +485,7 @@
               </div>
 
               <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" id="jenis_painting" name="jenis_vokasi[]" value="Painting" {{ (is_array(old('jenis_vokasi')) && in_array('Painting', old('jenis_vokasi'))) ? 'checked' : '' }}>
                     <label class="form-check-label" for="jenis_painting">Painting</label>
@@ -503,7 +503,7 @@
                     <label class="form-check-label" for="jenis_computer">Computer</label>
                   </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                   <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" id="jenis_gardening" name="jenis_vokasi[]" value="Gardening" {{ (is_array(old('jenis_vokasi')) && in_array('Gardening', old('jenis_vokasi'))) ? 'checked' : '' }}>
                     <label class="form-check-label" for="jenis_gardening">Gardening</label>
@@ -519,6 +519,12 @@
                   <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" id="jenis_housekeeping" name="jenis_vokasi[]" value="House Keeping" {{ (is_array(old('jenis_vokasi')) && in_array('House Keeping', old('jenis_vokasi'))) ? 'checked' : '' }}>
                     <label class="form-check-label" for="jenis_housekeeping">House Keeping</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="jenis_spiritual" name="jenis_vokasi[]" value="Spiritual" {{ (is_array(old('jenis_vokasi')) && in_array('Spiritual', old('jenis_vokasi'))) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="jenis_spiritual">Spiritual</label>
                   </div>
                 </div>
               </div>

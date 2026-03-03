@@ -516,7 +516,7 @@
       <div style="min-width:180px;">
         <select name="filter_jenis_vokasi" class="form-select">
           <option value="" {{ request('filter_jenis_vokasi') == '' ? 'selected' : '' }}>Semua Jenis Vokasi</option>
-          @foreach(['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping'] as $jv)
+          @foreach(['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping','Spiritual'] as $jv)
           <option value="{{ $jv }}" {{ request('filter_jenis_vokasi') == $jv ? 'selected' : '' }}>{{ $jv }}</option>
           @endforeach
         </select>
@@ -599,6 +599,7 @@
                 'Beauty' => ['bg' => '#e83e8c', 'text' => '#ffffff'],
                 'Auto Wash' => ['bg' => '#17a2b8', 'text' => '#ffffff'],
                 'House Keeping' => ['bg' => '#fd7e14', 'text' => '#ffffff'],
+                'Spiritual' => ['bg' => '#9b59b6', 'text' => '#ffffff'],
                 ];
                 @endphp
                 @foreach($types as $t)
@@ -1149,7 +1150,8 @@
                 'Gardening': 'GAR',
                 'Beauty': 'BEA',
                 'Auto Wash': 'AUT',
-                'House Keeping': 'HOU'
+                'House Keeping': 'HOU',
+                'Spiritual': 'SPR'
               };
               const programData = data.program || {};
               const anakV = Array.isArray(programData.anak_vokasi) ? programData.anak_vokasi : (programData.anak_vokasi ? [programData.anak_vokasi] : []);

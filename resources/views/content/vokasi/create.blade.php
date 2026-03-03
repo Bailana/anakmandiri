@@ -58,7 +58,7 @@
               <label class="form-label">Jenis Vokasi (centang yang sesuai)</label>
               <div class="d-flex flex-wrap gap-2">
                 @php
-                $jenisList = ['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping'];
+                $jenisList = ['Painting','Cooking','Craft','Computer','Gardening','Beauty','Auto Wash','House Keeping','Spiritual'];
                 @endphp
                 @foreach($jenisList as $j)
                 <div class="form-check">
@@ -469,7 +469,7 @@
     @php
     $anakVMap = [];
     foreach($anakDidiks ?? [] as $a) {
-      $anakVMap[$a->id] = $a-> vokasi_diikuti ?? [];
+      $anakVMap[$a->id] = $a->vokasi_diikuti ?? [];
     }
     @endphp
     // Map of anak_didik id -> vokasi_diikuti array

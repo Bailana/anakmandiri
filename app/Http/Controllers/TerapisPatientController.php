@@ -83,7 +83,16 @@ class TerapisPatientController extends Controller
       $query->where('status', $request->query('status'));
     }
 
-    $assignments = $query->orderBy('id', 'desc')->paginate(10)->appends($request->query());
+    $assignments = $query
+      ->orderBy(
+        AnakDidik::select('nama')
+          ->whereColumn('anak_didiks.id', 'guru_anak_didik.anak_didik_id')
+          ->limit(1),
+        'asc'
+      )
+      ->orderBy('id', 'asc')
+      ->paginate(10)
+      ->appends($request->query());
 
     return view('content.terapis.patients', compact('assignments', 'therapists', 'user', 'selectedTherapisId', 'selectedStatus'));
   }
