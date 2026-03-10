@@ -45,12 +45,6 @@
       font-size: 18pt;
     }
 
-    .meta {
-      margin-top: 6px;
-      color: #444;
-      font-size: 10pt;
-    }
-
     .info-box {
       margin: 14px 0;
       border: 1px solid #d9d9d9;
@@ -63,10 +57,37 @@
       margin: 4px 0;
     }
 
+    .section-title {
+      display: block;
+      width: 100%;
+      margin: 20px 0 8px;
+      font-size: 11pt;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 4px;
+      color: #fff;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .section-awal {
+      background: #f97316;
+      color: #fff !important;
+    }
+
+    .section-inti {
+      background: #7c3aed;
+    }
+
+    .section-penutup {
+      background: #198754;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 6px;
+      margin-bottom: 14px;
     }
 
     thead {
@@ -123,11 +144,12 @@
     }
 
     .no-data {
-      margin-top: 14px;
+      margin: 6px 0 14px;
       border: 1px dashed #bbb;
-      padding: 16px;
+      padding: 10px;
       text-align: center;
       color: #666;
+      border-radius: 4px;
     }
 
     .footer {
@@ -158,6 +180,21 @@
 
       .info-box {
         background: #f8f9fa !important;
+      }
+
+      .section-awal {
+        background: #f97316 !important;
+        color: #fff !important;
+      }
+
+      .section-inti {
+        background: #7c3aed !important;
+        color: #fff !important;
+      }
+
+      .section-penutup {
+        background: #198754 !important;
+        color: #fff !important;
       }
 
       .badge-primary {
@@ -210,10 +247,17 @@
 
   <div class="info-box">
     <p><strong>Nama Anak Didik:</strong> {{ $anakDidik ? $anakDidik->nama : '-' }}</p>
-    <p><strong>NIS:</strong> {{ $anakDidik && $anakDidik->nis ? $anakDidik->nis : '-' }}</p>
     <p><strong>Guru Fokus:</strong> {{ ($anakDidik && $anakDidik->guruFokus) ? $anakDidik->guruFokus->nama : '-' }}</p>
+    <p><strong>Bulan:</strong> {{ \Carbon\Carbon::parse($lp->tanggal)->locale('id')->translatedFormat('F Y') }}</p>
+    @if($ppi)
     <p><strong>Periode PPI:</strong> {{ $periodeMulai }} s/d {{ $periodeSelesai }}</p>
     <p><strong>Keterangan PPI:</strong> {{ $ppi->keterangan ?? '-' }}</p>
+    @endif
+  </div>
+
+  {{-- Program Aktif --}}
+  <div style="margin:28px 0 8px;border-top:2px solid #333;padding-top:14px;">
+    <h2 style="font-size:14pt;margin:0 0 10px;">Program Aktif Bulan Ini</h2>
   </div>
 
   @if(count($programData) > 0)
@@ -221,13 +265,11 @@
     <thead>
       <tr>
         <th width="4%">No</th>
-        <th width="12%">Kode</th>
-        <th width="18%">Nama Program</th>
-        <th width="10%">Kategori</th>
-        <th width="14%">Konsultan</th>
-        <th width="14%">Keterangan Program</th>
-        <th width="14%">Tujuan</th>
-        <th width="14%">Aktivitas</th>
+        <th width="10%">Kode</th>
+        <th width="22%">Nama Program</th>
+        <th width="12%">Kategori</th>
+        <th width="17%">Keterangan</th>
+        <th>Tujuan</th>
       </tr>
     </thead>
     <tbody>
@@ -254,26 +296,76 @@
           @endphp
           <span class="badge {{ $badgeClass }}">{{ $label }}</span>
         </td>
-        <td>
-          <strong>{{ $program['konsultan_nama'] ?? '-' }}</strong><br>
-          <small>{{ $program['konsultan_spesialisasi'] ?? '-' }}</small>
-        </td>
         <td>{{ $program['keterangan'] ?? '-' }}</td>
         <td>{{ $program['tujuan'] ?? '-' }}</td>
-        <td>{{ $program['aktivitas'] ?? '-' }}</td>
       </tr>
       @endforeach
     </tbody>
   </table>
   @else
-  <div class="no-data">Tidak ada program aktif untuk entri PPI ini.</div>
+  <div class="no-data">Tidak ada program aktif untuk bulan ini.</div>
   @endif
 
+  @foreach(['awal' => 'Awal', 'inti' => 'Inti', 'penutup' => 'Penutup'] as $key => $label)
+  <div class="section-title section-{{ $key }}">{{ $label }}</div>
+  @if($schedulesBySection[$key]->count())
+  <table>
+    <thead>
+      <tr>
+        <th width="5%">No</th>
+        <th width="18%">Waktu</th>
+        <th width="28%">Program</th>
+        <th>Keterangan / Aktivitas</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach($schedulesBySection[$key] as $i => $row)
+      <tr>
+        <td class="text-center">{{ $i + 1 }}</td>
+        <td>{{ \Carbon\Carbon::parse($row->jam_mulai)->format('H:i') }} &ndash; {{ \Carbon\Carbon::parse($row->jam_selesai)->format('H:i') }}</td>
+        <td>
+          @php
+          $programs = array_filter(array_map('trim', explode(',', $row->nama_program ?? '')));
+          @endphp
+          @forelse($programs as $prog)
+          @php
+          $cat = strtolower($programCategories[$prog] ?? '');
+          $bc = 'badge-secondary';
+          if ($cat === 'akademik') $bc = 'badge-primary';
+          elseif ($cat === 'bina diri') $bc = 'badge-success';
+          elseif ($cat === 'motorik') $bc = 'badge-info';
+          elseif ($cat === 'perilaku') $bc = 'badge-warning';
+          elseif ($cat === 'vokasi') $bc = 'badge-secondary';
+          @endphp
+          <span class="badge {{ $bc }}" style="display:block;margin-bottom:3px;white-space:normal;text-align:left;font-weight:normal;">{{ $prog }}</span>
+          @empty
+          <span class="text-muted">-</span>
+          @endforelse
+        </td>
+        <td>{{ $row->keterangan ?? '-' }}</td>
+      </tr>
+      @endforeach
+    </tbody>
+  </table>
+  @else
+  <div class="no-data">Tidak ada jadwal pada sesi ini.</div>
+  @endif
+  @endforeach
+
+  <!-- Refleksi Diri -->
+  <div class="section-title" style="margin-top:24px;background:#0f766e;color:#fff;">Refleksi Diri</div>
+  <table>
+    <tbody>
+      <tr style="height:120px;">
+        <td style="width:100%;"></td>
+      </tr>
+    </tbody>
+  </table>
+
   <div class="footer">
-    <div>Dokumen Lesson Plan ini dihasilkan dari program aktif pada tanggal pembuatan PPI.</div>
+    <div>Dokumen ini dibuat pada {{ now()->locale('id')->translatedFormat('d F Y, H:i') }}</div>
     <div style="margin-top:4px;">&copy; {{ now()->year }} R&amp;B Dev. All Rights Reserved.</div>
   </div>
-
 </body>
 
 </html>

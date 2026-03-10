@@ -222,9 +222,7 @@ Route::middleware(['auth'])->group(function () {
   // PPI Routes - Program Pembelajaran Individual (admin, guru & konsultan)
   Route::middleware(['auth', 'role:admin,guru,konsultan'])->group(function () {
     Route::get('ppi', [App\Http\Controllers\PPIController::class, 'index'])->name('ppi.index');
-    Route::get('ppi/create', [App\Http\Controllers\PPIController::class, 'create'])->name('ppi.create');
     Route::get('ppi/export-pdf', [App\Http\Controllers\PPIController::class, 'exportPdf'])->name('ppi.export-pdf');
-    Route::get('ppi/{id}/lesson-plan-pdf', [App\Http\Controllers\PPIController::class, 'exportLessonPlanPdf'])->name('ppi.lesson-plan-pdf');
     Route::post('ppi', [App\Http\Controllers\PPIController::class, 'store'])->name('ppi.store');
     Route::get('ppi/{id}', [App\Http\Controllers\PPIController::class, 'show'])->name('ppi.show');
     Route::post('ppi/request-access', [App\Http\Controllers\GuruAnakDidikController::class, 'requestAccess'])->name('ppi.request-access');
@@ -239,6 +237,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('guru-anak/approvals/{id}/reject', [App\Http\Controllers\GuruAnakDidikController::class, 'rejectRequest'])->name('guru-anak.approvals.reject');
     Route::put('guru-anak/approvals/{id}', [App\Http\Controllers\GuruAnakDidikController::class, 'updateApproval'])->name('guru-anak.approvals.update');
     Route::delete('guru-anak/approvals/{id}', [App\Http\Controllers\GuruAnakDidikController::class, 'destroyApproval'])->name('guru-anak.approvals.destroy');
+  });
+
+  // Lesson Plan: visible to admin and guru only
+  Route::middleware(['auth', 'role:admin,guru'])->group(function () {
+    Route::get('lesson-plan', [App\Http\Controllers\PPIController::class, 'lessonPlanIndex'])->name('lesson-plan.index');
+    Route::post('lesson-plan', [App\Http\Controllers\LessonPlanController::class, 'store'])->name('lesson-plan.store');
+    Route::get('lesson-plan/{id}/preview', [App\Http\Controllers\LessonPlanController::class, 'preview'])->name('lesson-plan.preview');
+    Route::get('lesson-plan/{id}/detail-json', [App\Http\Controllers\LessonPlanController::class, 'detailJson'])->name('lesson-plan.detail-json');
+    Route::get('lesson-plan/{id}/edit-json', [App\Http\Controllers\LessonPlanController::class, 'editJson'])->name('lesson-plan.edit-json');
+    Route::put('lesson-plan/{id}', [App\Http\Controllers\LessonPlanController::class, 'update'])->name('lesson-plan.update');
+    Route::delete('lesson-plan/{id}', [App\Http\Controllers\LessonPlanController::class, 'destroy'])->name('lesson-plan.destroy');
+    Route::get('lesson-plan/program-detail', [App\Http\Controllers\LessonPlanController::class, 'programDetail'])->name('lesson-plan.program-detail');
+    Route::get('lesson-plan/anak/{anakId}/riwayat', [App\Http\Controllers\LessonPlanController::class, 'riwayat'])->name('lesson-plan.riwayat');
   });
 
   // Absensi: CRUD for admin, guru

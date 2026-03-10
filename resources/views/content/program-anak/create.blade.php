@@ -55,32 +55,47 @@
           </div>
           <div class="col-md-12" id="daftarProgramAnakWrapper">
             <label class="form-label">Daftar Program Anak</label>
-            <div class="table-responsive">
-              <table class="table table-bordered align-middle" id="programItemsTable">
+            <div class="table-responsive" id="programTableWrapper">
+              <table class="table table-bordered align-middle mb-0" id="programItemsTable" style="table-layout:fixed">
                 <thead class="table-light">
                   <tr>
                     <th style="width:15%">Kode Program</th>
                     <th style="width:20%">Nama Program</th>
-                    <th style="width:35%">Tujuan</th>
-                    <th style="width:35%">Aktivitas</th>
+                    <th style="width:25%">Tujuan</th>
+                    <th style="width:25%">Aktivitas</th>
+                    @if(isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw))
+                    <th style="width:12%">Kategori</th>
+                    @endif
                     <th style="width:10%">Aksi</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="programItemsTbody">
                   <tr>
                     <td>
-                      <select name="program_items[0][kode_program]" class="form-select kode-select"></select>
+                      <select name="program_items[0][kode_program]" class="form-select kode-select" data-populated="false"></select>
                       <input type="hidden" name="program_items[0][program_konsultan_id]" class="program-konsultan-id">
                     </td>
                     <td><input type="text" name="program_items[0][nama_program]" class="form-control nama-input" required placeholder="Ketik nama untuk mencari..."></td>
                     <td><textarea name="program_items[0][tujuan]" class="form-control tujuan-input" rows="1" readonly required></textarea></td>
                     <td><textarea name="program_items[0][aktivitas]" class="form-control aktivitas-input" rows="1" readonly required></textarea></td>
+                    @if(isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw))
+                    <td>
+                      <select name="program_items[0][kategori]" class="form-select kategori-select">
+                        <option value="">Pilih Kategori</option>
+                        <option value="Akademik">Akademik</option>
+                        <option value="Bina Diri">Bina Diri</option>
+                        <option value="Motorik">Motorik</option>
+                        <option value="Perilaku">Basic Learning</option>
+                        <option value="Vokasi">Vokasi</option>
+                      </select>
+                    </td>
+                    @endif
                     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
                   </tr>
                 </tbody>
                 <!-- Tombol tambah baris di dalam tabel -->
                 <tr>
-                  <td colspan="4">
+                  <td colspan="{{ (isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw)) ? 5 : 4 }}">
                     <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="btnTambahBaris"><i class="ri-add-line"></i> Tambah Baris</button>
                   </td>
                 </tr>
@@ -92,11 +107,11 @@
           <div class="row mb-3 mt-2">
             <div class="col-md-6">
               <label for="periode_mulai" class="form-label">Periode Mulai</label>
-              <input type="date" name="periode_mulai" id="periode_mulai" class="form-control" required>
+              <input type="month" name="periode_mulai" id="periode_mulai" class="form-control" required>
             </div>
             <div class="col-md-6">
               <label for="periode_selesai" class="form-label">Periode Selesai</label>
-              <input type="date" name="periode_selesai" id="periode_selesai" class="form-control" required>
+              <input type="month" name="periode_selesai" id="periode_selesai" class="form-control" required>
             </div>
           </div>
           <!-- Kolom khusus untuk konsultan psikologi -->
@@ -151,6 +166,42 @@
     </div>
   </div>
 </div>
+{{-- CSS: wrapper scrollable dengan sticky thead --}}
+<style>
+  #programTableWrapper {
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  #programItemsTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #f8f9fa;
+  }
+</style>
+{{-- Template baris program anak, di-parse sekali oleh browser, di-clone tiap tambah baris --}}
+<template id="rowTemplate">
+  <tr>
+    <td class="kode-td"><input type="hidden" name="program_items[ROWIDX][program_konsultan_id]" class="program-konsultan-id"></td>
+    <td><input type="text" name="program_items[ROWIDX][nama_program]" class="form-control nama-input" required placeholder="Ketik nama untuk mencari..."></td>
+    <td><textarea name="program_items[ROWIDX][tujuan]" class="form-control tujuan-input" rows="1" readonly required></textarea></td>
+    <td><textarea name="program_items[ROWIDX][aktivitas]" class="form-control aktivitas-input" rows="1" readonly required></textarea></td>
+    @if(isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw))
+    <td>
+      <select name="program_items[ROWIDX][kategori]" class="form-select kategori-select">
+        <option value="">Pilih Kategori</option>
+        <option value="Akademik">Akademik</option>
+        <option value="Bina Diri">Bina Diri</option>
+        <option value="Motorik">Motorik</option>
+        <option value="Perilaku">Basic Learning</option>
+        <option value="Vokasi">Vokasi</option>
+      </select>
+    </td>
+    @endif
+    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
+  </tr>
+</template>
 @push('page-script')
 <script>
   // program master templates grouped by konsultan_id
@@ -162,21 +213,48 @@
   }
 
   let barisIdx = 1;
+  const isPendidikan = @json(isset($currentKonsultanSpesRaw) && (bool) preg_match('/pendidikan/i', $currentKonsultanSpesRaw));
 
-  function buildKodeSelectHtml(idx) {
-    const konsultanId = document.getElementById('konsultan_id').value || '';
-    const items = (programMastersByKonsultan[konsultanId] || []);
-    let html = `<select name="program_items[${idx}][kode_program]" class="form-select kode-select"><option value="">Pilih Kode</option>`;
+  // Opsi kode-select diisi secara lazy (hanya saat user buka select)
+  // sehingga cloneNode hanya menduplikasi 1 option, bukan ratusan
+  let _kodeItems = null;
+
+  function getKodeItems() {
+    if (!_kodeItems) {
+      const konsultanId = document.getElementById('konsultan_id').value || '';
+      _kodeItems = programMastersByKonsultan[konsultanId] || [];
+    }
+    return _kodeItems;
+  }
+
+  function buildKodeSelectEl(idx) {
+    const sel = document.createElement('select');
+    sel.className = 'form-select kode-select';
+    sel.name = `program_items[${idx}][kode_program]`;
+    sel.dataset.populated = 'false';
+    const defOpt = document.createElement('option');
+    defOpt.value = '';
+    defOpt.textContent = 'Pilih Kode';
+    sel.appendChild(defOpt);
+    return sel;
+  }
+
+  function populateKodeSelect(sel) {
+    if (sel.dataset.populated === 'true') return;
+    sel.dataset.populated = 'true';
+    const items = getKodeItems();
+    const frag = document.createDocumentFragment();
     items.forEach(item => {
-      const nama = escapeHtml(item.nama_program || item.nama || '');
-      const tujuan = escapeHtml(item.tujuan || '');
-      const aktivitas = escapeHtml(item.aktivitas || '');
-      const kode = escapeHtml(item.kode_program || '');
-      const id = item.id || '';
-      html += `<option value="${kode}" data-id="${id}" data-nama="${nama}" data-tujuan="${tujuan}" data-aktivitas="${aktivitas}">${kode} - ${nama}</option>`;
+      const opt = document.createElement('option');
+      opt.value = item.kode_program || '';
+      opt.dataset.id = item.id || '';
+      opt.dataset.nama = item.nama_program || item.nama || '';
+      opt.dataset.tujuan = item.tujuan || '';
+      opt.dataset.aktivitas = item.aktivitas || '';
+      opt.textContent = (item.kode_program || '') + ' - ' + (item.nama_program || item.nama || '');
+      frag.appendChild(opt);
     });
-    html += '</select>';
-    return html;
+    sel.appendChild(frag);
   }
 
   // (removed nama-select population — Nama Program is a plain input)
@@ -186,17 +264,27 @@
     return;
   }
 
+  // Clone baris dari <template> (sudah di-parse sekali saat page load, jauh lebih cepat)
+  function cloneRowTemplate(idx) {
+    const tmpl = document.getElementById('rowTemplate');
+    const tr = tmpl.content.cloneNode(true).querySelector('tr');
+    tr.querySelectorAll('[name]').forEach(el => {
+      el.name = el.name.replace(/ROWIDX/g, idx);
+    });
+    return tr;
+  }
+
+  const programItemsTbody = document.getElementById('programItemsTbody');
+
   document.getElementById('btnTambahBaris').addEventListener('click', function() {
-    const tbody = document.querySelector('#programItemsTable tbody');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-    <td>${buildKodeSelectHtml(barisIdx)}<input type="hidden" name="program_items[${barisIdx}][program_konsultan_id]" class="program-konsultan-id"></td>
-    <td><input type="text" name="program_items[${barisIdx}][nama_program]" class="form-control nama-input" required placeholder="Ketik nama untuk mencari..."></td>
-    <td><textarea name="program_items[${barisIdx}][tujuan]" class="form-control tujuan-input" rows="1" readonly required></textarea></td>
-    <td><textarea name="program_items[${barisIdx}][aktivitas]" class="form-control aktivitas-input" rows="1" readonly required></textarea></td>
-    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
-  `;
-    tbody.appendChild(tr);
+    const tr = cloneRowTemplate(barisIdx);
+    // Sisipkan kode-select ke elemen detached, lalu append sekali ke DOM (1x reflow)
+    const kodeTd = tr.querySelector('.kode-td');
+    kodeTd.insertBefore(buildKodeSelectEl(barisIdx), kodeTd.firstChild);
+    programItemsTbody.appendChild(tr);
+    // Scroll wrapper ke baris terbaru
+    const wrapper = document.getElementById('programTableWrapper');
+    wrapper.scrollTop = wrapper.scrollHeight;
     // Refresh nama selects for the new row
     refreshNamaOptions();
     // If the program list wrapper is hidden, disable newly added inputs to avoid browser validation errors
@@ -211,15 +299,21 @@
   });
 
   // delete row
-  document.querySelector('#programItemsTable').addEventListener('click', function(e) {
+  programItemsTbody.addEventListener('click', function(e) {
     if (e.target.closest('.btn-hapus-baris')) {
       const tr = e.target.closest('tr');
-      if (tr.parentNode.children.length > 1) tr.remove();
+      if (programItemsTbody.children.length > 1) tr.remove();
     }
   });
 
+  // Populate kode-select secara lazy saat user pertama kali membukanya
+  programItemsTbody.addEventListener('mousedown', function(e) {
+    const sel = e.target.closest('.kode-select');
+    if (sel) populateKodeSelect(sel);
+  });
+
   // when a kode-select changes, autofill nama/tujuan/aktivitas if they are empty
-  document.querySelector('#programItemsTable').addEventListener('change', function(e) {
+  programItemsTbody.addEventListener('change', function(e) {
     if (e.target.classList.contains('kode-select')) {
       const sel = e.target;
       const tr = sel.closest('tr');
@@ -242,15 +336,18 @@
   });
 
   // allow ArrowDown from nama-input to focus kode-select; Enter will perform search/select
-  document.querySelector('#programItemsTable').addEventListener('keydown', function(e) {
+  programItemsTbody.addEventListener('keydown', function(e) {
     const el = e.target;
     if (!el || !el.classList.contains('nama-input')) return;
-    // ArrowDown: focus kode select
+    // ArrowDown: focus kode select (populate dulu sebelum fokus)
     if (e.key === 'ArrowDown') {
       const tr = el.closest('tr');
       if (!tr) return;
       const kodeSel = tr.querySelector('.kode-select');
-      if (kodeSel) kodeSel.focus();
+      if (kodeSel) {
+        populateKodeSelect(kodeSel);
+        kodeSel.focus();
+      }
       return;
     }
     // Enter: perform selection based on current input value
@@ -261,6 +358,8 @@
       if (!tr) return;
       const kodeSel = tr.querySelector('.kode-select');
       if (!kodeSel) return;
+      // Pastikan opsi sudah dimuat sebelum mencari
+      populateKodeSelect(kodeSel);
       if (!q) {
         kodeSel.selectedIndex = 0;
         kodeSel.dispatchEvent(new Event('change', {
@@ -309,7 +408,7 @@
   });
 
   // clear not-found message when user types again in nama-input
-  document.querySelector('#programItemsTable').addEventListener('input', function(e) {
+  programItemsTbody.addEventListener('input', function(e) {
     const el = e.target;
     if (!el || !el.classList.contains('nama-input')) return;
     const tr = el.closest('tr');

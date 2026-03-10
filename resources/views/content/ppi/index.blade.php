@@ -22,16 +22,6 @@
               style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
               <i class="ri-file-pdf-line" style="font-size:1.7em;"></i>
             </button>
-
-            <!-- Tombol tambah PPI responsif -->
-            <a href="{{ route('ppi.create') }}"
-              class="btn btn-primary d-inline-flex d-sm-none align-items-center justify-content-center p-0"
-              style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
-              <i class="ri-add-line" style="font-size:1.7em;"></i>
-            </a>
-            <a href="{{ route('ppi.create') }}" class="btn btn-primary d-none d-sm-inline-flex align-items-center">
-              <i class="ri-add-line me-2"></i>Tambah PPI
-            </a>
           </div>
           @endif
         </div>
@@ -100,7 +90,7 @@
               <td>
                 <div class="d-flex gap-2 align-items-center">
                   @if(isset($isKonsultanPendidikan) && $isKonsultanPendidikan)
-                  <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-info" data-bs-toggle="modal"
                     data-bs-target="#riwayatPpiModal" data-anak-didik-id="{{ $anak->id }}"
                     data-is-fokus="{{ isset($isFokusMap[$anak->id]) && $isFokusMap[$anak->id] ? '1' : '0' }}"
                     onclick="loadRiwayatPpi(this)" title="Riwayat" aria-label="Riwayat">
@@ -108,7 +98,7 @@
                   </button>
                   @else
                   @if(isset($accessMap[$anak->id]) && $accessMap[$anak->id])
-                  <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-info" data-bs-toggle="modal"
                     data-bs-target="#riwayatPpiModal" data-anak-didik-id="{{ $anak->id }}"
                     data-is-fokus="{{ isset($isFokusMap[$anak->id]) && $isFokusMap[$anak->id] ? '1' : '0' }}"
                     onclick="loadRiwayatPpi(this)" title="Riwayat PPI">
@@ -466,6 +456,16 @@
             return `${dayName}, ${(''+day).padStart(2,'0')} ${month} ${year}`;
           }
 
+          function formatMonthYearIndo(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr.replace(' ', 'T'));
+            if (isNaN(d)) return dateStr;
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
+              'September', 'Oktober', 'November', 'Desember'
+            ];
+            return `${months[d.getMonth()]} ${d.getFullYear()}`;
+          }
+
           let html = '';
           // store riwayat globally for edit operations and build program options
           window._ppiRiwayat = res.riwayat || [];
@@ -480,72 +480,111 @@
             }
           });
           window._ppiProgramOptions = Array.from(progSet);
-          res.riwayat.forEach(item => {
-            // minimal card: only show day/date and action buttons; details are lazy-loaded
-            html +=
-              `
-              <div class="mb-3 p-3 border rounded shadow-sm">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="small text-muted">${formatDateIndo(item.created_at)}</div>
-                  </div>
-                  <div class="text-end">
-                    <!-- Desktop: show individual small buttons -->
-                    <div class="d-none d-sm-inline-flex align-items-center">
-                      <button class="btn btn-sm btn-outline-info me-1" onclick="viewPpiDetail(this)" data-ppi-id="${item.id}" title="Lihat"><i class='ri-eye-line'></i></button>
-                      <button class="btn btn-sm btn-outline-danger me-1" onclick="printPpiLessonPlan(${item.id})" title="Cetak Lesson Plan"><i class='ri-file-pdf-line'></i></button>
-                      `;
-            if (isFokus) {
-              html += `
-                      <button class="btn btn-sm btn-outline-secondary me-1" onclick="editPpi(this)" data-ppi-id="${item.id}" title="Edit"><i class='ri-edit-2-line'></i></button>
-                      <button class="btn btn-sm btn-outline-danger" onclick="deletePpi(${item.id})" title="Hapus"><i class='ri-delete-bin-line'></i></button>
-                      `;
-            } else if (canApprove && item.status !== 'disetujui' && currentUserRole !== 'admin') {
-              // show approve button only when user is not admin
-              html += `
-                      <button class="btn btn-sm btn-success me-1" onclick="approvePpi(${item.id})" title="Setujui"><i class='ri-check-line'></i></button>
-                      `;
-            } else {
-              if (item.status) html += ` <span class="badge bg-secondary me-1">${item.status}</span> `;
-            }
-            // close desktop buttons container
-            html += `
-                    </div>
-                    <!-- Mobile: condensed dropdown (three-dot) -->
-                    <div class="d-inline-flex d-sm-none">
-                      <div class="dropdown">
-                        <button class="btn btn-sm p-0 border-0 bg-transparent" type="button" id="ppiActionsToggle${item.id}" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:none;">
-                          <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="ppiActionsToggle${item.id}">
-                          <li><button class="dropdown-item" type="button" onclick="viewPpiDetail(this)" data-ppi-id="${item.id}">Lihat</button></li>
-                          <li><button class="dropdown-item" type="button" onclick="printPpiLessonPlan(${item.id})">Cetak Lesson Plan</button></li>
-                          `;
-            if (isFokus) {
-              html += `
-                          <li><button class="dropdown-item" type="button" onclick="editPpi(this)" data-ppi-id="${item.id}">Edit</button></li>
-                          <li><button class="dropdown-item text-danger" type="button" onclick="deletePpi(${item.id})">Hapus</button></li>
-                          `;
-            } else if (canApprove && item.status !== 'disetujui' && currentUserRole !== 'admin') {
-              html += `
-                          <li><button class="dropdown-item" type="button" onclick="approvePpi(${item.id})">Setujui</button></li>
-                          `;
-            } else {
-              if (item.status) html += ` <li><span class="dropdown-item-text">Status: ${item.status}</span></li> `;
-            }
-            html += `
-                        </ul>
-                      </div>
-                    </div>
-                    `;
 
-            html += `
-                  </div>
-                </div>
-                <div id="ppiDetailContainer${item.id}" class="ppi-detail-container mt-2 d-none"></div>
-              </div>`;
+          // Group riwayat by formatted period label (so minor date differences in same month still merge)
+          const ppiPeriodGroups = new Map();
+          res.riwayat.forEach(item => {
+            const pm = (item.periode_mulai || '').toString().split('T')[0].split(' ')[0];
+            const ps = (item.periode_selesai || '').toString().split('T')[0].split(' ')[0];
+            const pmLabel = pm ? formatMonthYearIndo(pm) : '';
+            const psLabel = ps ? formatMonthYearIndo(ps) : '';
+            const pk = pmLabel + '|' + psLabel;
+            if (!ppiPeriodGroups.has(pk)) ppiPeriodGroups.set(pk, {
+              periodMulaiRaw: pm,
+              periodSelesaiRaw: ps,
+              pmLabel,
+              psLabel,
+              items: []
+            });
+            ppiPeriodGroups.get(pk).items.push(item);
           });
+          // Sort periods newest first (by periode_selesai label desc)
+          const sortedPpiPeriodKeys = Array.from(ppiPeriodGroups.keys()).sort((a, b) => {
+            const aEnd = ppiPeriodGroups.get(a).periodSelesaiRaw || ppiPeriodGroups.get(a).periodMulaiRaw || '';
+            const bEnd = ppiPeriodGroups.get(b).periodSelesaiRaw || ppiPeriodGroups.get(b).periodMulaiRaw || '';
+            return bEnd.localeCompare(aEnd);
+          });
+
+          sortedPpiPeriodKeys.forEach(pk => {
+            const {
+              pmLabel,
+              psLabel,
+              items: pgItems
+            } = ppiPeriodGroups.get(pk);
+            const periodLabel = (pmLabel || psLabel) ?
+              `${pmLabel || psLabel} &ndash; ${psLabel || pmLabel}` :
+              'Tanpa Periode';
+
+            // Collect all program items oldest-first so older programs are not shadowed by dedup
+            const seenPrograms = new Set();
+            const allItems = [];
+            [...pgItems].reverse().forEach(ppiEntry => {
+              (ppiEntry.items || []).forEach(it => {
+                const key = (it.nama_program || '').trim().toLowerCase();
+                if (key && !seenPrograms.has(key)) {
+                  seenPrograms.add(key);
+                  allItems.push(it);
+                }
+              });
+            });
+
+            // Group by kategori
+            const katGroups = new Map();
+            allItems.forEach(it => {
+              const kat = (it.kategori && it.kategori.trim()) ? it.kategori.trim() : 'Lainnya';
+              if (!katGroups.has(kat)) katGroups.set(kat, []);
+              katGroups.get(kat).push(it);
+            });
+
+            const badgeMap = {
+              'akademik': 'bg-primary',
+              'bina diri': 'bg-success',
+              'motorik': 'bg-warning text-dark',
+              'perilaku': 'bg-danger',
+              'vokasi': 'bg-secondary',
+            };
+
+            let programsHtml = '';
+            katGroups.forEach((katItems, kat) => {
+              const katLower = kat.toLowerCase();
+              const badgeClass = badgeMap[katLower] || 'bg-info';
+              const displayLabel = katLower === 'perilaku' ? 'Basic Learning' : kat;
+              programsHtml += `<div class="mt-2 mb-1"><span class="badge ${badgeClass}">${displayLabel}</span></div>`;
+              programsHtml += `<ol class="mb-2 ps-3">`;
+              katItems.forEach(it => {
+                const progName = (it.nama_program || '').trim();
+                const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+                const isActiveThisMonth = Array.isArray(it.active_months) && it.active_months.includes(currentMonth);
+                const hasAnyLessonPlan = Array.isArray(it.active_months) && it.active_months.length > 0;
+                const dot = isActiveThisMonth ?
+                  `<span title="Dipilih di Lesson Plan bulan ini" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#28a745;flex-shrink:0;"></span>` :
+                  (hasAnyLessonPlan ?
+                    `<span title="Pernah dipilih di Lesson Plan" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6c757d;flex-shrink:0;"></span>` :
+                    '');
+                programsHtml += `<li class="small fw-bold" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">${progName}${dot}</li>`;
+              });
+              programsHtml += `</ol>`;
+            });
+
+            const periodKey = pk.replace(/[^a-z0-9]/gi, '_');
+            html += `<li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-center gap-2">
+                <div class="fw-semibold">Periode: ${periodLabel}</div>
+                <button class="btn btn-sm btn-icon btn-outline-info flex-shrink-0" onclick="togglePpiPrograms('${periodKey}')" title="Lihat Program"><i class='ri-eye-line'></i></button>
+              </div>
+              <div id="ppiPrograms_${periodKey}" class="d-none mt-2">${programsHtml || '<div class=\'small text-muted\'>Tidak ada program.</div>'}</div>
+            </li>`;
+            pgItems.forEach(item => {
+              html += `<div id="ppiDetailContainer${item.id}" class="ppi-detail-container d-none"></div>`;
+            });
+          });
+          html = `<ul class="list-group">${html}</ul>`;
           listDiv.innerHTML = html;
+          // toggle program list visibility per periode
+          window.togglePpiPrograms = function(periodKey) {
+            const el = document.getElementById('ppiPrograms_' + periodKey);
+            if (el) el.classList.toggle('d-none');
+          };
           // initialize bootstrap tooltips for dynamically added tooltip buttons inside the riwayat list
           try {
             Array.from(listDiv.querySelectorAll('[data-bs-toggle="tooltip"]')).forEach(el => new bootstrap.Tooltip(el));
@@ -602,11 +641,6 @@
           alert(res.message || 'Gagal menyetujui');
         }
       }).catch(() => alert('Terjadi kesalahan jaringan'));
-    }
-
-    window.printPpiLessonPlan = function(ppiId) {
-      if (!ppiId) return;
-      window.open('/ppi/' + encodeURIComponent(ppiId) + '/lesson-plan-pdf', '_blank');
     }
 
     window.viewPpiDetail = async function(btn, id) {
@@ -680,13 +714,17 @@
               // determine aktif checked state (support 1/0, true/false, '1')
               const wajibChecked = (item.aktif == 1 || item.aktif === true || item.aktif === '1') ? 'checked' : '';
               let toggleHtml = '';
-              if (window.CURRENT_USER_ROLE === 'admin' || window.CURRENT_USER_ROLE === 'guru') {
+              if (window.CURRENT_USER_ROLE === 'admin') {
                 toggleHtml = `
                   <div class="d-inline-flex align-items-center ms-2">
                     <div class="form-check form-switch m-0">
                       <input class="form-check-input ppi-wajib-toggle" type="checkbox" data-item-id="${item.id}" ${wajibChecked} aria-label="Wajib">
                     </div>
                   </div>`;
+              } else if (window.CURRENT_USER_ROLE === 'guru') {
+                if (item.aktif == 1 || item.aktif === true || item.aktif === '1') {
+                  toggleHtml = `<span class="ms-2" style="display:inline-block;width:12px;height:12px;border-radius:50%;background-color:#198754;flex-shrink:0;" title="Aktif"></span>`;
+                }
               }
               const rightHtml = toggleHtml || '';
 

@@ -281,17 +281,21 @@
               const dates = historyIndex[keyId] || historyIndex[nameKey2] || [];
               const nameKeyLookup = normalizeProgramName(name || '');
               const hasScore = scoreIndex && typeof scoreIndex[nameKeyLookup] !== 'undefined';
-              const scoreText = hasScore ? (function() {
-                const s = scoreIndex[nameKeyLookup];
-                return 'Skor: ' + (Number.isInteger(s) ? s : (Math.round(s * 10) / 10));
-              })() : null;
-              const metaHtml = hasScore ? `<div class="text-muted small">${scoreText}</div>` : `<span class="badge bg-warning text-dark" title="Tidak ada penilaian pada program ini."><i class="ri-alert-line me-1"></i><span class="d-inline d-sm-none">Tidak ada penilaian</span><span class="d-none d-sm-inline">Tidak ada penilaian pada program ini.</span></span>`;
+              const scoreVal = hasScore ? scoreIndex[nameKeyLookup] : null;
+              const scoreText = hasScore ? ('Skor: ' + (Number.isInteger(scoreVal) ? scoreVal : (Math.round(scoreVal * 10) / 10))) : null;
+              const metaHtml = hasScore ?
+                `<div class="text-muted small">${scoreText}</div>` :
+                `<span class="badge bg-warning text-dark" title="Tidak ada penilaian pada program ini."><i class="ri-alert-line me-1"></i><span class="d-inline d-sm-none">Tidak ada penilaian</span><span class="d-none d-sm-inline">Tidak ada penilaian pada program ini.</span></span>`;
+              const starHtml = (scoreVal == 4) ? `<i class="ri-star-fill me-2" style="color:#f59e0b;font-size:1.1em;flex-shrink:0"></i>` : '';
               const pid = String(p.nama_program || p.id || '').replace(/'/g, "\\'");
               html += `
                 <div class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="fw-semibold">${name}</div>
-                    ${metaHtml}
+                  <div class="d-flex align-items-start">
+                    ${starHtml}
+                    <div>
+                      <div class="fw-semibold">${name}</div>
+                      ${metaHtml}
+                    </div>
                   </div>
                   <div>
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectProgramAndClose(${anakDidikId}, '${pid}')" title="Lihat"><i class="ri-bar-chart-line"></i></button>
@@ -352,16 +356,20 @@
                   const dates = historyIndex[keyId] || historyIndex[nameKey3] || [];
                   const nameKeyNorm = normalizeProgramName(name || '');
                   const hasScore = scoreIndex && typeof scoreIndex[nameKeyNorm] !== 'undefined';
-                  const metaHtml = hasScore ? (function() {
-                    const s = scoreIndex[nameKeyNorm];
-                    return `<div class="text-muted small">Skor: ${Number.isInteger(s) ? s : (Math.round(s * 10) / 10)}</div>`;
-                  })() : `<span class="badge bg-warning text-dark" title="Tidak ada penilaian pada program ini."><i class="ri-alert-line me-1"></i><span class="d-inline d-sm-none">Tidak ada penilaian</span><span class="d-none d-sm-inline">Tidak ada penilaian pada program ini.</span></span>`;
+                  const scoreValFb = hasScore ? scoreIndex[nameKeyNorm] : null;
+                  const metaHtml = hasScore ?
+                    `<div class="text-muted small">Skor: ${Number.isInteger(scoreValFb) ? scoreValFb : (Math.round(scoreValFb * 10) / 10)}</div>` :
+                    `<span class="badge bg-warning text-dark" title="Tidak ada penilaian pada program ini."><i class="ri-alert-line me-1"></i><span class="d-inline d-sm-none">Tidak ada penilaian</span><span class="d-none d-sm-inline">Tidak ada penilaian pada program ini.</span></span>`;
+                  const starHtmlFb = (scoreValFb == 4) ? `<i class="ri-star-fill me-2" style="color:#f59e0b;font-size:1.1em;flex-shrink:0"></i>` : '';
                   const pid = String(p.nama_program || p.id || '').replace(/'/g, "\\'");
                   html += `
                 <div class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <div class="fw-semibold">${name}</div>
-                    ${metaHtml}
+                  <div class="d-flex align-items-start">
+                    ${starHtmlFb}
+                    <div>
+                      <div class="fw-semibold">${name}</div>
+                      ${metaHtml}
+                    </div>
                   </div>
                   <div>
                     <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectProgramAndClose(${anakDidikId}, '${pid}')" title="Lihat"><i class="ri-bar-chart-line"></i></button>
@@ -524,12 +532,12 @@
                 <div class="d-flex gap-2 align-items-center">
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-info btn-riwayat"
+                    class="btn btn-sm btn-icon btn-outline-info btn-riwayat"
                     data-anak-id="{{ $assessment->anakDidik->id ?? 0 }}"
                     data-anak-name="{{ addslashes($assessment->anakDidik->nama ?? '-') }}"
                     title="Riwayat Penilaian"
                     aria-label="Riwayat Penilaian">
-                    <i class="ri-history-line" style="font-size:1.1rem"></i>
+                    <i class="ri-history-line"></i>
                   </button>
                 </div>
               </td>

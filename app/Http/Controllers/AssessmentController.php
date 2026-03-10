@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\PpiItem;
 use App\Models\Program;
+use App\Models\LessonPlan;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -344,6 +345,42 @@ class AssessmentController extends Controller
         ->orWhereRaw('LOWER(kategori) LIKE ?', ["%{$lorig}%"]);
     });
 
+    // If tanggal provided, filter programs to only those in the lesson plan for that month
+    $noLessonPlan = false;
+    if ($tanggalQuery && !$includeInactive) {
+      try {
+        $lpDate = Carbon::parse($tanggalQuery);
+        $lp = LessonPlan::where('anak_didik_id', $anakId)
+          ->whereYear('tanggal', $lpDate->year)
+          ->whereMonth('tanggal', $lpDate->month)
+          ->with('schedules')
+          ->first();
+
+        if ($lp) {
+          $lpPrograms = $lp->schedules
+            ->pluck('nama_program')
+            ->filter()
+            ->flatMap(fn($np) => array_filter(array_map('trim', explode(',', $np))))
+            ->unique()
+            ->values()
+            ->toArray();
+
+          if (!empty($lpPrograms)) {
+            $itemsQuery->whereIn('nama_program', $lpPrograms);
+          } else {
+            // Lesson plan exists but has no programs in schedules → show nothing
+            $itemsQuery->whereRaw('0 = 1');
+          }
+        } else {
+          // No lesson plan for that month → show nothing and signal frontend
+          $noLessonPlan = true;
+          $itemsQuery->whereRaw('0 = 1');
+        }
+      } catch (\Throwable $e) {
+        // Ignore date parse errors, use default aktif=1 filter
+      }
+    }
+
     $items = $itemsQuery->get();
 
     // If `programs` table exists, try to ensure a Program record; otherwise return names from PPI items
@@ -409,7 +446,7 @@ class AssessmentController extends Controller
       }
     }
 
-    return response()->json(['success' => true, 'programs' => $result]);
+    return response()->json(['success' => true, 'programs' => $result, 'no_lesson_plan' => $noLessonPlan]);
   }
 
   /**

@@ -110,7 +110,7 @@
 
     .badge-warning {
       background-color: #ffc107;
-      color: #000;
+      color: #212529;
     }
 
     .badge-danger {
@@ -310,6 +310,7 @@
           $kategoriLabel = ucfirst(str_replace('_', ' ', $kategori));
 
           switch(strtolower($kategori)) {
+          case 'bina diri':
           case 'bina_diri':
           $badgeClass = 'badge-success';
           $kategoriLabel = 'Bina Diri';
@@ -319,11 +320,12 @@
           $kategoriLabel = 'Akademik';
           break;
           case 'motorik':
-          $badgeClass = 'badge-info';
+          $badgeClass = 'badge-warning';
           $kategoriLabel = 'Motorik';
           break;
           case 'perilaku':
-          $badgeClass = 'badge-warning';
+          case 'basic learning':
+          $badgeClass = 'badge-danger';
           $kategoriLabel = 'Basic Learning';
           break;
           case 'vokasi':

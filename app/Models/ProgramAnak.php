@@ -14,6 +14,7 @@ class ProgramAnak extends Model
     'nama_program',
     'tujuan',
     'aktivitas',
+    'kategori',
     'periode_mulai',
     'periode_selesai',
     'status',

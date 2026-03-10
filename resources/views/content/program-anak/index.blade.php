@@ -346,7 +346,7 @@
           });
         } catch (e) {}
         let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny || canViewAny) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>KATEGORI</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny || canViewAny) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
         data.programs.forEach(p => {
           const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
           // determine if current user may edit/delete or only view this program
@@ -367,9 +367,11 @@
             actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>`);
           }
           const actionsHtml = actionsParts.length ? `<div class="d-flex gap-1 pa-actions">${actionsParts.join('')}</div>` : '';
+          const kategoriLabel = p.kategori === 'Perilaku' ? 'Basic Learning' : (p.kategori || '-');
           html += `<tr>
             <td>${p.kode_program || '-'}</td>
             <td>${p.nama_program || '-'}</td>
+            <td>${kategoriLabel}</td>
             <td>${p.tujuan || '-'}</td>
             <td>${p.aktivitas || '-'}</td>
             <td>${konsultanName}</td>`;
@@ -404,7 +406,7 @@
   }
 
   // Show programs from a specific konsultan for an anak on a given date (YYYY-MM-DD)
-  window.showProgramsByKonsultanAndDate = function(anakDidikId, konsultanId, dateKey) {
+  window.showProgramsByKonsultanAndDate = function(anakDidikId, konsultanId, dateKey, periodMulai, periodSelesai, datesArr) {
     if (!konsultanId) {
       // fallback: show all programs for anak
       return window.showAllProgramsForAnak(anakDidikId);
@@ -414,7 +416,11 @@
     pushModalAndShow(modalEl);
     const listDiv = document.getElementById('groupProgramList');
     listDiv.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
-    const url = `/program-anak/riwayat-program/${anakDidikId}/konsultan/${konsultanId}/date/${encodeURIComponent(dateKey)}`;
+    let url = `/program-anak/riwayat-program/${anakDidikId}/konsultan/${konsultanId}/date/${encodeURIComponent(dateKey)}`;
+    const qp = [];
+    if (periodMulai) qp.push('periode_mulai=' + encodeURIComponent(periodMulai));
+    if (periodSelesai) qp.push('periode_selesai=' + encodeURIComponent(periodSelesai));
+    if (qp.length) url += '?' + qp.join('&');
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -437,7 +443,9 @@
         window._lastGroup = {
           anakDidikId: anakDidikId,
           konsultanId: konsultanId,
-          dateKey: dateKey
+          dateKey: dateKey,
+          periodMulai: periodMulai || null,
+          periodSelesai: periodSelesai || null
         };
         // initialize Sarankan Terapi toggle from server-provided is_suggested flag
         try {
@@ -478,34 +486,59 @@
             }
           });
         } catch (e) {}
-        let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny2 || canViewAny2) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        const colCount = (canEditAny2 || canViewAny2) ? 7 : 6;
+        // group programs by created_at date
+        const dateGroups2 = new Map();
         data.programs.forEach(p => {
-          const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
-          let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
-          let canEdit = false;
-          let canView = false;
-          if (window.currentUser) {
-            if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
-            if (['admin', 'guru', 'terapis'].includes(String(window.currentUser.role))) canView = true;
+          const dk = p.created_at ? (p.created_at.indexOf('T') !== -1 ? p.created_at.split('T')[0] : p.created_at.split(' ')[0]) : '';
+          if (!dateGroups2.has(dk)) dateGroups2.set(dk, []);
+          dateGroups2.get(dk).push(p);
+        });
+        const sortedDateKeys2 = Array.from(dateGroups2.keys()).sort((a, b) => b.localeCompare(a));
+        let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
+        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>KATEGORI</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny2 || canViewAny2) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        sortedDateKeys2.forEach(dk => {
+          if (dk) {
+            const dt = new Date(dk + 'T00:00:00');
+            const hari = dt.toLocaleDateString('id-ID', {
+              weekday: 'long'
+            });
+            const tgl = dt.toLocaleDateString('id-ID', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            });
+            html += `<tr class="table-primary"><td colspan="${colCount}" class="fw-semibold"><i class="ri-calendar-line me-1"></i>${hari}, ${tgl}</td></tr>`;
           }
-          let actionsParts = [];
-          if (canView || canEdit) {
-            actionsParts.push(`<button type="button" class="btn btn-sm btn-icon btn-outline-info" title="Lihat" onclick="window.showDetailProgram(${p.id})"><i class="ri-eye-line"></i></button>`);
-          }
-          if (canEdit) {
-            actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button>`);
-            actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>`);
-          }
-          const actionsHtml = actionsParts.length ? `<div class="d-flex gap-1 pa-actions">${actionsParts.join('')}</div>` : '';
-          html += `<tr>
-            <td>${p.kode_program || '-'}</td>
-            <td>${p.nama_program || '-'}</td>
-            <td>${p.tujuan || '-'}</td>
-            <td>${p.aktivitas || '-'}</td>
-            <td>${konsultanName}</td>`;
-          if (canEditAny2 || canViewAny2) html += `<td>${actionsHtml}</td>`;
-          html += `</tr>`;
+          dateGroups2.get(dk).forEach(p => {
+            const konsultanName = p.konsultan ? p.konsultan.nama : '-';
+            let konsultanIdOfRow = (p.konsultan && p.konsultan.id) ? p.konsultan.id : (p.konsultan_id || null);
+            let canEdit = false;
+            let canView = false;
+            if (window.currentUser) {
+              if (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanIdOfRow)) canEdit = true;
+              if (['admin', 'guru', 'terapis'].includes(String(window.currentUser.role))) canView = true;
+            }
+            let actionsParts = [];
+            if (canView || canEdit) {
+              actionsParts.push(`<button type="button" class="btn btn-sm btn-icon btn-outline-info" title="Lihat" onclick="window.showDetailProgram(${p.id})"><i class="ri-eye-line"></i></button>`);
+            }
+            if (canEdit) {
+              actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button>`);
+              actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>`);
+            }
+            const actionsHtml = actionsParts.length ? `<div class="d-flex gap-1 pa-actions">${actionsParts.join('')}</div>` : '';
+            const kategoriLabel2 = p.kategori === 'Perilaku' ? 'Basic Learning' : (p.kategori || '-');
+            html += `<tr>
+              <td>${p.kode_program || '-'}</td>
+              <td>${p.nama_program || '-'}</td>
+              <td>${kategoriLabel2}</td>
+              <td>${p.tujuan || '-'}</td>
+              <td>${p.aktivitas || '-'}</td>
+              <td>${konsultanName}</td>`;
+            if (canEditAny2 || canViewAny2) html += `<td>${actionsHtml}</td>`;
+            html += `</tr>`;
+          });
         });
         html += '</tbody></table></div>';
         listDiv.innerHTML = html;
@@ -528,6 +561,7 @@
   // keep group suggest toggle state available for other actions
   document.addEventListener('DOMContentLoaded', function() {
     window._groupSuggest = false;
+
     window.currentUser = {
       id: @json(Auth::id()),
       role: @json(optional(Auth::user())->role),
@@ -688,7 +722,7 @@
               </td>
               <!-- <td><span class="badge bg-label-success">{{ ucfirst($program->status) }}</span></td> -->
               <td>
-                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                <button type="button" class="btn btn-sm btn-icon btn-outline-info" data-bs-toggle="modal"
                   data-bs-target="#riwayatObservasiModal" data-anak-didik-id="{{ $program->anak_didik_id }}"
                   onclick="loadRiwayatObservasi(this)" title="Riwayat Program">
                   <i class="ri-history-line"></i>
@@ -839,59 +873,74 @@
             year: 'numeric'
           });
         }
+
+        function formatMonthYearIndo(dateValue) {
+          if (!dateValue) return '-';
+          const raw = dateValue.toString().split('T')[0].split(' ')[0];
+          const dt = new Date(raw + 'T00:00:00');
+          if (isNaN(dt)) return raw;
+          return dt.toLocaleDateString('id-ID', {
+            month: 'long',
+            year: 'numeric'
+          });
+        }
         res.riwayat.forEach(group => {
           html += `<div class="mb-3">
               <div class="fw-bold bg-light p-2 rounded border mb-2"><i class='ri-user-line me-1'></i> ${group.name}</div>
               <ul class="list-group">`;
-          // collapse items with the same date per konsultan: show each date only once
-          const seenDates = new Set();
+          // collapse items with the same periode per konsultan into one row
+          // Key: periodMulai|periodSelesai
+          const periodGroups = new Map();
           group.items.forEach(item => {
-            // derive date-only key (YYYY-MM-DD)
-            let dateKey = '';
+            const periodMulai = (item.periode_mulai || '').toString().split('T')[0].split(' ')[0];
+            const periodSelesai = (item.periode_selesai || '').toString().split('T')[0].split(' ')[0];
+            const periodKey = periodMulai + '|' + periodSelesai;
+            if (!periodGroups.has(periodKey)) {
+              periodGroups.set(periodKey, {
+                periodMulai,
+                periodSelesai,
+                items: [],
+                dates: new Set()
+              });
+            }
+            const pg = periodGroups.get(periodKey);
+            pg.items.push(item);
             if (item.created_at) {
-              // if datetime present, take date portion
-              dateKey = (item.created_at.indexOf('T') !== -1) ? item.created_at.split('T')[0] : item.created_at.split(' ')[0];
+              const dk = (item.created_at.indexOf('T') !== -1) ? item.created_at.split('T')[0] : item.created_at.split(' ')[0];
+              pg.dates.add(dk);
             }
-            if (!dateKey) {
-              // fallback to unique id if no date
-              dateKey = 'id_' + item.id;
-            }
-            if (seenDates.has(dateKey)) return; // skip duplicate date
-            seenDates.add(dateKey);
+          });
 
-            const itemsForDate = (group.items || []).filter(it => {
-              let ik = '';
-              if (it.created_at) {
-                ik = (it.created_at.indexOf('T') !== -1) ? it.created_at.split('T')[0] : it.created_at.split(' ')[0];
-              } else {
-                ik = 'id_' + it.id;
-              }
-              return ik === dateKey;
-            });
+          periodGroups.forEach((pg, periodKey) => {
+            const {
+              periodMulai,
+              periodSelesai,
+              items: pgItems,
+              dates
+            } = pg;
+            const periodText = (periodMulai || periodSelesai) ?
+              `Periode: ${formatMonthYearIndo(periodMulai || periodSelesai)} s/d ${formatMonthYearIndo(periodSelesai || periodMulai)}` :
+              '';
 
-            // determine if any item on this date was suggested
-            const anySuggestedForDate = itemsForDate.some(it => (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true));
+            // build sorted date list display
+            const sortedDates = Array.from(dates).sort();
+            const dateListHtml = sortedDates.map(dk => {
+              const dt = new Date(dk + 'T00:00:00');
+              const hari = dt.toLocaleDateString('id-ID', {
+                weekday: 'long'
+              });
+              const tgl = dt.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+              });
+              return `<div class="small"><b>${hari}</b>, ${tgl}</div>`;
+            }).join('');
 
-            // period range for this date (ambil min periode_mulai dan max periode_selesai di tanggal tersebut)
-            const periodStarts = itemsForDate.map(it => (it.periode_mulai || '').toString().split('T')[0].split(' ')[0]).filter(Boolean).sort();
-            const periodEnds = itemsForDate.map(it => (it.periode_selesai || '').toString().split('T')[0].split(' ')[0]).filter(Boolean).sort();
-            const periodStart = periodStarts.length ? periodStarts[0] : null;
-            const periodEnd = periodEnds.length ? periodEnds[periodEnds.length - 1] : null;
-            const periodText = (periodStart || periodEnd) ? `Periode: ${formatTanggalIndo(periodStart || periodEnd)} s/d ${formatTanggalIndo(periodEnd || periodStart)}` : '';
-
-            // format date and weekday for display
-            let dt = item.created_at ? new Date(item.created_at) : null;
-            let hari = dt ? dt.toLocaleDateString('id-ID', {
-              weekday: 'long'
-            }) : '';
-            let tanggal = dt ? dt.toLocaleDateString('id-ID', {
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric'
-            }) : (item.created_at || '');
-
-            // determine badge from konsultan spesialisasi
-            const spec = (group.spesialisasi || item.konsultan_spesialisasi || '') + '';
+            // badge detection (use first item for spesialisasi)
+            const firstItem = pgItems[0];
+            const anySuggested = pgItems.some(it => (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true));
+            const spec = (group.spesialisasi || firstItem.konsultan_spesialisasi || '') + '';
             const s = spec.toLowerCase();
             let badgeLabel = null,
               badgeClass = null;
@@ -904,57 +953,18 @@
             } else if (s.indexOf('psikologi') !== -1 || s.indexOf('psiko') !== -1) {
               badgeLabel = 'TP';
               badgeClass = 'bg-warning text-dark';
-            } else {
-              // fallback: inspect kode of item
-              const kode = (item.kode_program || '').toString().toUpperCase();
-              if (kode.startsWith('SI')) {
-                badgeLabel = 'SI';
-                badgeClass = 'bg-success';
-              } else if (kode.startsWith('WIC') || kode.startsWith('WICARA')) {
-                badgeLabel = 'TW';
-                badgeClass = 'bg-primary';
-              } else if (kode.startsWith('PS')) {
-                badgeLabel = 'TP';
-                badgeClass = 'bg-warning text-dark';
-              } else {
-                badgeLabel = null;
-                badgeClass = null;
-              }
             }
+            const badgeHtml = (anySuggested && badgeLabel) ? `<span class="badge ${badgeClass} ms-2">${badgeLabel}</span>` : '';
 
             const konsultanId = group.konsultan_id || null;
-            // Additional detection: if no spesialisasi available but one of the suggested items
-            // is a psikologi recommendation (e.g. program_konsultan_id == null or rekomendasi present),
-            // render TP badge as well.
-            try {
-              if (!badgeLabel) {
-                // restrict detection to items on the same dateKey
-                const psykDetected = itemsForDate.some(it => {
-                  const suggested = (it.is_suggested === 1 || it.is_suggested === '1' || it.is_suggested === true);
-                  if (!suggested) return false;
-                  // psikologi recommendations are saved with program_konsultan_id == null and often have rekomendasi or nama_program contains 'Rekomendasi'
-                  if ((it.program_konsultan_id === null || it.program_konsultan_id === undefined) && (it.rekomendasi || (it.nama_program && it.nama_program.toString().toLowerCase().includes('rekomendasi')))) return true;
-                  // or konsultan spesialisasi explicitly says psikologi
-                  if (it.konsultan_spesialisasi && it.konsultan_spesialisasi.toString().toLowerCase().includes('psiko')) return true;
-                  // or the program was created_by current konsultan and nama_program indicates rekomendasi
-                  if (it.created_by && window.currentUser && parseInt(it.created_by) === parseInt(window.currentUser.id) && it.nama_program && it.nama_program.toString().toLowerCase().includes('rekomendasi')) return true;
-                  return false;
-                });
-                if (psykDetected) {
-                  badgeLabel = 'TP';
-                  badgeClass = 'bg-warning text-dark';
-                }
-              }
-            } catch (e) {}
-            // show therapy-type badge only when any program on that date is suggested
-            const badgeHtml = (anySuggestedForDate && badgeLabel) ? (' <span class="badge ' + badgeClass + ' ms-2">' + badgeLabel + '</span>') : '';
-            html += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <div><b>${hari}</b>, ${tanggal}${badgeHtml}</div>
-                  ${periodText ? `<div class="small text-muted">${periodText}</div>` : ''}
+            const datesJson = JSON.stringify(sortedDates);
+            html += `<li class="list-group-item d-flex justify-content-between align-items-start gap-2">
+                <div class="flex-grow-1">
+                  ${periodText ? `<div class="fw-semibold">${periodText}</div>` : ''}
+                  ${badgeHtml}
                 </div>
-                <div>
-                  <button class="btn btn-sm btn-outline-info" onclick="showProgramsByKonsultanAndDate(${anakDidikId}, ${konsultanId}, '${dateKey}')" title="Lihat Program dari Konsultan"><i class="ri-eye-line"></i></button>
+                <div class="flex-shrink-0">
+                  <button class="btn btn-sm btn-icon btn-outline-info" onclick="showProgramsByKonsultanAndDate(${anakDidikId}, ${konsultanId}, 'all', '${periodMulai || ''}', '${periodSelesai || ''}', ${datesJson.replace(/"/g, '&quot;')})" title="Lihat Program dari Konsultan"><i class="ri-eye-line"></i></button>
                 </div>
               </li>`;
           });
@@ -1222,6 +1232,17 @@
           <label class="form-label">Aktivitas</label>
           <textarea id="editAktivitas" class="form-control" rows="3" disabled></textarea>
         </div>
+        <div class="mb-3">
+          <label class="form-label">Kategori</label>
+          <select id="editKategori" class="form-select">
+            <option value="">Pilih Kategori</option>
+            <option value="Akademik">Akademik</option>
+            <option value="Bina Diri">Bina Diri</option>
+            <option value="Motorik">Motorik</option>
+            <option value="Perilaku">Basic Learning</option>
+            <option value="Vokasi">Vokasi</option>
+          </select>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary restore-previous-on-close" data-bs-dismiss="modal"><i class="ri-close-line me-2"></i>Batal</button>
@@ -1257,6 +1278,8 @@
         namaEl.value = p.nama_program || '';
         tujuanEl.value = p.tujuan || '';
         aktivitasEl.value = p.aktivitas || '';
+        const kategoriEl = document.getElementById('editKategori');
+        if (kategoriEl) kategoriEl.value = p.kategori || '';
 
         // If program has konsultan info, try to load konsultan's master list to populate select
         const konsultanId = p.konsultan && p.konsultan.id ? p.konsultan.id : null;
@@ -1382,8 +1405,14 @@
       kode_program: kodeVal,
       nama_program: document.getElementById('editNamaProgram').value,
       tujuan: document.getElementById('editTujuan').value,
-      aktivitas: document.getElementById('editAktivitas').value
+      aktivitas: document.getElementById('editAktivitas').value,
+      kategori: document.getElementById('editKategori')?.value || ''
     };
+    // Include program_konsultan_id when a master-list select is used
+    if (kodeEl && kodeEl.tagName && kodeEl.tagName.toLowerCase() === 'select') {
+      const selOpt = kodeEl.options[kodeEl.selectedIndex];
+      if (selOpt && selOpt.value) payload.program_konsultan_id = selOpt.value;
+    }
     fetch('/program-anak/' + id + '/update-json', {
       method: 'PUT',
       headers: {
@@ -1400,7 +1429,7 @@
         // refresh current group view
         if (window._lastGroup) {
           if (window._lastGroup.dateKey) {
-            showProgramsByKonsultanAndDate(window._lastGroup.anakDidikId, window._lastGroup.konsultanId, window._lastGroup.dateKey);
+            showProgramsByKonsultanAndDate(window._lastGroup.anakDidikId, window._lastGroup.konsultanId, window._lastGroup.dateKey, window._lastGroup.periodMulai, window._lastGroup.periodSelesai);
           } else {
             showDetailProgramGroup(window._lastGroup.anakDidikId, window._lastGroup.konsultanId, id);
           }
@@ -1425,7 +1454,7 @@
         // refresh current group view
         if (window._lastGroup) {
           if (window._lastGroup.dateKey) {
-            showProgramsByKonsultanAndDate(window._lastGroup.anakDidikId, window._lastGroup.konsultanId, window._lastGroup.dateKey);
+            showProgramsByKonsultanAndDate(window._lastGroup.anakDidikId, window._lastGroup.konsultanId, window._lastGroup.dateKey, window._lastGroup.periodMulai, window._lastGroup.periodSelesai);
           } else {
             showDetailProgramGroup(window._lastGroup.anakDidikId, window._lastGroup.konsultanId, 0);
           }

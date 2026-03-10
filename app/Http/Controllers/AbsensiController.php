@@ -254,12 +254,18 @@ class AbsensiController extends Controller
     $rules = [
       'anak_didik_id' => 'required|exists:anak_didiks,id',
       'is_izin' => 'nullable|boolean',
+      'is_alfa' => 'nullable|boolean',
     ];
+
+    $isNotHadir = $request->filled('is_izin') || $request->filled('is_alfa');
 
     // Logika Validasi Kondisional
     if ($request->filled('is_izin')) {
-      // JIKA IZIN: Hanya butuh keterangan
+      // JIKA IZIN: Hanya butuh keterangan wajib
       $rules['keterangan'] = 'required|string|max:500';
+    } elseif ($request->filled('is_alfa')) {
+      // JIKA ALFA: keterangan opsional
+      $rules['keterangan'] = 'nullable|string|max:500';
     } else {
       // JIKA HADIR: Kondisi fisik, nama pengantar, dan SIGNATURE wajib
       $rules['keterangan'] = 'nullable|string|max:500';
@@ -269,7 +275,7 @@ class AbsensiController extends Controller
     }
 
     // Validasi tambahan jika kondisi fisik "ada_tanda" dan status Hadir
-    if (!$request->filled('is_izin') && $request->kondisi_fisik === 'ada_tanda') {
+    if (!$isNotHadir && $request->kondisi_fisik === 'ada_tanda') {
       $rules['jenis_tanda_fisik'] = 'required|array';
       $rules['jenis_tanda_fisik.*'] = 'required|in:lebam,luka_gores,luka_terbuka,bengkak,ruam,bekas_gigitan,luka_bakar,bekas_cakar,luka_lama';
       $rules['keterangan_tanda_fisik'] = 'required|string|max:500';
@@ -393,7 +399,7 @@ class AbsensiController extends Controller
       }
 
       // Persiapan Data Utama
-      $status = $request->filled('is_izin') ? 'izin' : 'hadir';
+      $status = $request->filled('is_izin') ? 'izin' : ($request->filled('is_alfa') ? 'alfa' : 'hadir');
 
       $data = [
         'anak_didik_id' => $request->anak_didik_id,
@@ -404,8 +410,8 @@ class AbsensiController extends Controller
         'keterangan' => $request->keterangan,
       ];
 
-      // Handle Detail Fisik & Signature (Hanya jika TIDAK izin)
-      if (!$request->filled('is_izin')) {
+      // Handle Detail Fisik & Signature (Hanya jika TIDAK izin dan TIDAK alfa)
+      if (!$isNotHadir) {
 
         // Simpan Nama Pengantar
         $data['nama_pengantar'] = $request->nama_pengantar;

@@ -202,13 +202,13 @@
               <td>
                 <div class="d-flex gap-1">
                   @if($todayAbsensi && !$todayAbsensi->waktu_jemput && !in_array(($todayAbsensi->status ?? ''), ['alfa', 'izin']))
-                  <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal"
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-warning" data-bs-toggle="modal"
                     data-bs-target="#jemputModal" data-absensi-id="{{ $todayAbsensi->id }}"
                     data-anak-nama="{{ $anakDidik->nama }}" onclick="openJemputModal(this)" title="Catat Penjemputan">
                     <i class="ri-user-follow-line"></i>
                   </button>
                   @endif
-                  <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                  <button type="button" class="btn btn-sm btn-icon btn-outline-info" data-bs-toggle="modal"
                     data-bs-target="#riwayatAbsensiModal" data-anak-didik-id="{{ $anakDidik->id }}"
                     onclick="loadRiwayatAbsensi(this)" title="Riwayat Absensi">
                     <i class="ri-history-line"></i>

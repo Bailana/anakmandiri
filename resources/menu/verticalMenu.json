@@ -138,6 +138,16 @@
       ]
     },
     {
+      "url": "lesson-plan",
+      "name": "Lesson Plan",
+      "icon": "menu-icon icon-base ri ri-file-list-2-line",
+      "slug": "lesson-plan.index",
+      "roles": [
+        "admin",
+        "guru"
+      ]
+    },
+    {
       "url": "absensi",
       "name": "Absensi Anak",
       "icon": "menu-icon icon-base ri ri-checkbox-multiple-line",

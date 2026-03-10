@@ -11,6 +11,8 @@ use App\Models\Karyawan;
 use App\Models\ProgramKonsultan;
 use App\Models\ProgramPendidikan;
 use App\Models\Assessment;
+use App\Models\LessonPlan;
+use App\Models\LessonPlanSchedule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\ActivityService;
@@ -164,25 +166,7 @@ class PPIController extends Controller
     return view('content.ppi.index', compact('anakList', 'search', 'guruOptions', 'guru_fokus', 'accessMap', 'canApprovePPI', 'isKonsultanPendidikan', 'isFokusMap', 'expiryMap', 'allAnakForAccess'));
   }
 
-  public function create()
-  {
-    $user = Auth::user();
-    $anakQuery = AnakDidik::orderBy('nama');
-    // if current user is a guru, only show anak didik where they are guru_fokus
-    if ($user && $user->role === 'guru') {
-      $karyawan = Karyawan::where('nama', $user->name)->first();
-      $karyawanId = $karyawan ? $karyawan->id : null;
-      if ($karyawanId) {
-        $anakQuery = $anakQuery->where('guru_fokus_id', $karyawanId);
-      } else {
-        // no matching karyawan record found; return empty collection
-        $anakQuery = $anakQuery->whereRaw('0 = 1');
-      }
-    }
-    $anakDidiks = $anakQuery->get();
-    $konsultans = Konsultan::orderBy('nama')->get();
-    return view('content.ppi.create', compact('anakDidiks', 'konsultans'));
-  }
+
 
   public function store(Request $request)
   {
@@ -268,7 +252,31 @@ class PPIController extends Controller
     }
 
     $ppis = Ppi::with('items')->where('anak_didik_id', $anakId)->orderByDesc('created_at')->get();
-    $riwayat = $ppis->map(function ($p) {
+
+    // Collect all lesson plan program selections for this anak, grouped by year-month
+    // key: "YYYY-MM", value: array of trimmed nama_program strings
+    $lessonPlans = LessonPlan::where('anak_didik_id', $anakId)
+      ->with('schedules')
+      ->get();
+
+    $lpProgramsByMonth = [];
+    foreach ($lessonPlans as $lp) {
+      if (!$lp->tanggal) continue;
+      $key = Carbon::parse($lp->tanggal)->format('Y-m');
+      if (!isset($lpProgramsByMonth[$key])) {
+        $lpProgramsByMonth[$key] = [];
+      }
+      foreach ($lp->schedules as $sch) {
+        if ($sch->nama_program) {
+          $progs = array_filter(array_map('trim', explode(',', $sch->nama_program)));
+          foreach ($progs as $prog) {
+            $lpProgramsByMonth[$key][strtolower($prog)] = true;
+          }
+        }
+      }
+    }
+
+    $riwayat = $ppis->map(function ($p) use ($lpProgramsByMonth) {
       // choose a representative item for preview: prefer Akademik category when present
       $displayItem = null;
       if ($p->items && $p->items->count()) {
@@ -289,15 +297,25 @@ class PPIController extends Controller
         'periode_mulai' => $p->periode_mulai ? $p->periode_mulai : null,
         'periode_selesai' => $p->periode_selesai ? $p->periode_selesai : null,
         'keterangan' => $p->keterangan ?? null,
-        'items' => $p->items->map(function ($it) {
+        'items' => $p->items->map(function ($it) use ($lpProgramsByMonth) {
+          $progLower = strtolower(trim($it->nama_program ?? ''));
+          // Build list of YYYY-MM months where this program was selected in a lesson plan
+          $activeMonths = [];
+          foreach ($lpProgramsByMonth as $month => $programs) {
+            if ($progLower !== '' && isset($programs[$progLower])) {
+              $activeMonths[] = $month;
+            }
+          }
           return [
             'id' => $it->id,
             'nama_program' => $it->nama_program,
             'kategori' => $it->kategori,
-            'aktif' => $it->aktif ?? 0
+            'aktif' => $it->aktif ?? 0,
+            'active_months' => $activeMonths,
           ];
         })->toArray(),
         'status' => $p->status ?? null,
+        'lp_programs_by_month' => $lpProgramsByMonth,
       ];
     });
 
@@ -701,137 +719,52 @@ class PPIController extends Controller
     return view('content.ppi.export-pdf', $data);
   }
 
-  public function exportLessonPlanPdf($id)
+  /**
+   * List all PPIs accessible to the current user for the Lesson Plan page.
+   */
+  public function lessonPlanIndex(Request $request)
   {
     $user = Auth::user();
-    $ppi = Ppi::with(['items.programKonsultan.konsultan', 'anak.guruFokus'])->findOrFail($id);
+    $search = $request->input('search');
 
-    $allowed = false;
-    if ($user && $user->role === 'admin') {
-      $allowed = true;
-    } elseif ($user && $user->role === 'konsultan') {
-      $k = Konsultan::where('user_id', $user->id)->orWhere('email', $user->email)->first();
-      if ($k && strtolower(trim($k->spesialisasi ?? '')) === 'pendidikan') {
-        $allowed = true;
-      }
-    } elseif ($user && $user->role === 'guru') {
-      $anakId = $ppi->anak_didik_id;
-      $can = \App\Http\Controllers\GuruAnakDidikController::canAccessChild($user->id, $anakId);
-      if ($can) $allowed = true;
-
+    $isAdmin = $user && $user->role === 'admin';
+    $karyawanId = null;
+    if ($user && $user->role === 'guru') {
       $k = Karyawan::where('nama', $user->name)->first();
       $karyawanId = $k ? $k->id : null;
-      if ($karyawanId && $ppi->anak && $ppi->anak->guru_fokus_id == $karyawanId) {
-        $allowed = true;
+    }
+
+    $anakQuery = AnakDidik::with('guruFokus')
+      ->when($search, fn($q, $s) => $q->where('nama', 'like', "%{$s}%")->orWhere('nis', 'like', "%{$s}%"))
+      ->orderBy('nama');
+
+    $allAnak = $anakQuery->get();
+
+    // Filter to only accessible anak
+    $accessible = $allAnak->filter(function ($a) use ($user, $isAdmin, $karyawanId) {
+      if ($isAdmin) return true;
+      if ($user && $user->role === 'guru') {
+        if ($karyawanId && $a->guru_fokus_id == $karyawanId) return true;
+        return \App\Http\Controllers\GuruAnakDidikController::canAccessChild($user->id, $a->id);
       }
-    }
+      return false;
+    });
 
-    if (!$allowed) {
-      abort(403, 'Anda tidak memiliki akses untuk mencetak lesson plan ini.');
-    }
+    $anakIds = $accessible->pluck('id');
 
-    $activeItems = $ppi->items->filter(function ($it) {
-      return intval($it->aktif ?? 0) === 1;
-    })->values();
+    // Load latest PPI per anak
+    $ppis = Ppi::with('anak')
+      ->whereIn('anak_didik_id', $anakIds)
+      ->orderByDesc('created_at')
+      ->get()
+      ->groupBy('anak_didik_id')
+      ->map(fn($group) => $group->first());
 
-    $programData = [];
-    foreach ($activeItems as $item) {
-      $pk = $item->programKonsultan;
-
-      $dispKode = '-';
-      $dispNama = $item->nama_program ?? '-';
-      $dispKategori = $item->kategori ?? '-';
-      $dispKonsultanNama = '-';
-      $dispKonsultanSpec = '-';
-      $dispTujuan = '-';
-      $dispAktivitas = '-';
-      $dispKeterangan = '-';
-
-      if ($pk) {
-        $dispKode = $pk->kode_program ?? '-';
-        $dispNama = $pk->nama_program ?? $dispNama;
-        $dispTujuan = $pk->tujuan ?? '-';
-        $dispAktivitas = $pk->aktivitas ?? '-';
-        $dispKeterangan = $pk->keterangan ?? '-';
-        if ($pk->konsultan) {
-          $dispKonsultanNama = $pk->konsultan->nama ?? '-';
-          $dispKonsultanSpec = $pk->konsultan->spesialisasi ?? '-';
-        }
-      } else {
-        $kode = null;
-        $nm = (string)($item->nama_program ?? '');
-        if (preg_match('/^([A-Za-z]{2,3})\s*-?\s*(\d{2,4})/i', $nm, $m)) {
-          $kode = strtoupper($m[1] . $m[2]);
-        }
-
-        $pp = ProgramPendidikan::with('konsultan')
-          ->where('anak_didik_id', $ppi->anak_didik_id)
-          ->where(function ($q) use ($kode, $nm) {
-            if ($kode) {
-              $q->orWhereRaw("REPLACE(UPPER(kode_program),'-','') = ?", [str_replace('-', '', strtoupper($kode))]);
-            }
-            $san = strtolower(preg_replace('/[\s\.-]+/', '', $nm));
-            if ($san !== '') {
-              $q->orWhereRaw("REPLACE(REPLACE(REPLACE(LOWER(nama_program),' ',''),'.',''),'-','') = ?", [$san]);
-            }
-          })
-          ->orderByDesc('id')
-          ->first();
-
-        if ($pp) {
-          $dispKode = $pp->kode_program ?? '-';
-          $dispNama = $pp->nama_program ?? $dispNama;
-          $dispTujuan = $pp->tujuan ?? '-';
-          $dispAktivitas = $pp->aktivitas ?? '-';
-          $dispKeterangan = $pp->keterangan ?? '-';
-          if ($pp->konsultan) {
-            $dispKonsultanNama = $pp->konsultan->nama ?? '-';
-            $dispKonsultanSpec = $pp->konsultan->spesialisasi ?? '-';
-          }
-        } else if ($kode) {
-          $mk = ProgramKonsultan::with('konsultan')
-            ->whereRaw("REPLACE(UPPER(kode_program),'-','') = ?", [str_replace('-', '', strtoupper($kode))])
-            ->first();
-
-          if ($mk) {
-            $dispKode = $mk->kode_program ?? '-';
-            $dispNama = $mk->nama_program ?? $dispNama;
-            $dispTujuan = $mk->tujuan ?? '-';
-            $dispAktivitas = $mk->aktivitas ?? '-';
-            $dispKeterangan = $mk->keterangan ?? '-';
-            if ($mk->konsultan) {
-              $dispKonsultanNama = $mk->konsultan->nama ?? '-';
-              $dispKonsultanSpec = $mk->konsultan->spesialisasi ?? '-';
-            }
-          }
-        }
-      }
-
-      $programData[] = [
-        'id' => $item->id,
-        'kode_program' => $dispKode,
-        'nama_program' => $dispNama,
-        'kategori' => $dispKategori,
-        'konsultan_nama' => $dispKonsultanNama,
-        'konsultan_spesialisasi' => $dispKonsultanSpec,
-        'tujuan' => $dispTujuan,
-        'aktivitas' => $dispAktivitas,
-        'keterangan' => $dispKeterangan,
-        'notes' => $item->notes ?? null,
-      ];
-    }
-
-    $data = [
-      'ppi' => $ppi,
-      'anakDidik' => $ppi->anak,
-      'programData' => $programData,
-      'tanggalPpi' => $ppi->created_at ? $ppi->created_at->locale('id')->isoFormat('dddd, D MMMM Y') : '-',
-      'periodeMulai' => $ppi->periode_mulai ? Carbon::parse($ppi->periode_mulai)->locale('id')->isoFormat('D MMMM Y') : '-',
-      'periodeSelesai' => $ppi->periode_selesai ? Carbon::parse($ppi->periode_selesai)->locale('id')->isoFormat('D MMMM Y') : '-',
-      'tanggalCetak' => Carbon::now()->locale('id')->isoFormat('dddd, D MMMM Y'),
-    ];
-
-    return view('content.ppi.export-lesson-plan-pdf', $data);
+    return view('content.lesson-plan.index', [
+      'anakList' => $accessible->values(),
+      'ppis' => $ppis,
+      'search' => $search,
+    ]);
   }
 
   // additional methods (riwayat, approve) can be added later

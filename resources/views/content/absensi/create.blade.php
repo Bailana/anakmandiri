@@ -201,12 +201,17 @@
             </div>
 
             <div class="col-12">
-              <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="is_izin" name="is_izin" value="1"
-                  @checked(old('is_izin'))>
-                <label class="form-check-label" for="is_izin">
-                  Anak didik izin hari ini
-                </label>
+              <div class="d-flex gap-4 mb-1">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="is_izin" name="is_izin" value="1"
+                    @checked(old('is_izin'))>
+                  <label class="form-check-label" for="is_izin">Izin</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="is_alfa" name="is_alfa" value="1"
+                    @checked(old('is_alfa'))>
+                  <label class="form-check-label" for="is_alfa">Alfa</label>
+                </div>
               </div>
             </div>
 
@@ -828,6 +833,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     // Handle izin checkbox - toggle keterangan required
     const izinCheckbox = document.getElementById('is_izin');
+    const alfaCheckbox = document.getElementById('is_alfa');
     const keteranganRequiredSpan = document.getElementById('keterangan-required');
     const keteranganField = document.getElementById('keterangan');
     const keteranganSection = document.getElementById('keteranganSection');
@@ -837,55 +843,67 @@
     const tandaFisikDivider = document.getElementById('tandaFisikDivider');
     const verifikasiDivider = document.getElementById('verifikasiDivider');
 
-    function updateIzinVisibility() {
-      if (izinCheckbox.checked) {
-        // Jika izin dicentang, tampilkan keterangan field dan buat wajib
-        keteranganSection.style.display = 'block';
-        keteranganRequiredSpan.style.display = 'inline';
-        keteranganField.required = true;
+    function hideKondisiFisikSections() {
+      kondisiFisikSection.style.display = 'none';
+      tandaFisikSection.style.display = 'none';
+      verifikasiOrangTuaSection.style.display = 'none';
+      tandaFisikDivider.style.display = 'none';
+      if (verifikasiDivider) verifikasiDivider.style.display = 'none';
+      document.getElementById('kondisi_baik').required = false;
+      document.getElementById('kondisi_ada_tanda').required = false;
+      document.getElementById('keterangan_tanda_fisik').required = false;
+    }
 
-        // Sembunyikan kondisi fisik, detail tanda fisik, dan verifikasi orang tua sections
-        kondisiFisikSection.style.display = 'none';
-        tandaFisikSection.style.display = 'none';
-        verifikasiOrangTuaSection.style.display = 'none';
-        tandaFisikDivider.style.display = 'none';
-        if (verifikasiDivider) verifikasiDivider.style.display = 'none';
-
-        // Hapus required attribute dari field yang disembunyikan
-        document.getElementById('kondisi_baik').required = false;
-        document.getElementById('kondisi_ada_tanda').required = false;
-        document.getElementById('keterangan_tanda_fisik').required = false;
+    function showKondisiFisikSections() {
+      kondisiFisikSection.style.display = 'block';
+      verifikasiOrangTuaSection.style.display = 'block';
+      tandaFisikDivider.style.display = 'block';
+      if (verifikasiDivider) verifikasiDivider.style.display = 'block';
+      document.getElementById('kondisi_baik').required = true;
+      document.getElementById('kondisi_ada_tanda').required = true;
+      const adaTandaRadio = document.getElementById('kondisi_ada_tanda');
+      if (adaTandaRadio && adaTandaRadio.checked) {
+        tandaFisikSection.style.display = 'block';
+        document.getElementById('keterangan_tanda_fisik').required = true;
       } else {
-        // Jika tidak izin, sembunyikan keterangan field
-        keteranganSection.style.display = 'none';
-        keteranganRequiredSpan.style.display = 'none';
-        keteranganField.required = false;
-
-        // Tampilkan kondisi fisik dan verifikasi orang tua sections
-        kondisiFisikSection.style.display = 'block';
-        verifikasiOrangTuaSection.style.display = 'block';
-        tandaFisikDivider.style.display = 'block';
-        if (verifikasiDivider) verifikasiDivider.style.display = 'block';
-
-        // Set kondisi_fisik ke wajib
-        document.getElementById('kondisi_baik').required = true;
-        document.getElementById('kondisi_ada_tanda').required = true;
-
-        // Tampilkan detail tanda fisik dan set required hanya jika ada_tanda dipilih
-        const adaTandaRadio = document.getElementById('kondisi_ada_tanda');
-        if (adaTandaRadio && adaTandaRadio.checked) {
-          tandaFisikSection.style.display = 'block';
-          document.getElementById('keterangan_tanda_fisik').required = true;
-        } else {
-          document.getElementById('keterangan_tanda_fisik').required = false;
-        }
+        document.getElementById('keterangan_tanda_fisik').required = false;
       }
     }
 
-    izinCheckbox.addEventListener('change', updateIzinVisibility);
+    function updateAbsensiVisibility() {
+      if (izinCheckbox.checked) {
+        // Izin: keterangan wajib, sembunyikan kondisi fisik
+        keteranganSection.style.display = 'block';
+        keteranganRequiredSpan.style.display = 'inline';
+        keteranganField.required = true;
+        hideKondisiFisikSections();
+      } else if (alfaCheckbox.checked) {
+        // Alfa: keterangan opsional, sembunyikan kondisi fisik
+        keteranganSection.style.display = 'block';
+        keteranganRequiredSpan.style.display = 'none';
+        keteranganField.required = false;
+        hideKondisiFisikSections();
+      } else {
+        // Hadir: sembunyikan keterangan, tampilkan kondisi fisik
+        keteranganSection.style.display = 'none';
+        keteranganRequiredSpan.style.display = 'none';
+        keteranganField.required = false;
+        showKondisiFisikSections();
+      }
+    }
+
+    // Mutual exclusion between Izin and Alfa
+    izinCheckbox.addEventListener('change', function() {
+      if (this.checked) alfaCheckbox.checked = false;
+      updateAbsensiVisibility();
+    });
+    alfaCheckbox.addEventListener('change', function() {
+      if (this.checked) izinCheckbox.checked = false;
+      updateAbsensiVisibility();
+    });
 
     // Initial check
-    updateIzinVisibility();
+    updateAbsensiVisibility();
 
     // Conditional show/hide tanda fisik section
     const kondisiFisikRadios = document.querySelectorAll('input[name="kondisi_fisik"]');
@@ -893,7 +911,7 @@
     // Function to toggle tanda fisik section
     function updateTandaFisikVisibility() {
       const adaTandaRadio = document.getElementById('kondisi_ada_tanda');
-      if (adaTandaRadio && adaTandaRadio.checked && !izinCheckbox.checked) {
+      if (adaTandaRadio && adaTandaRadio.checked && !izinCheckbox.checked && !alfaCheckbox.checked) {
         tandaFisikSection.style.display = 'block';
         tandaFisikDivider.style.display = 'block';
         document.getElementById('keterangan_tanda_fisik').required = true;
@@ -1554,7 +1572,7 @@
       }
 
       // 1. Validasi Dasar Client Side
-      if (!izinCheckbox.checked) {
+      if (!izinCheckbox.checked && !alfaCheckbox.checked) {
         if (!document.getElementById('nama_pengantar').value) {
           e.preventDefault();
           alert('Silakan masukkan nama orang tua/pengantar');
@@ -1583,8 +1601,8 @@
         }
       }
 
-      // 2. Jika Tidak Izin (Ada Tanda Tangan), Kita Manipulasi Pengiriman
-      if (!izinCheckbox.checked && !window.isCanvasEmpty()) {
+      // 2. Jika Tidak Izin dan Tidak Alfa (Ada Tanda Tangan), Kita Manipulasi Pengiriman
+      if (!izinCheckbox.checked && !alfaCheckbox.checked && !window.isCanvasEmpty()) {
         e.preventDefault(); // Stop submit standar browser
 
         console.log('🔄 Starting AJAX form submission...');

@@ -341,6 +341,13 @@
 
       programsListEl.innerHTML = '<div class="text-muted">Memuat program...</div>';
       Promise.all(promises).then(results => {
+        // Check if any kategori returned no_lesson_plan flag (means LP not created for this month)
+        const hasNoLessonPlan = results.some(res => res && res.data && res.data.no_lesson_plan === true);
+        if (hasNoLessonPlan) {
+          programsListEl.innerHTML = '<div class="alert alert-warning rounded-3 d-flex align-items-center mb-0" role="alert"><i class="ri-calendar-close-line me-2" style="font-size:1.1rem"></i><div class="mb-0">Lesson Plan belum dibuat untuk bulan tersebut.</div></div>';
+          clearSelection();
+          return;
+        }
         let aggregated = [];
         results.forEach(res => {
           if (!res || !res.data || !res.data.success || !Array.isArray(res.data.programs)) return;

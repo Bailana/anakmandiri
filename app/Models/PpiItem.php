@@ -13,6 +13,7 @@ class PpiItem extends Model
 
   protected $fillable = [
     'ppi_id',
+    'program_anak_id',
     'nama_program',
     'kategori',
     'program_konsultan_id',

@@ -127,6 +127,7 @@ class ProgramAnakController extends Controller
         'nama_program' => $it->nama_program,
         'tujuan' => $it->tujuan,
         'aktivitas' => $it->aktivitas,
+        'kategori' => $it->kategori ?? null,
         'program_konsultan_id' => $it->program_konsultan_id ?? null,
         'periode_mulai' => $it->periode_mulai ? $it->periode_mulai->toDateString() : null,
         'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
@@ -145,20 +146,28 @@ class ProgramAnakController extends Controller
    */
   public function riwayatProgramByKonsultanAndDate($anakDidikId, $konsultanId, $date)
   {
-    // ensure date is in YYYY-MM-DD format (basic check)
-    try {
-      $dt = \Carbon\Carbon::createFromFormat('Y-m-d', $date);
-      $dateOnly = $dt->toDateString();
-    } catch (\Exception $e) {
-      return response()->json(['success' => false, 'message' => 'Invalid date format']);
+    // 'all' means no date filter — return all programs for this konsultan within the period
+    $dateOnly = null;
+    if ($date !== 'all') {
+      try {
+        $dt = \Carbon\Carbon::createFromFormat('Y-m-d', $date);
+        $dateOnly = $dt->toDateString();
+      } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => 'Invalid date format']);
+      }
     }
+
+    $periodeMulai = request('periode_mulai');
+    $periodeSelesai = request('periode_selesai');
 
     $items = ProgramAnak::with(['programKonsultan.konsultan'])
       ->where('anak_didik_id', $anakDidikId)
       ->whereHas('programKonsultan', function ($q) use ($konsultanId) {
         $q->where('konsultan_id', $konsultanId);
       })
-      ->whereDate('created_at', $dateOnly)
+      ->when($dateOnly, fn($q) => $q->whereDate('created_at', $dateOnly))
+      ->when($periodeMulai, fn($q) => $q->whereDate('periode_mulai', $periodeMulai))
+      ->when($periodeSelesai, fn($q) => $q->whereDate('periode_selesai', $periodeSelesai))
       ->orderByDesc('created_at')
       ->get();
 
@@ -170,6 +179,7 @@ class ProgramAnakController extends Controller
         'nama_program' => $it->nama_program,
         'tujuan' => $it->tujuan,
         'aktivitas' => $it->aktivitas,
+        'kategori' => $it->kategori ?? null,
         'program_konsultan_id' => $it->program_konsultan_id ?? null,
         'periode_mulai' => $it->periode_mulai ? $it->periode_mulai->toDateString() : null,
         'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
@@ -496,6 +506,14 @@ class ProgramAnakController extends Controller
 
   public function store(Request $request)
   {
+    // Normalize month-only input (YYYY-MM) to first day of month (YYYY-MM-01)
+    foreach (['periode_mulai', 'periode_selesai'] as $field) {
+      $val = $request->input($field);
+      if ($val && preg_match('/^\d{4}-\d{2}$/', $val)) {
+        $request->merge([$field => $val . '-01']);
+      }
+    }
+
     // Basic common validation
     $request->validate([
       'konsultan_id' => 'required|exists:konsultans,id',
@@ -584,8 +602,9 @@ class ProgramAnakController extends Controller
 
     // collect created kode_program values so we can log a single activity after transaction
     $createdCodes = [];
+    $ppiItems = [];
 
-    \DB::transaction(function () use ($items, $request, $konsultanSpes, &$createdCodes) {
+    \DB::transaction(function () use ($items, $request, $konsultanSpes, &$createdCodes, &$ppiItems) {
       foreach ($items as $it) {
         // basic sanitation / mapping
         $nama = $it['nama_program'] ?? null;
@@ -607,6 +626,7 @@ class ProgramAnakController extends Controller
           'nama_program' => $nama,
           'tujuan' => $it['tujuan'] ?? null,
           'aktivitas' => $it['aktivitas'] ?? null,
+          'kategori' => $it['kategori'] ?? null,
           'periode_mulai' => $request->input('periode_mulai'),
           'periode_selesai' => $request->input('periode_selesai'),
           'status' => $request->input('status', 'aktif'),
@@ -655,9 +675,56 @@ class ProgramAnakController extends Controller
             // do not abort whole transaction on failure to create pendidikan record, but log
             \Log::error('Failed to create program_pendidikan: ' . $e->getMessage());
           }
+          // Collect item data for PPI auto-creation
+          $ppiItems[] = [
+            'program_anak_id' => $programAnak->id,
+            'nama_program' => $nama,
+            'kategori' => $it['kategori'] ?? null,
+            'program_konsultan_id' => $programKonsultanId,
+          ];
         }
       }
     });
+
+    // Auto-create or update a PPI record for konsultan pendidikan so it appears in Riwayat PPI
+    // If a PPI already exists for the same anak + same period, reuse it (add items to it).
+    if ($konsultanSpes && strpos($konsultanSpes, 'pendidikan') !== false && !empty($ppiItems)) {
+      try {
+        $anakDidikId  = $request->input('anak_didik_id');
+        $periodeMulai = $request->input('periode_mulai');
+        $periodeSelesai = $request->input('periode_selesai');
+
+        $ppi = \App\Models\Ppi::where('anak_didik_id', $anakDidikId)
+          ->where('periode_mulai', $periodeMulai)
+          ->where('periode_selesai', $periodeSelesai)
+          ->first();
+
+        if ($ppi) {
+          // Touch updated_at so the modal shows the latest timestamp
+          $ppi->touch();
+        } else {
+          $ppi = \App\Models\Ppi::create([
+            'anak_didik_id' => $anakDidikId,
+            'periode_mulai' => $periodeMulai,
+            'periode_selesai' => $periodeSelesai,
+            'keterangan' => $request->input('keterangan'),
+            'created_by' => auth()->check() ? auth()->id() : null,
+          ]);
+        }
+
+        foreach ($ppiItems as $pi) {
+          \App\Models\PpiItem::create([
+            'ppi_id' => $ppi->id,
+            'program_anak_id' => $pi['program_anak_id'] ?? null,
+            'nama_program' => $pi['nama_program'],
+            'kategori' => $pi['kategori'],
+            'program_konsultan_id' => $pi['program_konsultan_id'],
+          ]);
+        }
+      } catch (\Exception $e) {
+        \Log::error('Failed to create/update PPI from program-anak: ' . $e->getMessage());
+      }
+    }
 
     // After successful transaction, create one activity log entry (if performed by konsultan)
     try {
@@ -770,8 +837,10 @@ class ProgramAnakController extends Controller
 
     $rules = [
       'kode_program' => 'nullable|string|max:100',
+      'program_konsultan_id' => 'nullable|exists:program_konsultan,id',
       'tujuan' => 'nullable|string',
       'aktivitas' => 'nullable|string',
+      'kategori' => 'nullable|string|max:100',
       'rekomendasi' => 'nullable|string',
       'keterangan' => 'nullable|string',
     ];
@@ -784,7 +853,10 @@ class ProgramAnakController extends Controller
 
     // compute changes for audit
     $changed = [];
-    $fields = ['kode_program', 'nama_program', 'tujuan', 'aktivitas', 'rekomendasi', 'keterangan'];
+    $fields = ['kode_program', 'program_konsultan_id', 'nama_program', 'tujuan', 'aktivitas', 'kategori', 'rekomendasi', 'keterangan'];
+    // capture old values before mutation for PPI sync
+    $oldNamaProgram = $program->nama_program;
+    $oldProgramKonsultanId = $program->program_konsultan_id;
     foreach ($fields as $f) {
       if ($request->has($f)) {
         $old = $program->{$f};
@@ -794,6 +866,49 @@ class ProgramAnakController extends Controller
       }
     }
     $program->save();
+
+    // Sync corresponding ppi_item so Riwayat PPI reflects the updated program
+    try {
+      // Primary: find by direct program_anak_id link
+      $ppiItem = \App\Models\PpiItem::where('program_anak_id', $program->id)->first();
+
+      // Fallback: find by period + anak + old identifiers
+      if (!$ppiItem) {
+        $periodeM = $program->periode_mulai ? (is_string($program->periode_mulai) ? $program->periode_mulai : $program->periode_mulai->format('Y-m-d')) : null;
+        $periodeS = $program->periode_selesai ? (is_string($program->periode_selesai) ? $program->periode_selesai : $program->periode_selesai->format('Y-m-d')) : null;
+        if ($periodeM && $periodeS) {
+          $ppi = \App\Models\Ppi::where('anak_didik_id', $program->anak_didik_id)
+            ->where('periode_mulai', $periodeM)
+            ->where('periode_selesai', $periodeS)
+            ->first();
+          if ($ppi) {
+            if ($oldProgramKonsultanId) {
+              $ppiItem = \App\Models\PpiItem::where('ppi_id', $ppi->id)
+                ->where('program_konsultan_id', $oldProgramKonsultanId)
+                ->first();
+            }
+            if (!$ppiItem && $oldNamaProgram) {
+              $ppiItem = \App\Models\PpiItem::where('ppi_id', $ppi->id)
+                ->where('nama_program', $oldNamaProgram)
+                ->first();
+            }
+          }
+        }
+      }
+
+      if ($ppiItem) {
+        $ppiItem->nama_program = $program->nama_program;
+        $ppiItem->program_konsultan_id = $program->program_konsultan_id;
+        $ppiItem->kategori = $program->kategori;
+        $ppiItem->save();
+        // Touch parent PPI so modal reflects latest update time
+        if ($ppiItem->ppi_id) {
+          \App\Models\Ppi::where('id', $ppiItem->ppi_id)->update(['updated_at' => now()]);
+        }
+      }
+    } catch (\Exception $e) {
+      \Log::error('Failed to sync PPI item after program-anak update: ' . $e->getMessage());
+    }
 
     if (!empty($changed)) {
       try {
@@ -846,6 +961,14 @@ class ProgramAnakController extends Controller
     }
     if (!$allowed) return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
 
+    // Capture info needed for PPI sync before deletion
+    $programAnakId = $program->id;
+    $anakDidikId = $program->anak_didik_id;
+    $periodeM = $program->periode_mulai ? (is_string($program->periode_mulai) ? $program->periode_mulai : $program->periode_mulai->format('Y-m-d')) : null;
+    $periodeS = $program->periode_selesai ? (is_string($program->periode_selesai) ? $program->periode_selesai : $program->periode_selesai->format('Y-m-d')) : null;
+    $oldNamaProgram = $program->nama_program;
+    $oldProgramKonsultanId = $program->program_konsultan_id;
+
     try {
       if ($user && $user->role === 'konsultan') {
         $anak = AnakDidik::find($program->anak_didik_id);
@@ -859,6 +982,44 @@ class ProgramAnakController extends Controller
     }
 
     $program->delete();
+
+    // Sync: remove corresponding ppi_item and clean up empty PPI
+    try {
+      // Primary: find by direct FK
+      $ppiItem = \App\Models\PpiItem::where('program_anak_id', $programAnakId)->first();
+
+      // Fallback: find by period + anak + identifiers
+      if (!$ppiItem && $periodeM && $periodeS) {
+        $ppi = \App\Models\Ppi::where('anak_didik_id', $anakDidikId)
+          ->where('periode_mulai', $periodeM)
+          ->where('periode_selesai', $periodeS)
+          ->first();
+        if ($ppi) {
+          if ($oldProgramKonsultanId) {
+            $ppiItem = \App\Models\PpiItem::where('ppi_id', $ppi->id)
+              ->where('program_konsultan_id', $oldProgramKonsultanId)
+              ->first();
+          }
+          if (!$ppiItem && $oldNamaProgram) {
+            $ppiItem = \App\Models\PpiItem::where('ppi_id', $ppi->id)
+              ->where('nama_program', $oldNamaProgram)
+              ->first();
+          }
+        }
+      }
+
+      if ($ppiItem) {
+        $ppiId = $ppiItem->ppi_id;
+        $ppiItem->delete();
+        // If PPI has no remaining items, delete the PPI record too
+        if ($ppiId && \App\Models\PpiItem::where('ppi_id', $ppiId)->count() === 0) {
+          \App\Models\Ppi::where('id', $ppiId)->delete();
+        }
+      }
+    } catch (\Exception $e) {
+      \Log::error('Failed to sync PPI item after program-anak delete: ' . $e->getMessage());
+    }
+
     return response()->json(['success' => true, 'message' => 'Program berhasil dihapus']);
   }
 
@@ -882,6 +1043,7 @@ class ProgramAnakController extends Controller
       'nama_program' => $program->nama_program,
       'tujuan' => $program->tujuan,
       'aktivitas' => $program->aktivitas,
+      'kategori' => $program->kategori ?? null,
       'periode_mulai' => $program->periode_mulai ? $program->periode_mulai->toDateString() : null,
       'periode_selesai' => $program->periode_selesai ? $program->periode_selesai->toDateString() : null,
       'anak' => $program->anakDidik ? ['id' => $program->anakDidik->id, 'nama' => $program->anakDidik->nama] : null,
