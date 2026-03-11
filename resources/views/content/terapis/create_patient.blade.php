@@ -67,12 +67,18 @@
 
               <div class="col-12">
                 <label class="form-label">Nama Terapis</label>
+                @if(isset($user) && $user->role === 'terapis' && empty($isKepalaTerapis))
+                {{-- Terapis biasa: tampilkan nama sendiri, tidak bisa diubah --}}
+                <input type="text" class="form-control" value="{{ $user->name }}" disabled>
+                <input type="hidden" name="terapis_nama" value="{{ $user->name }}">
+                @else
                 <select name="terapis_nama" class="form-select">
                   <option value="">-- Pilih Nama Terapis --</option>
                   @foreach($therapists as $t)
                   <option value="{{ $t->name }}" @if(old('terapis_nama', isset($assignment) ? $assignment->terapis_nama : (isset($user) && $user->role === 'terapis' ? $user->name : ''))==$t->name) selected @endif>{{ $t->name }}</option>
                   @endforeach
                 </select>
+                @endif
               </div>
 
               @if(isset($assignment))

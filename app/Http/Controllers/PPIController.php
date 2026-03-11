@@ -259,18 +259,26 @@ class PPIController extends Controller
       ->with('schedules')
       ->get();
 
-    $lpProgramsByMonth = [];
+    $lpProgramsByMonth = []; // key: "YYYY-MM", value: ['ids' => [id => true], 'names' => [lc_name => true]]
     foreach ($lessonPlans as $lp) {
       if (!$lp->tanggal) continue;
       $key = Carbon::parse($lp->tanggal)->format('Y-m');
       if (!isset($lpProgramsByMonth[$key])) {
-        $lpProgramsByMonth[$key] = [];
+        $lpProgramsByMonth[$key] = ['ids' => [], 'names' => []];
       }
       foreach ($lp->schedules as $sch) {
-        if ($sch->nama_program) {
-          $progs = array_filter(array_map('trim', explode(',', $sch->nama_program)));
-          foreach ($progs as $prog) {
-            $lpProgramsByMonth[$key][strtolower($prog)] = true;
+        // Prefer ppi_item_ids for reliability (immune to name content)
+        if ($sch->ppi_item_ids) {
+          $ids = json_decode($sch->ppi_item_ids, true) ?: [];
+          foreach ($ids as $id) {
+            $lpProgramsByMonth[$key]['ids'][(int)$id] = true;
+          }
+        } elseif ($sch->nama_program) {
+          // Backward compat: old records with only nama_program
+          $decoded = json_decode($sch->nama_program, true);
+          $progs = is_array($decoded) ? $decoded : array_map('trim', explode(',', $sch->nama_program));
+          foreach (array_filter($progs) as $prog) {
+            $lpProgramsByMonth[$key]['names'][strtolower(trim($prog))] = true;
           }
         }
       }
@@ -301,8 +309,10 @@ class PPIController extends Controller
           $progLower = strtolower(trim($it->nama_program ?? ''));
           // Build list of YYYY-MM months where this program was selected in a lesson plan
           $activeMonths = [];
-          foreach ($lpProgramsByMonth as $month => $programs) {
-            if ($progLower !== '' && isset($programs[$progLower])) {
+          foreach ($lpProgramsByMonth as $month => $data) {
+            $byId   = isset($data['ids'][$it->id]);
+            $byName = $progLower !== '' && isset($data['names'][$progLower]);
+            if ($byId || $byName) {
               $activeMonths[] = $month;
             }
           }

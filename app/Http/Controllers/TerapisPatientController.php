@@ -110,8 +110,14 @@ class TerapisPatientController extends Controller
     $therapists = User::where('role', 'terapis')->get();
     $selectedTherapisId = $user->role === 'terapis' ? $user->id : $request->query('user_id');
 
+    $isKepalaTerapis = false;
+    if ($user->role === 'terapis') {
+      $isKepalaTerapis = Karyawan::where('email', $user->email)->where('posisi', 'Kepala Klinik')->exists()
+        || Karyawan::where('nama', $user->name)->where('posisi', 'Kepala Klinik')->exists();
+    }
+
     $anakDidiks = AnakDidik::orderBy('nama')->get();
-    return view('content.terapis.create_patient', compact('therapists', 'user', 'selectedTherapisId', 'anakDidiks'));
+    return view('content.terapis.create_patient', compact('therapists', 'user', 'selectedTherapisId', 'anakDidiks', 'isKepalaTerapis'));
   }
 
   /**
@@ -392,11 +398,7 @@ class TerapisPatientController extends Controller
   {
     if (!$user) return false;
     if ($user->role === 'admin') return true;
-    if ($user->role === 'terapis') {
-      $isKepalaByEmail = Karyawan::where('email', $user->email)->where('posisi', 'Kepala Klinik')->exists();
-      $isKepalaByName = Karyawan::where('nama', $user->name)->where('posisi', 'Kepala Klinik')->exists();
-      return $isKepalaByEmail || $isKepalaByName;
-    }
+    if ($user->role === 'terapis') return true;
     return false;
   }
 

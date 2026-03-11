@@ -16,6 +16,30 @@ use Carbon\Carbon;
 
 class LessonPlanController extends Controller
 {
+  /**
+   * Decode stored ppi_item_ids JSON back to an array of integers.
+   */
+  private function decodePpiItemIds(?string $value): array
+  {
+    if (!$value) return [];
+    $decoded = json_decode($value, true);
+    return is_array($decoded) ? array_values(array_filter(array_map('intval', $decoded))) : [];
+  }
+
+  /**
+   * Decode stored nama_program back to an array (backward compat for old records).
+   * Supports both JSON array format and old comma-separated format.
+   */
+  private function decodeProgramNames(?string $value): array
+  {
+    if (!$value) return [];
+    $decoded = json_decode($value, true);
+    if (is_array($decoded)) {
+      return array_values(array_filter(array_map('trim', $decoded)));
+    }
+    return array_values(array_filter(array_map('trim', explode(',', $value))));
+  }
+
   public function store(Request $request)
   {
     $request->validate([
@@ -37,24 +61,19 @@ class LessonPlanController extends Controller
     ]);
 
     if ($request->has('schedules')) {
-      $selectedPrograms = [];
+      $selectedPpiItemIds = [];
       foreach ($request->schedules as $idx => $row) {
         // $idx is like 'awal_0', 'inti_1' — extract the numeric suffix for urutan
         $urutan = (int) substr($idx, strrpos($idx, '_') + 1);
+        $ppiItemIds = [];
         $namaProgram = null;
-        if (isset($row['nama_program'])) {
-          if (is_array($row['nama_program'])) {
-            $programArr = array_filter($row['nama_program']);
-            $namaProgram = implode(', ', $programArr);
-            foreach ($programArr as $p) {
-              $t = trim($p);
-              if ($t !== '') $selectedPrograms[] = $t;
-            }
-          } else {
-            $namaProgram = $row['nama_program'];
-            $t = trim($row['nama_program']);
-            if ($t !== '') $selectedPrograms[] = $t;
-          }
+        if (!empty($row['ppi_item_ids'])) {
+          $ppiItemIds = array_values(array_filter(array_map('intval', (array) $row['ppi_item_ids'])));
+          $selectedPpiItemIds = array_merge($selectedPpiItemIds, $ppiItemIds);
+          // Cache resolved names for display (PDF preview etc.)
+          $nameMap = PpiItem::whereIn('id', $ppiItemIds)->pluck('nama_program', 'id');
+          $names = array_values(array_filter(array_map(fn($id) => $nameMap[$id] ?? null, $ppiItemIds)));
+          $namaProgram = !empty($names) ? json_encode($names, JSON_UNESCAPED_UNICODE) : null;
         }
         LessonPlanSchedule::create([
           'lesson_plan_id' => $lp->id,
@@ -62,16 +81,15 @@ class LessonPlanController extends Controller
           'jam_mulai'      => $row['jam_mulai'],
           'jam_selesai'    => $row['jam_selesai'],
           'keterangan'     => $row['keterangan'] ?? null,
+          'ppi_item_ids'   => !empty($ppiItemIds) ? json_encode($ppiItemIds) : null,
           'nama_program'   => $namaProgram,
           'urutan'         => $urutan,
         ]);
       }
 
-      // Mark selected programs as aktif in the linked PPI items
-      if ($lp->ppi_id && !empty($selectedPrograms)) {
-        PpiItem::where('ppi_id', $lp->ppi_id)
-          ->whereIn('nama_program', $selectedPrograms)
-          ->update(['aktif' => 1]);
+      // Mark selected programs as aktif by ID — works regardless of program name content
+      if ($lp->ppi_id && !empty($selectedPpiItemIds)) {
+        PpiItem::whereIn('id', $selectedPpiItemIds)->update(['aktif' => 1]);
       }
     }
 
@@ -104,9 +122,7 @@ class LessonPlanController extends Controller
           'jam_mulai'    => Carbon::parse($r->jam_mulai)->format('H:i'),
           'jam_selesai'  => Carbon::parse($r->jam_selesai)->format('H:i'),
           'keterangan'   => $r->keterangan ?? '',
-          'nama_program' => $r->nama_program
-            ? array_values(array_filter(array_map('trim', explode(',', $r->nama_program))))
-            : [],
+          'ppi_item_ids' => $this->decodePpiItemIds($r->ppi_item_ids),
         ])
         ->toArray();
     }
@@ -115,8 +131,8 @@ class LessonPlanController extends Controller
     if ($lp->ppi) {
       $ppiPrograms = PpiItem::where('ppi_id', $lp->ppi_id)
         ->whereNotNull('nama_program')
-        ->get(['nama_program'])
-        ->map(fn($it) => ['nama' => trim($it->nama_program)])
+        ->get(['id', 'nama_program'])
+        ->map(fn($it) => ['id' => $it->id, 'nama' => trim($it->nama_program)])
         ->filter(fn($it) => $it['nama'] !== '')
         ->values()
         ->toArray();
@@ -169,23 +185,17 @@ class LessonPlanController extends Controller
     $lp->schedules()->delete();
 
     if ($request->has('schedules')) {
-      $selectedPrograms = [];
+      $selectedPpiItemIds = [];
       foreach ($request->schedules as $idx => $row) {
         $urutan = (int) substr($idx, strrpos($idx, '_') + 1);
+        $ppiItemIds = [];
         $namaProgram = null;
-        if (isset($row['nama_program'])) {
-          if (is_array($row['nama_program'])) {
-            $programArr = array_filter($row['nama_program']);
-            $namaProgram = implode(', ', $programArr);
-            foreach ($programArr as $p) {
-              $t = trim($p);
-              if ($t !== '') $selectedPrograms[] = $t;
-            }
-          } else {
-            $namaProgram = $row['nama_program'];
-            $t = trim($row['nama_program']);
-            if ($t !== '') $selectedPrograms[] = $t;
-          }
+        if (!empty($row['ppi_item_ids'])) {
+          $ppiItemIds = array_values(array_filter(array_map('intval', (array) $row['ppi_item_ids'])));
+          $selectedPpiItemIds = array_merge($selectedPpiItemIds, $ppiItemIds);
+          $nameMap = PpiItem::whereIn('id', $ppiItemIds)->pluck('nama_program', 'id');
+          $names = array_values(array_filter(array_map(fn($id) => $nameMap[$id] ?? null, $ppiItemIds)));
+          $namaProgram = !empty($names) ? json_encode($names, JSON_UNESCAPED_UNICODE) : null;
         }
         LessonPlanSchedule::create([
           'lesson_plan_id' => $lp->id,
@@ -193,34 +203,33 @@ class LessonPlanController extends Controller
           'jam_mulai'      => $row['jam_mulai'],
           'jam_selesai'    => $row['jam_selesai'],
           'keterangan'     => $row['keterangan'] ?? null,
+          'ppi_item_ids'   => !empty($ppiItemIds) ? json_encode($ppiItemIds) : null,
           'nama_program'   => $namaProgram,
           'urutan'         => $urutan,
         ]);
       }
     } else {
-      $selectedPrograms = [];
+      $selectedPpiItemIds = [];
     }
 
     // Recalculate aktif status in ppi_items for the linked PPI
     $ppiIdToSync = $lp->ppi_id ?: $oldPpiId;
     if ($ppiIdToSync) {
-      // Collect ALL programs still referenced by any lesson plan for this PPI
-      $allActivePrograms = LessonPlan::where('ppi_id', $ppiIdToSync)
+      // Collect ALL ppi_item IDs still referenced by any lesson plan for this PPI
+      $allActiveIds = LessonPlan::where('ppi_id', $ppiIdToSync)
         ->with('schedules')
         ->get()
-        ->flatMap(fn($l) => $l->schedules->pluck('nama_program'))
+        ->flatMap(fn($l) => $l->schedules->pluck('ppi_item_ids'))
         ->filter()
-        ->flatMap(fn($np) => array_filter(array_map('trim', explode(',', $np))))
+        ->flatMap(fn($json) => $this->decodePpiItemIds($json))
         ->unique()
         ->values()
         ->toArray();
 
-      // Mark programs present in any LP as aktif = 1, others as aktif = 0
+      // Mark ppi_items aktif by ID — immune to name changes and special characters
       PpiItem::where('ppi_id', $ppiIdToSync)->update(['aktif' => 0]);
-      if (!empty($allActivePrograms)) {
-        PpiItem::where('ppi_id', $ppiIdToSync)
-          ->whereIn('nama_program', $allActivePrograms)
-          ->update(['aktif' => 1]);
+      if (!empty($allActiveIds)) {
+        PpiItem::whereIn('id', $allActiveIds)->update(['aktif' => 1]);
       }
     }
 
@@ -248,21 +257,19 @@ class LessonPlanController extends Controller
 
     // Recalculate aktif for all ppi_items in this PPI
     if ($ppiId) {
-      $allActivePrograms = LessonPlan::where('ppi_id', $ppiId)
+      $allActiveIds = LessonPlan::where('ppi_id', $ppiId)
         ->with('schedules')
         ->get()
-        ->flatMap(fn($l) => $l->schedules->pluck('nama_program'))
+        ->flatMap(fn($l) => $l->schedules->pluck('ppi_item_ids'))
         ->filter()
-        ->flatMap(fn($np) => array_filter(array_map('trim', explode(',', $np))))
+        ->flatMap(fn($json) => $this->decodePpiItemIds($json))
         ->unique()
         ->values()
         ->toArray();
 
       PpiItem::where('ppi_id', $ppiId)->update(['aktif' => 0]);
-      if (!empty($allActivePrograms)) {
-        PpiItem::where('ppi_id', $ppiId)
-          ->whereIn('nama_program', $allActivePrograms)
-          ->update(['aktif' => 1]);
+      if (!empty($allActiveIds)) {
+        PpiItem::whereIn('id', $allActiveIds)->update(['aktif' => 1]);
       }
     }
 
@@ -292,6 +299,7 @@ class LessonPlanController extends Controller
     $lessonPlans = LessonPlan::with('ppi')
       ->where('anak_didik_id', $anakId)
       ->orderByDesc('tanggal')
+      ->orderByDesc('id')
       ->get();
 
     return view('content.lesson-plan.riwayat', compact('anak', 'lessonPlans'));
@@ -471,10 +479,20 @@ class LessonPlanController extends Controller
     $schedulesBySection = [];
     foreach (['awal', 'inti', 'penutup'] as $sec) {
       $schedulesBySection[$sec] = $lp->schedules->where('section', $sec)->values()->map(function ($r) {
+        $ppiItemIds = $this->decodePpiItemIds($r->ppi_item_ids);
+        $names = [];
+        if (!empty($ppiItemIds)) {
+          $nameMap = PpiItem::whereIn('id', $ppiItemIds)->pluck('nama_program', 'id');
+          $names = array_values(array_filter(array_map(fn($id) => $nameMap[$id] ?? null, $ppiItemIds)));
+        } elseif ($r->nama_program) {
+          // backward compat for old records without ppi_item_ids
+          $names = $this->decodeProgramNames($r->nama_program);
+        }
         return [
           'jam_mulai'    => Carbon::parse($r->jam_mulai)->format('H:i'),
           'jam_selesai'  => Carbon::parse($r->jam_selesai)->format('H:i'),
-          'nama_program' => $r->nama_program,
+          'ppi_item_ids' => $ppiItemIds,
+          'nama_program' => $names,
           'keterangan'   => $r->keterangan,
         ];
       });
@@ -495,20 +513,26 @@ class LessonPlanController extends Controller
 
   public function programDetail(\Illuminate\Http\Request $request)
   {
+    $ppiItemId   = $request->query('ppi_item_id');
     $namaProgram = $request->query('nama_program');
     $ppiId       = $request->query('ppi_id');
 
-    if (!$namaProgram) {
-      return response()->json(['success' => false, 'message' => 'Nama program wajib diisi'], 422);
+    if (!$ppiItemId && !$namaProgram) {
+      return response()->json(['success' => false, 'message' => 'Parameter wajib diisi'], 422);
     }
 
-    // Find ppi_item matching nama_program; optionally scoped to a specific ppi
-    $query = \App\Models\PpiItem::with('programKonsultan')
-      ->where('nama_program', $namaProgram);
-    if ($ppiId) {
-      $query->where('ppi_id', $ppiId);
+    if ($ppiItemId) {
+      // Primary path: look up by ID (immune to name changes / special characters)
+      $item = \App\Models\PpiItem::with('programKonsultan')->find((int) $ppiItemId);
+    } else {
+      // Fallback: look up by name (backward compat for old records)
+      $query = \App\Models\PpiItem::with('programKonsultan')
+        ->where('nama_program', $namaProgram);
+      if ($ppiId) {
+        $query->where('ppi_id', $ppiId);
+      }
+      $item = $query->first();
     }
-    $item = $query->first();
 
     if (!$item) {
       return response()->json(['success' => true, 'program' => null, 'nama_program' => $namaProgram]);

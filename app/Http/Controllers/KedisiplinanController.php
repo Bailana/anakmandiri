@@ -113,6 +113,17 @@ class KedisiplinanController extends Controller
         ->get();
 
       $byUser = [];
+      // Pre-populate all active guru users so they appear even with score 0
+      // Exclude users whose karyawan record has status_kepegawaian = 'nonaktif'
+      $nonAktifUserIds = Karyawan::where('status_kepegawaian', 'nonaktif')->pluck('user_id')->filter()->toArray();
+      $allGuruUsers = User::where('role', 'guru')
+        ->whereNotIn('id', $nonAktifUserIds)
+        ->get();
+      foreach ($allGuruUsers as $guruUser) {
+        if (!isset($byUser[$guruUser->id])) {
+          $byUser[$guruUser->id] = [];
+        }
+      }
       foreach ($allAssess as $a) {
         $uid = $a->user_id ?? null;
         if (!$uid) continue; // skip assessments without a user penilai

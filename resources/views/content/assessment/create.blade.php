@@ -242,6 +242,16 @@
 
     const kategoriKeys = ['bina_diri', 'akademik', 'motorik', 'perilaku', 'vokasi'];
 
+    // Map kategori_key → display label
+    const kategoriLabelMap = {
+      'bina_diri': 'Bina Diri',
+      'akademik': 'Akademik',
+      'motorik': 'Motorik',
+      'perilaku': 'Basic Learning',
+      'vokasi': 'Vokasi',
+      'lainnya': 'Lainnya',
+    };
+
     function clearSelection() {
       // clear active styling
       programsListEl.querySelectorAll('.list-group-item.active').forEach(r => r.classList.remove('active'));
@@ -258,20 +268,22 @@
       const groups = {};
       programs.forEach(p => {
         const key = p.kategori_key || 'lainnya';
+        const label = p.kategori_label || kategoriLabelMap[key] || key;
         if (!groups[key]) groups[key] = {
-          label: p.kategori_label || (p.kategori_key || 'Lainnya'),
+          label,
           items: []
         };
         groups[key].items.push(p);
       });
 
-      // badge map same as before
+      // badge map
       const badgeMap = {
         'bina_diri': 'bg-success',
         'akademik': 'bg-primary',
         'motorik': 'bg-warning text-white',
         'perilaku': 'bg-danger text-white',
-        'vokasi': 'bg-secondary'
+        'vokasi': 'bg-secondary',
+        'lainnya': 'bg-info text-white',
       };
 
       let html = '';
@@ -322,50 +334,40 @@
         return;
       }
 
-      const promises = kategoriKeys.map(k => {
-        let url = `/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anakId)}&kategori=${encodeURIComponent(k)}`;
-        if (tanggal) url += `&tanggal=${encodeURIComponent(tanggal)}`;
-        return fetch(url, {
-            credentials: 'same-origin'
-          })
-          .then(r => r.json().catch(() => null))
-          .then(j => ({
-            key: k,
-            data: j
-          }))
-          .catch(() => ({
-            key: k,
-            data: null
-          }));
-      });
-
       programsListEl.innerHTML = '<div class="text-muted">Memuat program...</div>';
-      Promise.all(promises).then(results => {
-        // Check if any kategori returned no_lesson_plan flag (means LP not created for this month)
-        const hasNoLessonPlan = results.some(res => res && res.data && res.data.no_lesson_plan === true);
-        if (hasNoLessonPlan) {
-          programsListEl.innerHTML = '<div class="alert alert-warning rounded-3 d-flex align-items-center mb-0" role="alert"><i class="ri-calendar-close-line me-2" style="font-size:1.1rem"></i><div class="mb-0">Lesson Plan belum dibuat untuk bulan tersebut.</div></div>';
+
+      // Single call: returns ALL LP programs for that month with their actual kategori_key
+      const url = `/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anakId)}&tanggal=${encodeURIComponent(tanggal)}`;
+      fetch(url, {
+          credentials: 'same-origin'
+        })
+        .then(r => r.json().catch(() => null))
+        .then(j => {
+          if (!j) {
+            programsListEl.innerHTML = '<div class="text-danger">Gagal memuat program.</div>';
+            return;
+          }
+          if (j.no_lesson_plan) {
+            programsListEl.innerHTML = '<div class="alert alert-warning rounded-3 d-flex align-items-center mb-0" role="alert"><i class="ri-calendar-close-line me-2" style="font-size:1.1rem"></i><div class="mb-0">Lesson Plan belum dibuat untuk bulan tersebut.</div></div>';
+            clearSelection();
+            return;
+          }
+          if (!j.success || !Array.isArray(j.programs)) {
+            programsListEl.innerHTML = '<div class="text-danger">Gagal memuat program.</div>';
+            return;
+          }
+          const aggregated = j.programs.map(p => ({
+            id: p.id,
+            nama_program: p.nama_program,
+            kategori_key: p.kategori_key || 'lainnya',
+            kategori_label: kategoriLabelMap[p.kategori_key] || p.kategori_key || 'Lainnya',
+          }));
+          renderPrograms(aggregated);
           clearSelection();
-          return;
-        }
-        let aggregated = [];
-        results.forEach(res => {
-          if (!res || !res.data || !res.data.success || !Array.isArray(res.data.programs)) return;
-          res.data.programs.forEach(p => {
-            aggregated.push({
-              id: p.id,
-              nama_program: p.nama_program,
-              kategori_key: res.key,
-              kategori_label: (res.key === 'perilaku' ? 'Basic Learning' : (res.key.replace('_', ' ') || res.key))
-            });
-          });
+        })
+        .catch(() => {
+          programsListEl.innerHTML = '<div class="text-danger">Gagal memuat program.</div>';
         });
-        renderPrograms(aggregated);
-        clearSelection();
-      }).catch(err => {
-        console.error('Failed to load programs', err);
-        programsListEl.innerHTML = '<div class="text-danger">Gagal memuat program.</div>';
-      });
     }
 
     if (anakEl) anakEl.addEventListener('change', function() {

@@ -120,12 +120,12 @@
 
 @push('page-script')
 <!-- Modal Tambah Lesson Plan -->
-<div class="modal fade" id="tambahLessonPlanModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="tambahLessonPlanModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><i class="ri-file-list-2-line me-2"></i>Buat Lesson Plan</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close" aria-label="Close" onclick="lpTryClose()"></button>
       </div>
       <form id="lessonPlanForm" method="POST" action="{{ route('lesson-plan.store') }}" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
         @csrf
@@ -175,10 +175,28 @@
 
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-outline-secondary" onclick="lpTryClose()">Batal</button>
           <button type="submit" class="btn btn-primary"><i class="ri-save-line me-1"></i>Buat Lesson Plan</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Konfirmasi Batalkan Lesson Plan -->
+<div class="modal fade" id="lpConfirmCloseModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-semibold"><i class="ri-error-warning-line me-2 text-warning"></i>Batalkan Pembuatan Lesson Plan?</h5>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="mb-0 text-body-secondary">Anda memiliki data yang belum disimpan. Apakah Anda yakin ingin membatalkan? Semua inputan yang sudah diisi akan dihapus.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" onclick="lpCancelConfirm()"><i class="ri-arrow-left-line me-1"></i>Kembali ke Form</button>
+        <button type="button" class="btn btn-danger" onclick="lpConfirmClose()"><i class="ri-delete-bin-line me-1"></i>Batalkan &amp; Hapus Inputan</button>
+      </div>
     </div>
   </div>
 </div>
@@ -192,10 +210,16 @@
     if (hint) hint.remove();
 
     const idx = container.querySelectorAll('.lp-row').length;
-    // Build program options from currently selected PPI
+    // Collect all program IDs already selected across all rows in the modal
+    const alreadySelected = new Set(
+      Array.from(document.querySelectorAll('#tambahLessonPlanModal input[type=hidden][data-prog]')).map(i => String(i.dataset.prog))
+    );
+    // Build program options excluding already-selected ones
     let programOpts = '<option value="">-- Pilih Program --</option>';
     (window._lpProgramList || []).forEach(p => {
-      programOpts += `<option value="${p.nama}">${p.nama}</option>`;
+      if (!alreadySelected.has(String(p.id))) {
+        programOpts += `<option value="${p.id}">${p.nama}</option>`;
+      }
     });
     const div = document.createElement('div');
     div.className = 'lp-row border rounded p-2';
@@ -244,24 +268,28 @@
         return;
       }
     }
-    // hidden input for form submission
+    // hidden input for form submission (using ppi_item_id)
     const hidden = document.createElement('input');
     hidden.type = 'hidden';
-    hidden.name = `schedules[${section}_${idx}][nama_program][]`;
+    hidden.name = `schedules[${section}_${idx}][ppi_item_ids][]`;
     hidden.value = val;
     hidden.dataset.prog = val;
     wrap.appendChild(hidden);
+    // badge shows program name looked up by ID
+    const prog = (window._lpProgramList || []).find(p => String(p.id) === String(val));
+    const label = prog ? prog.nama : val;
     // badge with truncation for long names
     const tag = document.createElement('span');
     tag.className = 'badge bg-primary d-inline-flex align-items-center gap-1 lp-prog-tag';
     tag.style.cssText = 'max-width:100%; overflow:hidden; word-break:break-word; white-space:normal;';
     tag.dataset.val = val;
-    tag.innerHTML = `<span title="${val}">${val}</span><i class="ri-close-line ms-1" style="cursor:pointer;font-size:.85em;flex-shrink:0" onclick="lpRemoveProg(this)"></i>`;
+    tag.dataset.progName = label;
+    tag.innerHTML = `<span title="${label}">${label}</span><i class="ri-close-line ms-1" style="cursor:pointer;font-size:.85em;flex-shrink:0" onclick="lpRemoveProg(this)"></i>`;
     wrap.querySelector('.lp-prog-tags').appendChild(tag);
     // remove chosen option from ALL pickers in the modal so it can't be picked twice globally
     document.querySelectorAll('.lp-prog-picker').forEach(s => {
       Array.from(s.options).forEach(o => {
-        if (o.value === val) o.remove();
+        if (String(o.value) === String(val)) o.remove();
       });
     });
     select.value = '';
@@ -270,6 +298,7 @@
   function lpRemoveProg(icon) {
     const tag = icon.closest('.lp-prog-tag');
     const val = tag.dataset.val;
+    const progName = tag.dataset.progName || val;
     const wrap = tag.closest('.lp-program-wrap');
     // remove hidden input and badge first
     wrap.querySelectorAll('input[type=hidden]').forEach(inp => {
@@ -280,10 +309,10 @@
     document.querySelectorAll('.lp-prog-picker').forEach(s => {
       const w = s.closest('.lp-program-wrap');
       const alreadyPicked = Array.from(w.querySelectorAll('input[type=hidden]')).some(i => i.dataset.prog === val);
-      if (!alreadyPicked && !Array.from(s.options).some(o => o.value === val)) {
+      if (!alreadyPicked && !Array.from(s.options).some(o => String(o.value) === String(val))) {
         const opt = document.createElement('option');
         opt.value = val;
-        opt.textContent = val;
+        opt.textContent = progName;
         s.appendChild(opt);
       }
     });
@@ -296,14 +325,20 @@
     const container = row.parentElement;
     row.remove();
     // release this row's programs back to all remaining pickers
+    // collect name labels before removal
+    const rowProgLabels = {};
+    row.querySelectorAll('.lp-prog-tag').forEach(t => {
+      rowProgLabels[t.dataset.val] = t.dataset.progName || t.dataset.val;
+    });
     rowPrograms.forEach(val => {
+      const progName = rowProgLabels[val] || val;
       document.querySelectorAll('.lp-prog-picker').forEach(s => {
         const w = s.closest('.lp-program-wrap');
         const alreadyPicked = Array.from(w.querySelectorAll('input[type=hidden]')).some(i => i.dataset.prog === val);
-        if (!alreadyPicked && !Array.from(s.options).some(o => o.value === val)) {
+        if (!alreadyPicked && !Array.from(s.options).some(o => String(o.value) === String(val))) {
           const opt = document.createElement('option');
           opt.value = val;
-          opt.textContent = val;
+          opt.textContent = progName;
           s.appendChild(opt);
         }
       });
@@ -361,8 +396,9 @@
             opt.textContent = label;
             ppiSelect.appendChild(opt);
             window._lpRiwayat[p.id] = (p.items || []).map(it => ({
+              id: it.id,
               nama: it.nama_program
-            })).filter(it => it.nama);
+            })).filter(it => it.id && it.nama);
           });
           ppiSelect.disabled = false;
           // reset program list when no PPI selected yet
@@ -387,15 +423,51 @@
       const picked = Array.from(wrap.querySelectorAll('input[type=hidden]')).map(i => i.dataset.prog);
       sel.innerHTML = '<option value="">-- Pilih Program --</option>';
       window._lpProgramList.forEach(p => {
-        if (!picked.includes(p.nama)) {
+        if (!picked.includes(String(p.id))) {
           const o = document.createElement('option');
-          o.value = p.nama;
+          o.value = p.id;
           o.textContent = p.nama;
           sel.appendChild(o);
         }
       });
     });
   });
+
+  // Check if the form has any user-entered data
+  function lpHasInput() {
+    if (document.getElementById('lpAnakSelect').value) return true;
+    if (document.querySelectorAll('#tambahLessonPlanModal .lp-row').length > 0) return true;
+    return false;
+  }
+
+  // Attempt to close: show confirm dialog if there's input, else close directly
+  function lpTryClose() {
+    if (lpHasInput()) {
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('lpConfirmCloseModal')).show();
+    } else {
+      lpForceClose();
+    }
+  }
+
+  // Close the main modal without confirmation
+  function lpForceClose() {
+    bootstrap.Modal.getInstance(document.getElementById('tambahLessonPlanModal')).hide();
+  }
+
+  // Dismiss the confirm dialog and go back to the form
+  function lpCancelConfirm() {
+    bootstrap.Modal.getInstance(document.getElementById('lpConfirmCloseModal')).hide();
+  }
+
+  // User confirmed cancellation: close confirm dialog then main modal
+  function lpConfirmClose() {
+    var confirmEl = document.getElementById('lpConfirmCloseModal');
+    confirmEl.addEventListener('hidden.bs.modal', function handler() {
+      confirmEl.removeEventListener('hidden.bs.modal', handler);
+      lpForceClose();
+    });
+    bootstrap.Modal.getInstance(confirmEl).hide();
+  }
 
   // Reset modal when closed
   document.getElementById('tambahLessonPlanModal').addEventListener('hidden.bs.modal', function() {

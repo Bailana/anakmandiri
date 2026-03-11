@@ -241,7 +241,7 @@ class AssessmentController extends Controller
       'kemampuan.*.skala' => 'nullable|in:1,2,3,4,5',
       'programs' => 'required|array|min:1',
       'programs.*.program_id' => 'nullable|exists:programs,id',
-      'programs.*.kategori' => 'required|in:bina_diri,akademik,motorik,perilaku,vokasi',
+      'programs.*.kategori' => 'nullable|in:bina_diri,akademik,motorik,perilaku,vokasi,lainnya',
       'programs.*.perkembangan' => 'nullable|integer|min:1|max:4',
     ]);
 
@@ -274,7 +274,7 @@ class AssessmentController extends Controller
         'anak_didik_id' => $validated['anak_didik_id'],
         'konsultan_id' => $validated['konsultan_id'] ?? null,
         'program_id' => $p['program_id'] ?? null,
-        'kategori' => $p['kategori'],
+        'kategori' => in_array($p['kategori'] ?? '', ['bina_diri', 'akademik', 'motorik', 'perilaku', 'vokasi']) ? $p['kategori'] : null,
         'perkembangan' => isset($p['perkembangan']) && $p['perkembangan'] !== '' ? $p['perkembangan'] : null,
         'aktivitas' => $validated['aktivitas'] ?? null,
         'hasil_penilaian' => $validated['hasil_penilaian'] ?? null,
@@ -309,6 +309,135 @@ class AssessmentController extends Controller
     $kategori = $request->query('kategori');
     $tanggalQuery = $request->query('tanggal') ?? $request->query('tanggal_assessment') ?? null;
 
+    if (!$anakId) {
+      return response()->json(['success' => false, 'programs' => []]);
+    }
+
+    $includeInactive = false;
+    if ($request->has('include_inactive')) {
+      $val = $request->query('include_inactive');
+      $includeInactive = filter_var($val, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+    }
+
+    // Helper: normalize stored kategori value → frontend key
+    $toFrontendKey = function (?string $cat): string {
+      $c = strtolower(trim($cat ?? ''));
+      if ($c === 'bina diri') return 'bina_diri';
+      if ($c === 'akademik') return 'akademik';
+      if ($c === 'motorik') return 'motorik';
+      if ($c === 'basic learning' || $c === 'perilaku') return 'perilaku';
+      if ($c === 'vokasi') return 'vokasi';
+      return 'lainnya';
+    };
+
+    // === ALL-LP MODE: no kategori specified + tanggal provided ===
+    // Returns ALL items from that month's lesson plan with their actual kategori_key per item.
+    if (!$kategori && $tanggalQuery && !$includeInactive) {
+      try {
+        $lpDate = Carbon::parse($tanggalQuery);
+        $lp = LessonPlan::where('anak_didik_id', $anakId)
+          ->whereYear('tanggal', $lpDate->year)
+          ->whereMonth('tanggal', $lpDate->month)
+          ->with('schedules')
+          ->first();
+
+        if (!$lp) {
+          return response()->json(['success' => true, 'programs' => [], 'no_lesson_plan' => true]);
+        }
+
+        // Collect all ppi_item_ids from all schedule rows
+        $ppiItemIds = $lp->schedules
+          ->map(function ($s) {
+            $ids = json_decode($s->ppi_item_ids ?? 'null', true);
+            return is_array($ids) ? $ids : [];
+          })
+          ->flatten()->filter()->unique()->values()->toArray();
+
+        if (!empty($ppiItemIds)) {
+          $items = PpiItem::whereIn('id', $ppiItemIds)->get();
+        } else {
+          // Old records: fall back to name matching
+          $lpPrograms = $lp->schedules->pluck('nama_program')->filter()
+            ->flatMap(function ($np) {
+              $decoded = json_decode($np, true);
+              if (is_array($decoded)) return array_filter(array_map('trim', $decoded));
+              return array_filter(array_map('trim', explode(',', $np)));
+            })->unique()->values()->toArray();
+
+          if (empty($lpPrograms)) {
+            return response()->json(['success' => true, 'programs' => [], 'no_lesson_plan' => false]);
+          }
+          $items = PpiItem::whereHas('ppi', function ($q) use ($anakId) {
+            $q->where('anak_didik_id', $anakId);
+          })->whereIn('nama_program', $lpPrograms)->get();
+        }
+
+        $targetDate = null;
+        try {
+          $targetDate = Carbon::parse($tanggalQuery)->toDateString();
+        } catch (\Throwable $e) {
+        }
+
+        $result = [];
+        foreach ($items as $it) {
+          $name = trim($it->nama_program ?? '');
+          if ($name === '') continue;
+
+          $catKey = $toFrontendKey($it->kategori);
+          // programs.kategori is an ENUM — only store valid values, null for unknown
+          $catDb = in_array($catKey, ['bina_diri', 'akademik', 'motorik', 'perilaku', 'vokasi']) ? $catKey : null;
+
+          if (Schema::hasTable('programs')) {
+            // Look up by anak_didik_id + nama_program only (ignore kategori) so we always
+            // find the same Program record regardless of which kategori was used when first created.
+            $prog = Program::where('anak_didik_id', $anakId)
+              ->where('nama_program', $name)
+              ->first();
+            if (!$prog) {
+              $prog = Program::create([
+                'anak_didik_id' => $anakId,
+                'nama_program'  => $name,
+                'kategori'      => $catDb,
+                'konsultan_id'  => null,
+                'deskripsi'     => null,
+              ]);
+            }
+
+            if ($targetDate) {
+              // Collect ALL program IDs with this name for this child (may differ due to historical
+              // duplicate records created with different kategori values) then check any of them.
+              $allProgIds = Program::where('anak_didik_id', $anakId)
+                ->where('nama_program', $name)
+                ->pluck('id');
+              $already = Assessment::where('anak_didik_id', $anakId)
+                ->whereIn('program_id', $allProgIds)
+                ->whereDate('tanggal_assessment', $targetDate)
+                ->exists();
+              if ($already) continue;
+            }
+            $result[] = ['id' => $prog->id, 'nama_program' => $prog->nama_program, 'kategori_key' => $catKey];
+          } else {
+            if ($targetDate) {
+              $nm = trim(strtolower($name));
+              $already = Assessment::where('anak_didik_id', $anakId)
+                ->whereDate('tanggal_assessment', $targetDate)
+                ->where(function ($q) use ($nm) {
+                  $q->whereRaw('LOWER(COALESCE(hasil_penilaian, "")) LIKE ?', ["%{$nm}%"])
+                    ->orWhereRaw('LOWER(COALESCE(aktivitas, "")) LIKE ?', ["%{$nm}%"]);
+                })->exists();
+              if ($already) continue;
+            }
+            $result[] = ['id' => null, 'nama_program' => $name, 'kategori_key' => $catKey];
+          }
+        }
+
+        return response()->json(['success' => true, 'programs' => $result, 'no_lesson_plan' => false]);
+      } catch (\Throwable $e) {
+        // Fall through to per-kategori mode on unexpected errors
+      }
+    }
+
+    // === PER-KATEGORI MODE (existing, used when kategori param is provided or include_inactive) ===
     if (!$anakId || !$kategori) {
       return response()->json(['success' => false, 'programs' => []]);
     }
@@ -337,15 +466,15 @@ class AssessmentController extends Controller
 
     $itemsQuery = PpiItem::whereHas('ppi', function ($q) use ($anakId) {
       $q->where('anak_didik_id', $anakId);
-    })->when(!$includeInactive, function ($q) {
-      $q->where('aktif', 1);
     })->where(function ($q) use ($lk, $lorig) {
       $q->whereRaw('LOWER(kategori) = ?', [$lk])
         ->orWhereRaw('LOWER(kategori) LIKE ?', ["%{$lk}%"])
         ->orWhereRaw('LOWER(kategori) LIKE ?', ["%{$lorig}%"]);
     });
 
-    // If tanggal provided, filter programs to only those in the lesson plan for that month
+    // If tanggal provided, limit programs to those in the lesson plan schedule for that month.
+    // This handles old records (name-based) and new records (ID-based ppi_item_ids).
+    // If no lesson plan exists for that month, block and signal the frontend.
     $noLessonPlan = false;
     if ($tanggalQuery && !$includeInactive) {
       try {
@@ -357,19 +486,43 @@ class AssessmentController extends Controller
           ->first();
 
         if ($lp) {
-          $lpPrograms = $lp->schedules
-            ->pluck('nama_program')
+          // Prefer ID-based filtering using ppi_item_ids (new records)
+          $ppiItemIds = $lp->schedules
+            ->map(function ($s) {
+              $ids = json_decode($s->ppi_item_ids ?? 'null', true);
+              return is_array($ids) ? $ids : [];
+            })
+            ->flatten()
             ->filter()
-            ->flatMap(fn($np) => array_filter(array_map('trim', explode(',', $np))))
             ->unique()
             ->values()
             ->toArray();
 
-          if (!empty($lpPrograms)) {
-            $itemsQuery->whereIn('nama_program', $lpPrograms);
+          if (!empty($ppiItemIds)) {
+            // New records: filter by ID (removes aktif constraint so all referenced items appear)
+            $itemsQuery->whereIn('id', $ppiItemIds);
           } else {
-            // Lesson plan exists but has no programs in schedules → show nothing
-            $itemsQuery->whereRaw('0 = 1');
+            // Old records: fall back to name matching (nama_program may be JSON or comma-separated)
+            $lpPrograms = $lp->schedules
+              ->pluck('nama_program')
+              ->filter()
+              ->flatMap(function ($np) {
+                $decoded = json_decode($np, true);
+                if (is_array($decoded)) {
+                  return array_filter(array_map('trim', $decoded));
+                }
+                return array_filter(array_map('trim', explode(',', $np)));
+              })
+              ->unique()
+              ->values()
+              ->toArray();
+
+            if (!empty($lpPrograms)) {
+              $itemsQuery->whereIn('nama_program', $lpPrograms);
+            } else {
+              // Lesson plan exists but schedule rows have no programs → show nothing
+              $itemsQuery->whereRaw('0 = 1');
+            }
           }
         } else {
           // No lesson plan for that month → show nothing and signal frontend
@@ -377,8 +530,14 @@ class AssessmentController extends Controller
           $itemsQuery->whereRaw('0 = 1');
         }
       } catch (\Throwable $e) {
-        // Ignore date parse errors, use default aktif=1 filter
+        // Ignore date parse errors, fall back to aktif=1 filter
+        if (!$includeInactive) {
+          $itemsQuery->where('aktif', 1);
+        }
       }
+    } elseif (!$includeInactive) {
+      // No tanggal provided — fall back to aktif=1 filter
+      $itemsQuery->where('aktif', 1);
     }
 
     $items = $itemsQuery->get();

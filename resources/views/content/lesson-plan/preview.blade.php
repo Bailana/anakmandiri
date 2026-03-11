@@ -325,7 +325,8 @@
         <td>{{ \Carbon\Carbon::parse($row->jam_mulai)->format('H:i') }} &ndash; {{ \Carbon\Carbon::parse($row->jam_selesai)->format('H:i') }}</td>
         <td>
           @php
-          $programs = array_filter(array_map('trim', explode(',', $row->nama_program ?? '')));
+          $decoded = json_decode($row->nama_program ?? 'null', true);
+          $programs = array_filter(array_map('trim', is_array($decoded) ? $decoded : explode(',', $row->nama_program ?? '')));
           @endphp
           @forelse($programs as $prog)
           @php

@@ -15,6 +15,7 @@ class LessonPlanSchedule extends Model
     'jam_selesai',
     'keterangan',
     'nama_program',
+    'ppi_item_ids',
     'urutan',
   ];
 

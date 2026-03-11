@@ -11,13 +11,14 @@
 $canManagePatients = false;
 $isKepalaTerapis = false;
 if (isset($user)) {
-// Only terapis who are Kepala Klinik can manage patients from this view.
-if ($user->role === 'terapis') {
-// Check Karyawan table for posisi 'Kepala Klinik' by email or name
+if ($user->role === 'admin') {
+$canManagePatients = true;
+} elseif ($user->role === 'terapis') {
+$canManagePatients = true;
+// Still detect if this terapis is Kepala Klinik (used elsewhere in the view)
 $isKepalaByEmail = \App\Models\Karyawan::where('email', $user->email)->where('posisi', 'Kepala Klinik')->exists();
 $isKepalaByName = \App\Models\Karyawan::where('nama', $user->name)->where('posisi', 'Kepala Klinik')->exists();
 if ($isKepalaByEmail || $isKepalaByName) {
-$canManagePatients = true;
 $isKepalaTerapis = true;
 }
 }

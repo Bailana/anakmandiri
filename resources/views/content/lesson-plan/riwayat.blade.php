@@ -321,12 +321,14 @@
     const globallyPicked = new Set(
       Array.from(document.querySelectorAll('#editLpForm .elp-row input[type=hidden][data-prog]')).map(i => i.dataset.prog)
     );
-    const thisPrefill = new Set((prefill?.nama_program || []).filter(v => v));
+    // Support both ppi_item_ids (new) and nama_program (old compat) for prefill
+    const prefillIds = (prefill?.ppi_item_ids || []).map(String).filter(v => v);
+    const thisPrefill = new Set(prefillIds);
     const allPicked = new Set([...globallyPicked, ...thisPrefill]);
 
     let programOpts = '<option value="">-- Pilih Program --</option>';
     (_elpProgramList || []).forEach(p => {
-      if (!allPicked.has(p.nama)) programOpts += `<option value="${p.nama}">${p.nama}</option>`;
+      if (!allPicked.has(String(p.id))) programOpts += `<option value="${p.id}">${p.nama}</option>`;
     });
 
     const div = document.createElement('div');
@@ -367,7 +369,7 @@
       document.querySelectorAll('#editLpForm .elp-prog-picker').forEach(sel => {
         if (sel.closest('.elp-row') === div) return;
         Array.from(sel.options).forEach(o => {
-          if (thisPrefill.has(o.value)) o.remove();
+          if (thisPrefill.has(String(o.value))) o.remove();
         });
       });
     }
@@ -375,18 +377,21 @@
     // Add pre-fill hidden inputs and badges
     if (thisPrefill.size > 0) {
       const wrap = div.querySelector('.elp-program-wrap');
-      thisPrefill.forEach(val => {
+      thisPrefill.forEach(idStr => {
+        const prog = (_elpProgramList || []).find(p => String(p.id) === idStr);
+        const label = prog ? prog.nama : idStr;
         const hidden = document.createElement('input');
         hidden.type = 'hidden';
-        hidden.name = `schedules[${section}_${actualIdx}][nama_program][]`;
-        hidden.value = val;
-        hidden.dataset.prog = val;
+        hidden.name = `schedules[${section}_${actualIdx}][ppi_item_ids][]`;
+        hidden.value = idStr;
+        hidden.dataset.prog = idStr;
         wrap.appendChild(hidden);
         const tag = document.createElement('span');
         tag.className = 'badge bg-primary d-inline-flex align-items-center gap-1 elp-prog-tag';
         tag.style.cssText = 'max-width:100%;overflow:hidden;word-break:break-word;white-space:normal;';
-        tag.dataset.val = val;
-        tag.innerHTML = `<span title="${val}">${val}</span><i class="ri-close-line ms-1" style="cursor:pointer;font-size:.85em;flex-shrink:0" onclick="elpRemoveProg(this)"></i>`;
+        tag.dataset.val = idStr;
+        tag.dataset.progName = label;
+        tag.innerHTML = `<span title="${label}">${label}</span><i class="ri-close-line ms-1" style="cursor:pointer;font-size:.85em;flex-shrink:0" onclick="elpRemoveProg(this)"></i>`;
         wrap.querySelector('.elp-prog-tags').appendChild(tag);
       });
     }
@@ -404,19 +409,22 @@
     }
     const hidden = document.createElement('input');
     hidden.type = 'hidden';
-    hidden.name = `schedules[${section}_${idx}][nama_program][]`;
+    hidden.name = `schedules[${section}_${idx}][ppi_item_ids][]`;
     hidden.value = val;
     hidden.dataset.prog = val;
     wrap.appendChild(hidden);
+    const prog = (_elpProgramList || []).find(p => String(p.id) === String(val));
+    const label = prog ? prog.nama : val;
     const tag = document.createElement('span');
     tag.className = 'badge bg-primary d-inline-flex align-items-center gap-1 elp-prog-tag';
     tag.style.cssText = 'max-width:100%;overflow:hidden;word-break:break-word;white-space:normal;';
     tag.dataset.val = val;
-    tag.innerHTML = `<span title="${val}">${val}</span><i class="ri-close-line ms-1" style="cursor:pointer;font-size:.85em;flex-shrink:0" onclick="elpRemoveProg(this)"></i>`;
+    tag.dataset.progName = label;
+    tag.innerHTML = `<span title="${label}">${label}</span><i class="ri-close-line ms-1" style="cursor:pointer;font-size:.85em;flex-shrink:0" onclick="elpRemoveProg(this)"></i>`;
     wrap.querySelector('.elp-prog-tags').appendChild(tag);
     document.querySelectorAll('#editLpForm .elp-prog-picker').forEach(s => {
       Array.from(s.options).forEach(o => {
-        if (o.value === val) o.remove();
+        if (String(o.value) === String(val)) o.remove();
       });
     });
     select.value = '';
@@ -425,6 +433,7 @@
   function elpRemoveProg(icon) {
     const tag = icon.closest('.elp-prog-tag');
     const val = tag.dataset.val;
+    const progName = tag.dataset.progName || val;
     const wrap = tag.closest('.elp-program-wrap');
     wrap.querySelectorAll('input[type=hidden]').forEach(inp => {
       if (inp.dataset.prog === val) inp.remove();
@@ -433,9 +442,10 @@
     document.querySelectorAll('#editLpForm .elp-prog-picker').forEach(s => {
       const w = s.closest('.elp-program-wrap');
       const already = Array.from(w.querySelectorAll('input[type=hidden]')).some(i => i.dataset.prog === val);
-      if (!already && !Array.from(s.options).some(o => o.value === val)) {
+      if (!already && !Array.from(s.options).some(o => String(o.value) === String(val))) {
         const opt = document.createElement('option');
-        opt.value = opt.textContent = val;
+        opt.value = val;
+        opt.textContent = progName;
         s.appendChild(opt);
       }
     });
@@ -446,13 +456,19 @@
     const rowPrograms = Array.from(row.querySelectorAll('input[type=hidden][data-prog]')).map(i => i.dataset.prog);
     const container = row.parentElement;
     row.remove();
+    const rowProgLabels = {};
+    row.querySelectorAll('.elp-prog-tag').forEach(t => {
+      rowProgLabels[t.dataset.val] = t.dataset.progName || t.dataset.val;
+    });
     rowPrograms.forEach(val => {
+      const progName = rowProgLabels[val] || val;
       document.querySelectorAll('#editLpForm .elp-prog-picker').forEach(s => {
         const w = s.closest('.elp-program-wrap');
         const already = Array.from(w.querySelectorAll('input[type=hidden]')).some(i => i.dataset.prog === val);
-        if (!already && !Array.from(s.options).some(o => o.value === val)) {
+        if (!already && !Array.from(s.options).some(o => String(o.value) === String(val))) {
           const opt = document.createElement('option');
-          opt.value = opt.textContent = val;
+          opt.value = val;
+          opt.textContent = progName;
           s.appendChild(opt);
         }
       });
@@ -511,8 +527,9 @@
                   if (p.id == res.ppi_id) opt.selected = true;
                   ppiSelect.appendChild(opt);
                   _elpRiwayat[p.id] = (p.items || []).map(it => ({
+                    id: it.id,
                     nama: it.nama_program
-                  })).filter(it => it.nama);
+                  })).filter(it => it.id && it.nama);
                 });
                 ppiSelect.disabled = false;
               }
@@ -541,9 +558,10 @@
       const picked = Array.from(wrap.querySelectorAll('input[type=hidden]')).map(i => i.dataset.prog);
       sel.innerHTML = '<option value="">-- Pilih Program --</option>';
       _elpProgramList.forEach(p => {
-        if (!picked.includes(p.nama)) {
+        if (!picked.includes(String(p.id))) {
           const o = document.createElement('option');
-          o.value = o.textContent = p.nama;
+          o.value = p.id;
+          o.textContent = p.nama;
           sel.appendChild(o);
         }
       });
@@ -601,14 +619,32 @@
               html += `<div class="table-responsive"><table class="table table-sm table-bordered mb-0">
                 <thead class="table-light"><tr><th style="width:5%">No</th><th style="width:18%">Waktu</th><th style="width:30%">Program</th><th>Aktivitas</th></tr></thead><tbody>`;
               rows.forEach((r, i) => {
-                html += `<tr>
-                  <td class="text-center">${i + 1}</td>
-                  <td>${r.jam_mulai} &ndash; ${r.jam_selesai}</td>
-                  <td>${r.nama_program ? r.nama_program.split(', ').map(p => `<span class="badge bg-label-primary rounded-pill mb-1 me-1 d-inline-block lp-prog-badge" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle" title="${p}" onclick="showProgDetail('${p.replace(/'/g,"\\'")}')">` + p + `</span>`).join('') : '<span class="text-body-secondary">-</span>'}</td>
-                  <td style="white-space:normal;word-break:break-word;min-width:120px;">${r.keterangan || '<span class="text-body-secondary">-</span>'}</td>
-                </tr>`;
+                const ids = r.ppi_item_ids || [];
+                const names = Array.isArray(r.nama_program) ? r.nama_program : (r.nama_program ? r.nama_program.split(', ') : []);
+                let progHtml = '';
+                if (ids.length > 0) {
+                  progHtml = ids.map((id, idx2) => {
+                    const nm = (names[idx2] || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    const nmRaw = names[idx2] || String(id);
+                    return '<span class="badge bg-label-primary rounded-pill mb-1 me-1 d-inline-block lp-prog-badge" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle" title="' + nm + '" onclick="showProgDetail(' + id + ', \'' + nm + '\')">' + nmRaw + '</span>';
+                  }).join('');
+                } else if (names.filter(p => p).length > 0) {
+                  progHtml = names.filter(p => p).map(p => {
+                    const safe = p.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    return '<span class="badge bg-label-primary rounded-pill mb-1 me-1 d-inline-block lp-prog-badge" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle" title="' + safe + '" onclick="showProgDetail(null, \'' + safe + '\')">' + p + '</span>';
+                  }).join('');
+                } else {
+                  progHtml = '<span class="text-body-secondary">-</span>';
+                }
+                const keteranganHtml = r.keterangan || '<span class="text-body-secondary">-</span>';
+                html += '<tr>';
+                html += '<td class="text-center">' + (i + 1) + '</td>';
+                html += '<td>' + r.jam_mulai + ' &ndash; ' + r.jam_selesai + '</td>';
+                html += '<td>' + progHtml + '</td>';
+                html += '<td style="white-space:normal;word-break:break-word;min-width:120px;">' + keteranganHtml + '</td>';
+                html += '</tr>';
               });
-              html += `</tbody></table></div>`;
+              html += '</tbody></table></div>';
             }
             html += `</div>`;
           });
@@ -625,16 +661,20 @@
     document.getElementById('lpProgOverlay').classList.remove('show');
   }
 
-  function showProgDetail(namaProgram) {
+  function showProgDetail(ppiItemId, namaProgram) {
     const body = document.getElementById('lpProgOverlayBody');
     body.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat...</div>';
     document.getElementById('lpProgOverlay').classList.add('show');
 
-    const params = new URLSearchParams({
-      nama_program: namaProgram
-    });
-    if (currentPpiId) params.append('ppi_id', currentPpiId);
+    if (!ppiItemId && !namaProgram) {
+      body.innerHTML = '<p class="text-body-secondary">Detail program tidak tersedia.</p>';
+      return;
+    }
 
+    const params = new URLSearchParams();
+    if (ppiItemId) params.set('ppi_item_id', ppiItemId);
+    if (namaProgram) params.set('nama_program', namaProgram);
+    if (!ppiItemId && currentPpiId) params.set('ppi_id', currentPpiId);
     fetch('/lesson-plan/program-detail?' + params.toString())
       .then(r => r.json())
       .then(res => {
