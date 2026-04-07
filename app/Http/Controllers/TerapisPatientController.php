@@ -10,6 +10,7 @@ use App\Models\AnakDidik;
 use App\Models\GuruAnakDidikSchedule;
 use App\Models\Karyawan;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class TerapisPatientController extends Controller
 {
@@ -61,21 +62,36 @@ class TerapisPatientController extends Controller
     $search = $request->query('search');
     $therapists = collect();
 
-    // Show all assignments to both admin and terapis users.
-    // Build query and therapist list (used for optional filtering by admin).
+    // Build therapist list (used for optional filtering by admin).
     $therapists = User::where('role', 'terapis')->get();
 
-    $query = GuruAnakDidik::with(['anakDidik', 'user']);
-    if ($selectedTherapisId) {
-      $query->where('user_id', $selectedTherapisId);
+    $query = GuruAnakDidik::with(['anakDidik', 'user', 'schedules']);
+
+    // Admin can browse all assignments and optionally filter by therapist.
+    // Terapis users should only see their own assignments.
+    if ($user->role === 'admin') {
+      if ($selectedTherapisId) {
+        $query->where('user_id', $selectedTherapisId);
+      } else {
+        $query->whereIn('user_id', $therapists->pluck('id')->toArray());
+      }
     } else {
-      // Default: show assignments for all therapists
-      $query->whereIn('user_id', $therapists->pluck('id')->toArray());
+      $normalizedUserName = strtolower(trim((string) $user->name));
+      $query->where(function ($q) use ($user, $normalizedUserName) {
+        $q->where('user_id', $user->id)
+          // Backward-compatibility for old rows created by Kepala Klinik
+          // that stored therapist only in `terapis_nama`.
+          ->orWhereRaw('LOWER(TRIM(COALESCE(terapis_nama, ""))) = ?', [$normalizedUserName])
+          ->orWhereHas('schedules', function ($sq) use ($normalizedUserName) {
+            $sq->whereRaw('LOWER(TRIM(COALESCE(terapis_nama, ""))) = ?', [$normalizedUserName]);
+          });
+      });
     }
 
     if ($request->filled('search')) {
       $query->whereHas('anakDidik', function ($q) use ($search) {
-        $q->where('nama', 'like', "%{$search}%");
+        $q->where('nama', 'like', "%{$search}%")
+          ->orWhere('nis', 'like', "%{$search}%");
       });
     }
 
@@ -91,8 +107,48 @@ class TerapisPatientController extends Controller
         'asc'
       )
       ->orderBy('id', 'asc')
-      ->paginate(10)
-      ->appends($request->query());
+      ->get();
+
+    // Show one row per child for all roles. This prevents legacy duplicate rows
+    // when a child has more than one assignment record.
+    $groupedAssignments = $assignments
+      ->groupBy('anak_didik_id')
+      ->map(function ($items) {
+        $base = clone $items->first();
+        $jenisParts = [];
+        $mergedSchedules = collect();
+
+        foreach ($items as $item) {
+          $raw = trim((string) ($item->jenis_terapi ?? ''));
+          if ($raw !== '') {
+            foreach (preg_split('/[|,]+/', $raw) as $part) {
+              $part = trim($part);
+              if ($part !== '') $jenisParts[] = $part;
+            }
+          }
+
+          if ($item->relationLoaded('schedules')) {
+            $mergedSchedules = $mergedSchedules->concat($item->schedules);
+          }
+        }
+
+        $base->jenis_terapi = implode(' | ', array_values(array_unique($jenisParts)));
+        $base->status = $items->contains(fn($item) => $item->status === 'aktif') ? 'aktif' : ($base->status ?? null);
+        $base->setRelation('schedules', $mergedSchedules->unique('id')->values());
+        return $base;
+      })
+      ->values();
+
+    $perPage = 10;
+    $currentPage = LengthAwarePaginator::resolveCurrentPage();
+    $currentItems = $groupedAssignments->slice(($currentPage - 1) * $perPage, $perPage)->values();
+    $assignments = new LengthAwarePaginator(
+      $currentItems,
+      $groupedAssignments->count(),
+      $perPage,
+      $currentPage,
+      ['path' => $request->url(), 'query' => $request->query()]
+    );
 
     return view('content.terapis.patients', compact('assignments', 'therapists', 'user', 'selectedTherapisId', 'selectedStatus'));
   }
@@ -186,7 +242,21 @@ class TerapisPatientController extends Controller
       'schedules.*.jam_mulai' => 'nullable|date_format:H:i',
     ]);
 
-    $terapisId = $user->role === 'terapis' ? $user->id : ($data['user_id'] ?? null);
+    $terapisId = null;
+    if ($user->role === 'terapis') {
+      $terapisId = $user->id;
+      // Kepala Klinik may assign to another therapist using `terapis_nama`.
+      if ($this->isKepalaKlinik($user) && !empty($data['terapis_nama'])) {
+        $mappedTherapistId = User::where('role', 'terapis')
+          ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim((string) $data['terapis_nama']))])
+          ->value('id');
+        if (!empty($mappedTherapistId)) {
+          $terapisId = $mappedTherapistId;
+        }
+      }
+    } else {
+      $terapisId = $data['user_id'] ?? null;
+    }
     if (!$terapisId) {
       return back()->withInput()->withErrors(['user_id' => 'Pilih terapis.']);
     }
@@ -194,14 +264,26 @@ class TerapisPatientController extends Controller
     // Check if an assignment already exists for this terapis + anak_didik.
     // The DB has a unique constraint on (user_id, anak_didik_id) so if an
     // assignment exists we must update/merge it instead of inserting.
-    $exists = GuruAnakDidik::where('user_id', $terapisId)
-      ->where('anak_didik_id', $data['anak_didik_id'])
-      ->first();
+    $existsQuery = GuruAnakDidik::where('anak_didik_id', $data['anak_didik_id']);
+    if ($user->role === 'admin') {
+      $existsQuery->where('user_id', $terapisId);
+    } elseif (!$this->isKepalaKlinik($user)) {
+      // Non-kepala therapist should attach new schedules to the existing child row.
+      $existsQuery->where(function ($q) use ($terapisId) {
+        $q->where('user_id', $terapisId)
+          ->orWhereNull('user_id');
+      });
+    }
+
+    $exists = $existsQuery->orderBy('id', 'asc')->first();
     if ($exists) {
       // DB has unique constraint on (user_id, anak_didik_id) so we cannot insert another
       // assignment row. Instead, update the existing assignment: merge jenis_terapi
       // values if different and append any provided schedules to it.
       $assignment = $exists;
+      if ($user->role !== 'admin' && (int) $assignment->user_id !== (int) $terapisId) {
+        $assignment->user_id = $terapisId;
+      }
       $newJenis = $data['jenis_terapi'] ?? null;
       if ($newJenis) {
         $existingJenis = $assignment->jenis_terapi ?? '';
@@ -238,7 +320,7 @@ class TerapisPatientController extends Controller
             ]);
           } catch (\Throwable $ex) {
             // ignore individual schedule errors but continue
-            \Log::warning('Failed to create schedule while merging assignment', ['error' => $ex->getMessage(), 'data' => $s]);
+            Log::warning('Failed to create schedule while merging assignment', ['error' => $ex->getMessage(), 'data' => $s]);
           }
         }
       }
@@ -325,7 +407,21 @@ class TerapisPatientController extends Controller
 
     $assignment = GuruAnakDidik::findOrFail($id);
     Log::info('TerapisPatientController@update called', ['id' => $id, 'request' => $request->all()]);
-    $terapisId = $user->role === 'terapis' ? $user->id : ($data['user_id'] ?? $assignment->user_id);
+    $terapisId = null;
+    if ($user->role === 'terapis') {
+      $terapisId = $user->id;
+      // Kepala Klinik may reassign/edit records for another therapist.
+      if ($this->isKepalaKlinik($user) && !empty($data['terapis_nama'])) {
+        $mappedTherapistId = User::where('role', 'terapis')
+          ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim((string) $data['terapis_nama']))])
+          ->value('id');
+        if (!empty($mappedTherapistId)) {
+          $terapisId = $mappedTherapistId;
+        }
+      }
+    } else {
+      $terapisId = $data['user_id'] ?? $assignment->user_id;
+    }
 
     $assignment->update([
       'user_id' => $terapisId,
@@ -400,6 +496,17 @@ class TerapisPatientController extends Controller
     if ($user->role === 'admin') return true;
     if ($user->role === 'terapis') return true;
     return false;
+  }
+
+  /**
+   * Check if therapist account is marked as Kepala Klinik in karyawans table.
+   */
+  private function isKepalaKlinik($user): bool
+  {
+    if (!$user || $user->role !== 'terapis') return false;
+
+    return Karyawan::where('email', $user->email)->where('posisi', 'Kepala Klinik')->exists()
+      || Karyawan::where('nama', $user->name)->where('posisi', 'Kepala Klinik')->exists();
   }
 
   /**

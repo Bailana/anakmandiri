@@ -555,12 +555,9 @@
                 const progName = (it.nama_program || '').trim();
                 const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
                 const isActiveThisMonth = Array.isArray(it.active_months) && it.active_months.includes(currentMonth);
-                const hasAnyLessonPlan = Array.isArray(it.active_months) && it.active_months.length > 0;
                 const dot = isActiveThisMonth ?
                   `<span title="Dipilih di Lesson Plan bulan ini" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#28a745;flex-shrink:0;"></span>` :
-                  (hasAnyLessonPlan ?
-                    `<span title="Pernah dipilih di Lesson Plan" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6c757d;flex-shrink:0;"></span>` :
-                    '');
+                  '';
                 programsHtml += `<li class="small fw-bold" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">${progName}${dot}</li>`;
               });
               programsHtml += `</ol>`;

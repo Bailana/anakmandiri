@@ -105,14 +105,64 @@ class AssessmentController extends Controller
     $wajibTotals = [];
     $wajibDoneToday = [];
     foreach ($anakIds as $anakId) {
-      // get active PPI items for this anak
-      $items = PpiItem::whereHas('ppi', function ($q) use ($anakId) {
-        $q->where('anak_didik_id', $anakId);
-      })->where('aktif', 1)->get();
+      // Wajib nilai must follow CURRENT month lesson plan only (not historical months).
+      $today = Carbon::today();
+      $lessonPlans = LessonPlan::where('anak_didik_id', $anakId)
+        ->whereYear('tanggal', $today->year)
+        ->whereMonth('tanggal', $today->month)
+        ->with('schedules')
+        ->get();
 
-      $names = $items->pluck('nama_program')->map(function ($n) {
-        return trim(strtolower($n ?? ''));
-      })->filter()->unique()->values()->all();
+      $schedules = $lessonPlans->flatMap(function ($lp) {
+        return $lp->schedules ?? collect();
+      });
+
+      $names = [];
+      if ($schedules->isNotEmpty()) {
+        // Prefer ID-based extraction when ppi_item_ids exists.
+        $ppiItemIds = $schedules
+          ->map(function ($s) {
+            $ids = json_decode($s->ppi_item_ids ?? 'null', true);
+            return is_array($ids) ? $ids : [];
+          })
+          ->flatten()
+          ->filter()
+          ->map(fn($id) => (int) $id)
+          ->unique()
+          ->values()
+          ->all();
+
+        if (!empty($ppiItemIds)) {
+          $names = PpiItem::whereIn('id', $ppiItemIds)
+            ->pluck('nama_program')
+            ->map(function ($n) {
+              return trim(strtolower((string) $n));
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        } else {
+          // Backward compatibility for old lesson plan records (name-based storage).
+          $names = $schedules
+            ->pluck('nama_program')
+            ->filter()
+            ->flatMap(function ($np) {
+              $decoded = json_decode($np, true);
+              if (is_array($decoded)) {
+                return array_filter(array_map('trim', $decoded));
+              }
+              return array_filter(array_map('trim', explode(',', $np)));
+            })
+            ->map(function ($n) {
+              return trim(strtolower((string) $n));
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+        }
+      }
 
       $total = count($names);
       $wajibTotals[$anakId] = $total;
@@ -626,10 +676,17 @@ class AssessmentController extends Controller
    */
   public function programHistory($anakId)
   {
-    $assessments = Assessment::with('program')
-      ->where('anak_didik_id', $anakId)
-      ->orderBy('tanggal_assessment')
-      ->get();
+    // Ambil filter bulan dan tahun dari query string
+    $month = request()->query('month'); // format: 1-12
+    $year = request()->query('year'); // format: 4 digit
+
+    $query = Assessment::with('program')
+      ->where('anak_didik_id', $anakId);
+    if ($month && $year) {
+      $query->whereMonth('tanggal_assessment', $month)
+        ->whereYear('tanggal_assessment', $year);
+    }
+    $assessments = $query->orderBy('tanggal_assessment')->get();
     // Build per-program per-date selection: prefer latest assessment by guru_fokus (if any),
     // otherwise pick latest assessment overall for that date.
     $grouped = [];
@@ -658,19 +715,23 @@ class AssessmentController extends Controller
     };
 
     foreach ($assessments as $a) {
-      // determine grouping key: prefer program_id if present, otherwise use normalized program name
-      if ($a->program_id) {
-        $pid = 'id:' . $a->program_id;
-        $progName = $a->program ? $a->program->nama_program : ('Program #' . $a->program_id);
-        $kategori = $a->program ? $a->program->kategori : null;
-      } else {
-        $nameSource = $a->program ? $a->program->nama_program : ($a->hasil_penilaian ?? $a->aktivitas ?? 'Umum');
-        $norm = $normalizeName($nameSource);
-        $pid = 'name:' . ($norm !== '' ? $norm : 'umum');
-        $progName = $a->program ? $a->program->nama_program : ($a->hasil_penilaian ?? $a->aktivitas ?? 'Umum');
-        $kategori = $a->program ? $a->program->kategori : null;
+      // Grouping: gunakan program_id jika ada, jika tidak, gunakan nama program yang sudah dinormalisasi
+      $normName = $normalizeName($a->program ? $a->program->nama_program : ($a->hasil_penilaian ?? $a->aktivitas ?? 'Umum'));
+      $pid = $a->program_id ? 'id:' . $a->program_id : 'name:' . ($normName !== '' ? $normName : 'umum');
+      // Gabungkan ke group dengan nama program yang sama (meskipun program_id berbeda)
+      // Cari group dengan nama program yang sama
+      $foundPid = null;
+      foreach ($progMeta as $key => $meta) {
+        if ($meta['nama_program'] && $normalizeName($meta['nama_program']) === $normName) {
+          $foundPid = $key;
+          break;
+        }
       }
+      if ($foundPid) $pid = $foundPid;
 
+      $progName = $a->program ? $a->program->nama_program : ($a->hasil_penilaian ?? $a->aktivitas ?? 'Umum');
+      // Prefer category saved on assessment row; fallback to linked Program category.
+      $kategori = $a->kategori ?? ($a->program ? $a->program->kategori : null);
       $dateKey = $a->tanggal_assessment ? (string)$a->tanggal_assessment->toDateString() : ($a->created_at ? (string)$a->created_at->toDateString() : null);
       if (!$dateKey) continue;
       if (!isset($byProgDate[$pid])) $byProgDate[$pid] = [];
@@ -678,6 +739,9 @@ class AssessmentController extends Controller
       $byProgDate[$pid][$dateKey][] = $a;
       if (!isset($progMeta[$pid])) {
         $progMeta[$pid] = ['nama_program' => $progName, 'kategori' => $kategori];
+      } elseif (empty($progMeta[$pid]['kategori']) && !empty($kategori)) {
+        // Upgrade metadata when later rows have a valid category.
+        $progMeta[$pid]['kategori'] = $kategori;
       }
     }
 

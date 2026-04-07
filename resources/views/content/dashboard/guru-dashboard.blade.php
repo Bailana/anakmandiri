@@ -172,7 +172,8 @@
             if (json && json.success && Array.isArray(json.programs) && json.programs.length) {
               json.programs.forEach(p => {
                 const opt = document.createElement('option');
-                opt.value = p.id;
+                // Gunakan nama program sebagai value
+                opt.value = p.nama_program || p.nama || '';
                 opt.textContent = p.nama_program || p.nama || '';
                 selectProgram.appendChild(opt);
               });
@@ -211,10 +212,10 @@
       function tryRenderChart() {
         const anakId = selectAnak.value;
         const kategori = selectKategori.value;
-        const programId = selectProgram.value;
+        const programName = selectProgram.value;
         const chartDiv = document.getElementById('guruPerformanceChart');
         const filtersOnly = document.getElementById('guruPerformanceFiltersOnly');
-        if (!anakId || !kategori || !programId) {
+        if (!anakId || !kategori || !programName) {
           // hide chart
           if (guruChart) {
             try {
@@ -247,7 +248,7 @@
         };
         const kategoriKeyForChart = kategoriMapForChart[kategori] || kategori;
         url.searchParams.set('kategori', kategoriKeyForChart);
-        url.searchParams.set('program_id', programId);
+        url.searchParams.set('program_name', programName);
 
         fetch(url.toString()).then(r => r.json()).then(json => {
           if (!json.success) {

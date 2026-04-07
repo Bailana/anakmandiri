@@ -216,7 +216,9 @@
     );
     // Build program options excluding already-selected ones
     let programOpts = '<option value="">-- Pilih Program --</option>';
-    (window._lpProgramList || []).forEach(p => {
+    // Urutkan program secara alfabetis A-Z
+    const sortedPrograms = (window._lpProgramList || []).slice().sort((a, b) => a.nama.localeCompare(b.nama));
+    sortedPrograms.forEach(p => {
       if (!alreadySelected.has(String(p.id))) {
         programOpts += `<option value="${p.id}">${p.nama}</option>`;
       }

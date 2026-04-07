@@ -656,57 +656,112 @@ $isKepalaTerapis = true;
       }
       // Render table view (separate table per therapy) and agenda view (grouped by date)
       function renderTableView(data) {
-        let out = '';
+        const groups = {};
+        const seenRows = new Set();
+
         data.forEach(a => {
-          // split jenis_terapi if merged with '|' delimiter
-          const jenisRaw = a.jenis_terapi || '-';
-          const jenisParts = jenisRaw.split('|').map(p => p.trim()).filter(Boolean);
-          // if there are multiple jenis, create a section for each
-          jenisParts.forEach((jenis, idx) => {
-            // filter schedules by jenis_terapi when available. If schedules don't have jenis, show them only for the first jenis
-            const schedulesForJenis = (a.schedules || []).filter(s => {
-              if (s.jenis_terapi && s.jenis_terapi.trim() !== '') return s.jenis_terapi.trim() === jenis.trim();
-              return idx === 0; // fallback: show schedules without jenis only under the first jenis
-            });
-            if (!schedulesForJenis || schedulesForJenis.length === 0) {
-              // skip rendering this jenis if no schedule
-              return;
+          const jenisParts = (a.jenis_terapi || '').split('|').map(p => p.trim()).filter(Boolean);
+          const fallbackJenis = jenisParts.length ? jenisParts[0] : '-';
+
+          (a.schedules || []).forEach(s => {
+            const jenis = (s.jenis_terapi && s.jenis_terapi.trim() !== '') ? s.jenis_terapi.trim() : fallbackJenis;
+            const groupKey = jenis.toLowerCase();
+            if (!groups[groupKey]) {
+              groups[groupKey] = {
+                label: jenis,
+                rows: []
+              };
             }
-            out += `<div class="mb-3"><h6 class="mb-1">${jenis}</h6>`;
-            let thead = '<thead><tr><th>Tanggal</th><th>Jam</th><th>Terapis</th>' + (canEditSchedules ? '<th>Aksi</th>' : '') + '</tr></thead>';
-            out += `<div class="table-responsive"><table class="table table-sm">${thead}<tbody>`;
-            schedulesForJenis.forEach(s => {
-              const tanggal = s.tanggal_mulai ? formatDate(s.tanggal_mulai) : '-';
-              const jam = s.jam_mulai || '-';
-              const terapisNama = s.terapis_nama || a.terapis_nama || '-';
-              if (typeof s.id === 'undefined' || s.id === null) {
-                out += `<tr><td colspan="${canEditSchedules ? 4 : 3}" class="text-danger">Jadwal tidak valid (id kosong)</td></tr>`;
-              } else {
-                out += `<tr data-schedule-id="${s.id}"><td>${tanggal}</td><td>${jam}</td><td class="text-muted">${terapisNama}</td>`;
-                if (canEditSchedules) {
-                  out += `<td>` +
-                    `<div class="d-none d-md-flex gap-1 align-items-center">` +
-                    `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-warning btn-edit-schedule me-1\" data-schedule-id=\"${s.id}\" title=\"Edit\"><i class=\"ri-edit-line\"></i></button>` +
-                    `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-danger btn-delete-schedule\" data-schedule-id=\"${s.id}\" title=\"Hapus\"><i class=\"ri-delete-bin-line\"></i></button>` +
-                    `</div>` +
-                    `<div class="dropdown d-md-none">` +
-                    `<button class=\"btn btn-sm p-0 border-0 bg-transparent\" type=\"button\" data-bs-toggle=\"dropdown\" aria-expanded=\"false\" style=\"box-shadow:none;\">` +
-                    `<i class=\"ri-more-2-fill\" style=\"font-weight: bold; font-size: 1.25em;\"></i>` +
-                    `</button>` +
-                    `<ul class=\"dropdown-menu dropdown-menu-end\">` +
-                    `<li><a class=\"dropdown-item\" href=\"#\" onclick=\"document.querySelector(\'button.btn-edit-schedule[data-schedule-id=\\\'${s.id}\\\']\').click();return false;\"><i class='ri-edit-line me-1'></i> Edit</a></li>` +
-                    `<li><a class=\"dropdown-item text-danger\" href=\"#\" onclick=\"document.querySelector(\'button.btn-delete-schedule[data-schedule-id=\\\'${s.id}\\\']\').click();return false;\"><i class='ri-delete-bin-line me-1'></i> Hapus</a></li>` +
-                    `</ul>` +
-                    `</div>` +
-                    `</td>`;
-                }
-                out += `</tr>`;
-              }
+
+            const dedupeKey = (typeof s.id !== 'undefined' && s.id !== null) ?
+              `id:${s.id}` :
+              `raw:${s.tanggal_mulai || ''}|${s.jam_mulai || ''}|${s.terapis_nama || a.terapis_nama || ''}|${groupKey}`;
+            if (seenRows.has(dedupeKey)) return;
+            seenRows.add(dedupeKey);
+
+            groups[groupKey].rows.push({
+              id: s.id,
+              tanggal_mulai: s.tanggal_mulai,
+              jam_mulai: s.jam_mulai,
+              terapis_nama: s.terapis_nama || a.terapis_nama || '-'
             });
-            out += '</tbody></table></div>';
-            out += '</div>';
           });
         });
+
+        const orderScore = label => {
+          const low = (label || '').toLowerCase();
+          if (low.includes('sensori') || low.includes('integrasi')) return 1;
+          if (low.includes('wicara')) return 2;
+          if (low.includes('perilaku')) return 3;
+          return 99;
+        };
+
+        const groupList = Object.values(groups).sort((a, b) => {
+          const sa = orderScore(a.label);
+          const sb = orderScore(b.label);
+          if (sa !== sb) return sa - sb;
+          return (a.label || '').localeCompare(b.label || '');
+        });
+
+        if (!groupList.length) return '<div class="text-muted">Belum ada jadwal untuk anak ini.</div>';
+
+        let out = '';
+        groupList.forEach(g => {
+          g.rows.sort((r1, r2) => {
+            const d1 = r1.tanggal_mulai || '';
+            const d2 = r2.tanggal_mulai || '';
+            // Newest date first; empty dates pushed to bottom.
+            if (d1 && d2 && d1 !== d2) return d2.localeCompare(d1);
+            if (d1 && !d2) return -1;
+            if (!d1 && d2) return 1;
+
+            const j1 = r1.jam_mulai || '';
+            const j2 = r2.jam_mulai || '';
+            // For equal dates, latest time first; empty times pushed to bottom.
+            if (j1 && j2 && j1 !== j2) return j2.localeCompare(j1);
+            if (j1 && !j2) return -1;
+            if (!j1 && j2) return 1;
+            return 0;
+          });
+
+          out += `<div class="mb-3"><h6 class="mb-1">${g.label}</h6>`;
+          let thead = '<thead><tr><th>Tanggal</th><th>Jam</th><th>Terapis</th>' + (canEditSchedules ? '<th>Aksi</th>' : '') + '</tr></thead>';
+          out += `<div class="table-responsive"><table class="table table-sm">${thead}<tbody>`;
+
+          g.rows.forEach(s => {
+            const tanggal = s.tanggal_mulai ? formatDate(s.tanggal_mulai) : '-';
+            const jam = s.jam_mulai || '-';
+            const terapisNama = s.terapis_nama || '-';
+
+            if (typeof s.id === 'undefined' || s.id === null) {
+              out += `<tr><td colspan="${canEditSchedules ? 4 : 3}" class="text-danger">Jadwal tidak valid (id kosong)</td></tr>`;
+            } else {
+              out += `<tr data-schedule-id="${s.id}"><td>${tanggal}</td><td>${jam}</td><td class="text-muted">${terapisNama}</td>`;
+              if (canEditSchedules) {
+                out += `<td>` +
+                  `<div class="d-none d-md-flex gap-1 align-items-center">` +
+                  `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-warning btn-edit-schedule me-1\" data-schedule-id=\"${s.id}\" title=\"Edit\"><i class=\"ri-edit-line\"></i></button>` +
+                  `<button type=\"button\" class=\"btn btn-icon btn-sm btn-outline-danger btn-delete-schedule\" data-schedule-id=\"${s.id}\" title=\"Hapus\"><i class=\"ri-delete-bin-line\"></i></button>` +
+                  `</div>` +
+                  `<div class="dropdown d-md-none">` +
+                  `<button class=\"btn btn-sm p-0 border-0 bg-transparent\" type=\"button\" data-bs-toggle=\"dropdown\" aria-expanded=\"false\" style=\"box-shadow:none;\">` +
+                  `<i class=\"ri-more-2-fill\" style=\"font-weight: bold; font-size: 1.25em;\"></i>` +
+                  `</button>` +
+                  `<ul class=\"dropdown-menu dropdown-menu-end\">` +
+                  `<li><a class=\"dropdown-item\" href=\"#\" onclick=\"document.querySelector(\'button.btn-edit-schedule[data-schedule-id=\\\'${s.id}\\\']\').click();return false;\"><i class='ri-edit-line me-1'></i> Edit</a></li>` +
+                  `<li><a class=\"dropdown-item text-danger\" href=\"#\" onclick=\"document.querySelector(\'button.btn-delete-schedule[data-schedule-id=\\\'${s.id}\\\']\').click();return false;\"><i class='ri-delete-bin-line me-1'></i> Hapus</a></li>` +
+                  `</ul>` +
+                  `</div>` +
+                  `</td>`;
+              }
+              out += `</tr>`;
+            }
+          });
+
+          out += '</tbody></table></div>';
+          out += '</div>';
+        });
+
         return out;
       }
 

@@ -10,6 +10,7 @@ use App\Models\Assessment;
 use App\Models\Karyawan;
 use App\Models\User;
 use App\Models\Absensi;
+use App\Models\LessonPlan;
 use Carbon\Carbon;
 
 class KedisiplinanController extends Controller
@@ -113,17 +114,6 @@ class KedisiplinanController extends Controller
         ->get();
 
       $byUser = [];
-      // Pre-populate all active guru users so they appear even with score 0
-      // Exclude users whose karyawan record has status_kepegawaian = 'nonaktif'
-      $nonAktifUserIds = Karyawan::where('status_kepegawaian', 'nonaktif')->pluck('user_id')->filter()->toArray();
-      $allGuruUsers = User::where('role', 'guru')
-        ->whereNotIn('id', $nonAktifUserIds)
-        ->get();
-      foreach ($allGuruUsers as $guruUser) {
-        if (!isset($byUser[$guruUser->id])) {
-          $byUser[$guruUser->id] = [];
-        }
-      }
       foreach ($allAssess as $a) {
         $uid = $a->user_id ?? null;
         if (!$uid) continue; // skip assessments without a user penilai
@@ -148,15 +138,19 @@ class KedisiplinanController extends Controller
         }
         $anakIds = array_values(array_unique($anakIds));
 
-        // collect wajib program names for these anakIds
+        // Ranking should only show guru/karyawan who actually have anak didik.
+        if (empty($anakIds)) {
+          continue;
+        }
+
+        // collect wajib program names for these anakIds from lesson plan in selected month
         $namesSet = [];
         if (!empty($anakIds)) {
-          $items = PpiItem::whereHas('ppi', function ($q) use ($anakIds) {
-            $q->whereIn('anak_didik_id', $anakIds);
-          })->where('aktif', 1)->get();
-          foreach ($items as $it) {
-            $n = trim(strtolower($it->nama_program ?? ''));
-            if ($n !== '') $namesSet[$n] = true;
+          foreach ($anakIds as $aid) {
+            $namesForAnak = $this->getLessonPlanProgramNamesForAnak((int) $aid, $rangeStart);
+            foreach ($namesForAnak as $nm) {
+              $namesSet[$nm] = true;
+            }
           }
         }
 
@@ -253,15 +247,7 @@ class KedisiplinanController extends Controller
         $totalWajibInstances = 0;
         $anakListObjs = AnakDidik::whereIn('id', $anakIds)->get()->keyBy('id');
         foreach ($anakIds as $aid) {
-          $ppiItemsForAnak = PpiItem::whereHas('ppi', function ($q) use ($aid) {
-            $q->where('anak_didik_id', $aid);
-          })->where('aktif', 1)->get();
-          $namesSetAnak = [];
-          foreach ($ppiItemsForAnak as $it) {
-            $n = trim(strtolower($it->nama_program ?? ''));
-            if ($n !== '') $namesSetAnak[$n] = true;
-          }
-          $namesAnak = array_keys($namesSetAnak);
+          $namesAnak = $this->getLessonPlanProgramNamesForAnak((int) $aid, $rangeStart);
           $totalWajibAnak = count($namesAnak);
           $totalWajibInstances += $totalWajibAnak;
           $assessedAnak = isset($assessmentsByAnak[$aid]) ? count($assessmentsByAnak[$aid]['all']) : 0;
@@ -350,16 +336,14 @@ class KedisiplinanController extends Controller
       }
 
       // collect unique wajib program names across semua anak guru ini
+      // based on lesson plan in month of current rangeStart.
       $namesSet = [];
       $anakIds = [];
       foreach ($anakList as $anak) {
         $anakIds[] = $anak->id;
-        $items = PpiItem::whereHas('ppi', function ($q) use ($anak) {
-          $q->where('anak_didik_id', $anak->id);
-        })->where('aktif', 1)->get();
-        foreach ($items as $it) {
-          $n = trim(strtolower($it->nama_program ?? ''));
-          if ($n !== '') $namesSet[$n] = true;
+        $namesForAnak = $this->getLessonPlanProgramNamesForAnak((int) $anak->id, $rangeStart);
+        foreach ($namesForAnak as $nm) {
+          if ($nm !== '') $namesSet[$nm] = true;
         }
       }
 
@@ -490,16 +474,8 @@ class KedisiplinanController extends Controller
       $perAnak = [];
       foreach ($anakList as $anak) {
         $aid = $anak->id;
-        // fetch wajib program names for this anak
-        $ppiItemsForAnak = PpiItem::whereHas('ppi', function ($q) use ($aid) {
-          $q->where('anak_didik_id', $aid);
-        })->where('aktif', 1)->get();
-        $namesSetAnak = [];
-        foreach ($ppiItemsForAnak as $it) {
-          $n = trim(strtolower($it->nama_program ?? ''));
-          if ($n !== '') $namesSetAnak[$n] = true;
-        }
-        $namesAnak = array_keys($namesSetAnak);
+        // fetch wajib program names for this anak from lesson plan month
+        $namesAnak = $this->getLessonPlanProgramNamesForAnak((int) $aid, $rangeStart);
         $totalWajibAnak = count($namesAnak);
         $totalWajibInstances += $totalWajibAnak;
         // compute per-anak counts from matched assessments grouped earlier
@@ -615,15 +591,15 @@ class KedisiplinanController extends Controller
       return response()->json(['success' => false, 'message' => 'Invalid date']);
     }
 
-    // build list of wajib program names across the guru's children (same logic as index)
+    // build list of wajib program names across the guru's children using lesson plan month of selected date
     $namesSet = [];
     if (!empty($anakIds)) {
-      $items = PpiItem::whereHas('ppi', function ($q) use ($anakIds) {
-        $q->whereIn('anak_didik_id', $anakIds);
-      })->where('aktif', 1)->get();
-      foreach ($items as $it) {
-        $n = trim(strtolower($it->nama_program ?? ''));
-        if ($n !== '') $namesSet[$n] = true;
+      $monthRef = Carbon::parse($dateParsed);
+      foreach ($anakIds as $aid) {
+        $namesForAnak = $this->getLessonPlanProgramNamesForAnak((int) $aid, $monthRef);
+        foreach ($namesForAnak as $nm) {
+          if ($nm !== '') $namesSet[$nm] = true;
+        }
       }
     }
 
@@ -639,22 +615,17 @@ class KedisiplinanController extends Controller
     }
     $assessments = $assessments->orderBy('created_at', 'asc')->get();
 
-    // Map program names to anak ids (which children have that program assigned)
-    $ppiItems = PpiItem::whereHas('ppi', function ($q) use ($anakIds) {
-      $q->whereIn('anak_didik_id', $anakIds);
-    })->where('aktif', 1)->with('ppi')->get();
-
+    // Map program names to anak ids (which children have that program assigned in lesson plan month)
     $programToAnak = [];
     $nameDisplayMap = [];
-    foreach ($ppiItems as $it) {
-      $n = trim(strtolower($it->nama_program ?? ''));
-      if ($n === '') continue;
-      // preserve original casing for display when available
-      if (!isset($nameDisplayMap[$n])) $nameDisplayMap[$n] = $it->nama_program;
-      $aid = $it->ppi && isset($it->ppi->anak_didik_id) ? $it->ppi->anak_didik_id : null;
-      if (!$aid) continue;
-      if (!isset($programToAnak[$n])) $programToAnak[$n] = [];
-      if (!in_array($aid, $programToAnak[$n])) $programToAnak[$n][] = $aid;
+    $monthRef = Carbon::parse($dateParsed);
+    foreach ($anakIds as $aid) {
+      $displayMapForAnak = $this->getLessonPlanProgramDisplayMapForAnak((int) $aid, $monthRef);
+      foreach ($displayMapForAnak as $normName => $displayName) {
+        if (!isset($nameDisplayMap[$normName])) $nameDisplayMap[$normName] = $displayName;
+        if (!isset($programToAnak[$normName])) $programToAnak[$normName] = [];
+        if (!in_array($aid, $programToAnak[$normName])) $programToAnak[$normName][] = $aid;
+      }
     }
 
     // map anak id to name
@@ -837,5 +808,72 @@ class KedisiplinanController extends Controller
     }
 
     return response()->json(['success' => true, 'riwayat' => [['date' => $dateParsed, 'items' => $items]]]);
+  }
+
+  /**
+   * Normalized program names from lesson plan schedules for a child in a given month.
+   */
+  private function getLessonPlanProgramNamesForAnak(int $anakId, Carbon $monthRef): array
+  {
+    return array_keys($this->getLessonPlanProgramDisplayMapForAnak($anakId, $monthRef));
+  }
+
+  /**
+   * Normalized-to-display map of lesson plan programs for a child in a given month.
+   */
+  private function getLessonPlanProgramDisplayMapForAnak(int $anakId, Carbon $monthRef): array
+  {
+    $lessonPlans = LessonPlan::where('anak_didik_id', $anakId)
+      ->whereYear('tanggal', $monthRef->year)
+      ->whereMonth('tanggal', $monthRef->month)
+      ->with('schedules')
+      ->get();
+
+    $schedules = $lessonPlans->flatMap(function ($lp) {
+      return $lp->schedules ?? collect();
+    });
+
+    if ($schedules->isEmpty()) return [];
+
+    $displayMap = [];
+
+    // Prefer ID-based schedule mapping where available.
+    $ppiItemIds = $schedules
+      ->map(function ($s) {
+        $ids = json_decode($s->ppi_item_ids ?? 'null', true);
+        return is_array($ids) ? $ids : [];
+      })
+      ->flatten()
+      ->filter()
+      ->map(fn($id) => (int) $id)
+      ->unique()
+      ->values()
+      ->all();
+
+    if (!empty($ppiItemIds)) {
+      $items = PpiItem::whereIn('id', $ppiItemIds)->get();
+      foreach ($items as $it) {
+        $name = trim((string) ($it->nama_program ?? ''));
+        if ($name === '') continue;
+        $norm = strtolower($name);
+        if (!isset($displayMap[$norm])) $displayMap[$norm] = $name;
+      }
+    }
+
+    // Backward compatibility for old records that store names directly.
+    foreach ($schedules as $sch) {
+      $np = $sch->nama_program ?? null;
+      if (!$np) continue;
+      $decoded = json_decode($np, true);
+      $programNames = is_array($decoded) ? $decoded : explode(',', (string) $np);
+      foreach ($programNames as $rawName) {
+        $name = trim((string) $rawName);
+        if ($name === '') continue;
+        $norm = strtolower($name);
+        if (!isset($displayMap[$norm])) $displayMap[$norm] = $name;
+      }
+    }
+
+    return $displayMap;
   }
 }

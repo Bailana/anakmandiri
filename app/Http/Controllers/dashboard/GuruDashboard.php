@@ -99,16 +99,20 @@ class GuruDashboard extends Controller
   {
     $anakId = $request->query('anak_id');
     $kategori = $request->query('kategori');
-    $programId = $request->query('program_id');
+    $programName = $request->query('program_name');
 
-    if (!$anakId || !$kategori || !$programId) {
+    if (!$anakId || !$kategori || !$programName) {
       return response()->json(['success' => false, 'message' => 'Missing parameters'], 400);
     }
 
     // fetch assessments matching criteria and return labels (dates) and series (perkembangan)
+    // Normalisasi nama program: lowercase, hapus spasi berlebih
+    $normName = preg_replace('/\s+/', ' ', strtolower(trim($programName)));
     $assess = \App\Models\Assessment::where('anak_didik_id', $anakId)
       ->where('kategori', $kategori)
-      ->where('program_id', $programId)
+      ->whereHas('program', function ($q) use ($normName) {
+        $q->whereRaw('LOWER(REPLACE(nama_program, "  ", " ")) LIKE ?', ["%$normName%"]);
+      })
       ->orderBy('tanggal_assessment')
       ->get();
 

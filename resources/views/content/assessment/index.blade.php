@@ -57,6 +57,22 @@
     if (window.ASSESSMENT_DEBUG && console && console.error) console.error.apply(console, arguments);
   };
 
+  // Shared normalizer used across list and chart matching.
+  if (typeof window.normalizeProgramName !== 'function') {
+    window.normalizeProgramName = function(s) {
+      let str = String(s || '').trim();
+      if (!str) return '';
+      if (str.indexOf(' - ') !== -1) {
+        const parts = str.split(' - ');
+        const left = parts[0] || '';
+        if (/^[A-Za-z0-9\-\.]{1,10}$/.test(left)) {
+          str = parts.slice(1).join(' - ').trim();
+        }
+      }
+      return str.toLowerCase();
+    };
+  }
+
   window.showRiwayatObservasi = async function(anakDidikId) {
     _a_debug('showRiwayatObservasi called for', anakDidikId);
     let modal;
@@ -80,31 +96,17 @@
       _a_error('modal.show failed', e);
     }
 
-    // Fetch program history (program-anak) and display programs from first to last
+    // Build modal using assessment program-history as primary source.
     try {
-      const res = await fetch(`/program-anak/riwayat-program/${anakDidikId}`);
-      const data = await (res.ok ? res.json().catch(() => null) : null);
-      if (!data || !data.success || !Array.isArray(data.riwayat) || data.riwayat.length === 0) {
-        wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Belum ada riwayat penilaian.</div>';
-        return;
-      }
+      const data = {
+        success: true,
+        riwayat: []
+      };
 
       // helpers for kategori: normalize key, display label, and badge class
       const normalizeKey = (k) => String(k || '').toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
       // normalize program name for lookups: strip leading "KODE - " if present, trim and lowercase
-      const normalizeProgramName = (s) => {
-        let str = String(s || '').trim();
-        if (!str) return '';
-        // if contains ' - ' and left part looks like a kode (no spaces, short), remove left part
-        if (str.indexOf(' - ') !== -1) {
-          const parts = str.split(' - ');
-          const left = parts[0] || '';
-          if (/^[A-Za-z0-9\-\.]{1,10}$/.test(left)) {
-            str = parts.slice(1).join(' - ').trim();
-          }
-        }
-        return str.toLowerCase();
-      };
+      const normalizeProgramName = window.normalizeProgramName;
       const displayLabelFor = (k) => {
         const key = normalizeKey(k);
         switch (key) {
@@ -139,24 +141,10 @@
             return 'bg-dark';
         }
       };
-      // Build history index: map programAnak id AND program name -> array of dates
-      // (store both `id:...` and `name:...` keys so matching works when program IDs differ)
-      const historyIndex = {};
-      data.riwayat.forEach(group => {
-        (group.items || []).forEach(it => {
-          const nameKeyHist = `name:${normalizeProgramName(it.nama_program)}`;
-          if (it.id) {
-            const idKey = `id:${it.id}`;
-            historyIndex[idKey] = historyIndex[idKey] || [];
-            historyIndex[idKey].push(it.created_at || null);
-          }
-          historyIndex[nameKeyHist] = historyIndex[nameKeyHist] || [];
-          historyIndex[nameKeyHist].push(it.created_at || null);
-        });
-      });
-
       // Fetch per-program assessment history to extract last score per program name
       const scoreIndex = {}; // nameLower -> last score
+      const historyProgramKeyByAlnum = {}; // normalized-alnum name -> history key (id:/name:)
+      let programHistoryPrograms = [];
       try {
         const phRes = await fetch(`/assessment/${anakDidikId}/program-history`, {
           credentials: 'same-origin'
@@ -164,9 +152,12 @@
         if (phRes && phRes.ok) {
           const phJson = await phRes.json().catch(() => null);
           if (phJson && phJson.success && Array.isArray(phJson.programs)) {
+            programHistoryPrograms = phJson.programs;
             phJson.programs.forEach(p => {
               const name = normalizeProgramName(p.nama_program || '');
               if (!name) return;
+              const alnumKey = String(name).replace(/[^a-z0-9]/g, '');
+              if (alnumKey && p.id) historyProgramKeyByAlnum[alnumKey] = String(p.id);
               const dps = Array.isArray(p.datapoints) ? p.datapoints : [];
               if (dps.length === 0) return;
               const last = dps.slice().sort((a, b) => {
@@ -184,7 +175,7 @@
         // program-history fetch failed (debug log removed)
       }
 
-      // Fetch PPI programs per known kategori (same categories used in create page)
+      // Fetch programs from current-month lesson plan first (single source of truth)
       const kategoriKeys = ['bina_diri', 'akademik', 'motorik', 'perilaku', 'vokasi'];
       const groupMap = {}; // key -> { label, raw, items }
       const ensureGroup = (rawKat) => {
@@ -197,63 +188,75 @@
         return groupMap[key];
       };
 
-      try {
-        // Request PPI programs including inactive ones so riwayat view shows all programs
-        const results = await Promise.all(kategoriKeys.map(k => fetch(`/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anakDidikId)}&kategori=${encodeURIComponent(k)}&include_inactive=1`, {
-          credentials: 'same-origin'
-        }).then(r => r.json().catch(() => null)).catch(() => null)));
+      // Seed groups from assessment history first. This is the most reliable source
+      // for programs that were actually scored today.
+      if (Array.isArray(programHistoryPrograms) && programHistoryPrograms.length) {
+        programHistoryPrograms.forEach(p => {
+          const rawKat = p.kategori || 'Lainnya';
+          const g = ensureGroup(rawKat);
+          const exists = g.items.find(x => (x.id && p.id && x.id == p.id) || (x.nama_program && p.nama_program && x.nama_program === p.nama_program));
+          if (!exists) g.items.push(p);
+        });
+      }
 
-        results.forEach((res, i) => {
-          const kat = kategoriKeys[i];
-          if (!res || !res.success || !Array.isArray(res.programs)) return;
-          const g = ensureGroup(kat);
-          res.programs.forEach(p => {
+      try {
+        const todayIso = new Date().toISOString().slice(0, 10);
+        const lpRes = await fetch(`/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anakDidikId)}&tanggal=${encodeURIComponent(todayIso)}`, {
+          credentials: 'same-origin'
+        }).then(r => r.json().catch(() => null)).catch(() => null);
+
+        // Create all default kategori groups to keep UI consistent.
+        kategoriKeys.forEach(k => ensureGroup(k));
+
+        if (lpRes && lpRes.success && Array.isArray(lpRes.programs) && lpRes.programs.length > 0) {
+          lpRes.programs.forEach(p => {
+            const rawKat = p.kategori_key || 'Lainnya';
+            const g = ensureGroup(rawKat);
             const exists = g.items.find(x => (x.id && p.id && x.id == p.id) || (x.nama_program && p.nama_program && x.nama_program === p.nama_program));
             if (!exists) g.items.push(p);
           });
-        });
+        }
 
-        // if no ppi programs found at all, fallback: infer kategori from each history item (prefer its.kategori)
-        const anyPpi = Object.keys(groupMap).some(k => groupMap[k].items && groupMap[k].items.length);
-        if (!anyPpi) {
-          // create groups from history items using each item's kategori (not group name)
-          data.riwayat.forEach(group => {
-            (group.items || []).forEach(it => {
-              const rawKat = it.kategori || 'Lainnya';
-              const g = ensureGroup(rawKat);
-              const exists = g.items.find(x => (x.id && it.id && x.id == it.id) || (x.nama_program && it.nama_program && x.nama_program === it.nama_program));
-              if (!exists) g.items.push({
-                id: it.id || null,
-                nama_program: it.nama_program || '-',
+        // Fallback for legacy data: if LP source returns empty, use legacy category fetch.
+        const hasLpPrograms = Object.keys(groupMap).some(k => groupMap[k].items && groupMap[k].items.length);
+        if (!hasLpPrograms) {
+          const results = await Promise.all(kategoriKeys.map(k => fetch(`/assessment/ppi-programs?anak_didik_id=${encodeURIComponent(anakDidikId)}&kategori=${encodeURIComponent(k)}&include_inactive=1`, {
+            credentials: 'same-origin'
+          }).then(r => r.json().catch(() => null)).catch(() => null)));
+
+          results.forEach((res, i) => {
+            const kat = kategoriKeys[i];
+            if (!res || !res.success || !Array.isArray(res.programs)) return;
+            const g = ensureGroup(kat);
+            res.programs.forEach(p => {
+              const exists = g.items.find(x => (x.id && p.id && x.id == p.id) || (x.nama_program && p.nama_program && x.nama_program === p.nama_program));
+              if (!exists) g.items.push(p);
+            });
+          });
+        }
+
+
+        // Final fallback: if lesson-plan lookup still yields nothing, use assessed programs
+        // from program-history so the modal never renders as completely empty.
+        const stillEmpty = !Object.keys(groupMap).some(k => groupMap[k].items && groupMap[k].items.length);
+        if (stillEmpty && Array.isArray(programHistoryPrograms) && programHistoryPrograms.length) {
+          programHistoryPrograms.forEach(p => {
+            const rawKat = p.kategori || 'Lainnya';
+            const g = ensureGroup(rawKat);
+            const exists = g.items.find(x => (x.id && p.id && x.id == p.id) || (x.nama_program && p.nama_program && x.nama_program === p.nama_program));
+            if (!exists) {
+              g.items.push({
+                id: p.id || null,
+                nama_program: p.nama_program || '-',
                 kategori: rawKat
               });
-            });
+            }
           });
-        } else {
-          // build name/id -> kategori lookup from fetched PPI programs
-          const nameToKat = {};
-          Object.values(groupMap).forEach(g => {
-            g.items.forEach(p => {
-              if (p.id) nameToKat[`id:${p.id}`] = g.raw;
-              if (p.nama_program) nameToKat[normalizeProgramName(p.nama_program)] = g.raw;
-            });
-          });
-
-          // merge history items into matched groups by id or nama_program; prefer it.kategori, then lookup, else 'Lainnya'
-          data.riwayat.forEach(group => {
-            (group.items || []).forEach(it => {
-              const idKey = it.id ? `id:${it.id}` : null;
-              const nameKeyNorm = normalizeProgramName(it.nama_program || '');
-              const mappedRawKat = it.kategori || (idKey && nameToKat[idKey]) || nameToKat[nameKeyNorm] || 'Lainnya';
-              const g = ensureGroup(mappedRawKat);
-              const exists = g.items.find(x => (x.id && it.id && x.id == it.id) || (x.nama_program && it.nama_program && x.nama_program === it.nama_program));
-              if (!exists) g.items.push({
-                id: it.id || null,
-                nama_program: it.nama_program || '-',
-                kategori: mappedRawKat
-              });
-            });
-          });
+        }
+        const hasAnyProgram = Object.keys(groupMap).some(k => groupMap[k].items && groupMap[k].items.length);
+        if (!hasAnyProgram) {
+          wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Belum ada riwayat penilaian.</div>';
+          return;
         }
 
         // render groups (skip 'Lainnya')
@@ -276,10 +279,8 @@
             html += '<div class="list-group">';
             g.items.forEach(p => {
               const name = p.nama_program || '-';
-              const keyId = p.id ? `id:${p.id}` : `name:${normalizeProgramName(p.nama_program || '')}`;
-              const nameKey2 = `name:${normalizeProgramName(p.nama_program || '')}`;
-              const dates = historyIndex[keyId] || historyIndex[nameKey2] || [];
               const nameKeyLookup = normalizeProgramName(name || '');
+              const alnumLookup = String(nameKeyLookup || '').replace(/[^a-z0-9]/g, '');
               const hasScore = scoreIndex && typeof scoreIndex[nameKeyLookup] !== 'undefined';
               const scoreVal = hasScore ? scoreIndex[nameKeyLookup] : null;
               const scoreText = hasScore ? ('Skor: ' + (Number.isInteger(scoreVal) ? scoreVal : (Math.round(scoreVal * 10) / 10))) : null;
@@ -287,7 +288,11 @@
                 `<div class="text-muted small">${scoreText}</div>` :
                 `<span class="badge bg-warning text-dark" title="Tidak ada penilaian pada program ini."><i class="ri-alert-line me-1"></i><span class="d-inline d-sm-none">Tidak ada penilaian</span><span class="d-none d-sm-inline">Tidak ada penilaian pada program ini.</span></span>`;
               const starHtml = (scoreVal == 4) ? `<i class="ri-star-fill me-2" style="color:#f59e0b;font-size:1.1em;flex-shrink:0"></i>` : '';
-              const pid = String(p.nama_program || p.id || '').replace(/'/g, "\\'");
+              const rawId = (p && p.id !== null && typeof p.id !== 'undefined') ? String(p.id).trim() : '';
+              const idLooksLikeHistoryKey = rawId.startsWith('id:') || rawId.startsWith('name:');
+              const mappedHistoryKey = alnumLookup ? historyProgramKeyByAlnum[alnumLookup] : null;
+              const stableProgramKey = idLooksLikeHistoryKey ? rawId : (mappedHistoryKey || ('name:' + normalizeProgramName(p.nama_program || '')));
+              const pid = String(stableProgramKey || '').replace(/'/g, "\\'");
               html += `
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                   <div class="d-flex align-items-start">
@@ -311,83 +316,6 @@
         wrapper.innerHTML = html;
       } catch (err) {
         _a_error('Failed to load ppi programs', err);
-        // Fallback: if we have riwayat data, build groups from it so modal still shows programs
-        try {
-          if (data && Array.isArray(data.riwayat) && data.riwayat.length) {
-            // clear any existing groups
-            Object.keys(groupMap).forEach(k => delete groupMap[k]);
-            // build groups directly from history items
-            data.riwayat.forEach(group => {
-              (group.items || []).forEach(it => {
-                const rawKat = it.kategori || 'Lainnya';
-                const g = ensureGroup(rawKat);
-                const exists = g.items.find(x => (x.id && it.id && x.id == it.id) || (x.nama_program && it.nama_program && x.nama_program === it.nama_program));
-                if (!exists) g.items.push({
-                  id: it.id || null,
-                  nama_program: it.nama_program || '-',
-                  kategori: rawKat
-                });
-              });
-            });
-
-            // render (same renderer as below)
-            let html = '';
-            Object.keys(groupMap).sort().forEach(k => {
-              const g = groupMap[k];
-              if (normalizeKey(g.raw) === 'lainnya') {
-                // include Lainnya as well to surface unmapped/inactive programs
-              }
-              html += `<div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <div class="d-flex align-items-center gap-2">
-                <span class="badge ${badgeFor(g.raw)} text-uppercase">${g.label}</span>
-                <strong class="ms-2">${g.items.length} item</strong>
-              </div>
-            </div>`;
-
-              if (!g.items.length) {
-                html += '<div class="text-body-secondary small">(Tidak ada program pada kategori ini)</div>';
-              } else {
-                html += '<div class="list-group">';
-                g.items.forEach(p => {
-                  const name = p.nama_program || '-';
-                  const keyId = p.id ? `id:${p.id}` : `name:${normalizeProgramName(p.nama_program || '')}`;
-                  const nameKey3 = `name:${normalizeProgramName(p.nama_program || '')}`;
-                  const dates = historyIndex[keyId] || historyIndex[nameKey3] || [];
-                  const nameKeyNorm = normalizeProgramName(name || '');
-                  const hasScore = scoreIndex && typeof scoreIndex[nameKeyNorm] !== 'undefined';
-                  const scoreValFb = hasScore ? scoreIndex[nameKeyNorm] : null;
-                  const metaHtml = hasScore ?
-                    `<div class="text-muted small">Skor: ${Number.isInteger(scoreValFb) ? scoreValFb : (Math.round(scoreValFb * 10) / 10)}</div>` :
-                    `<span class="badge bg-warning text-dark" title="Tidak ada penilaian pada program ini."><i class="ri-alert-line me-1"></i><span class="d-inline d-sm-none">Tidak ada penilaian</span><span class="d-none d-sm-inline">Tidak ada penilaian pada program ini.</span></span>`;
-                  const starHtmlFb = (scoreValFb == 4) ? `<i class="ri-star-fill me-2" style="color:#f59e0b;font-size:1.1em;flex-shrink:0"></i>` : '';
-                  const pid = String(p.nama_program || p.id || '').replace(/'/g, "\\'");
-                  html += `
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                  <div class="d-flex align-items-start">
-                    ${starHtmlFb}
-                    <div>
-                      <div class="fw-semibold">${name}</div>
-                      ${metaHtml}
-                    </div>
-                  </div>
-                  <div>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectProgramAndClose(${anakDidikId}, '${pid}')" title="Lihat"><i class="ri-bar-chart-line"></i></button>
-                  </div>
-                </div>`;
-                });
-                html += '</div>';
-              }
-
-              html += '</div>';
-            });
-            wrapper.innerHTML = html;
-            return;
-          }
-        } catch (e) {
-          _a_debug('Fallback rendering from riwayat failed', e);
-        }
-
         wrapper.innerHTML = '<div class="text-center py-4 text-body-secondary">Gagal memuat daftar program.</div>';
       }
     } catch (err) {
@@ -644,6 +572,53 @@
     });
   }
 
+  function findProgramFromHistory(programs, programIdOrName) {
+    const normalizeProgramName = (window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName : function(s) {
+      return String(s || '').toLowerCase().trim();
+    };
+    const normalizeAlnum = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    const raw = String(programIdOrName || '').trim();
+    const stripped = raw.replace(/^id:/i, '').replace(/^name:/i, '').trim();
+    const nameNorm = normalizeProgramName(stripped);
+    const nameAlnum = normalizeAlnum(nameNorm);
+
+    // 1) Direct id-key matching (supports p.id like "id:545" and "name:...")
+    let prog = programs.find(p => String(p.id || '').trim() === raw);
+    if (prog) return prog;
+
+    // 2) Raw numeric id from UI vs prefixed id from history, and vice versa
+    const idCandidates = [
+      stripped,
+      `id:${stripped}`,
+      `name:${nameNorm}`
+    ].filter(Boolean);
+    prog = programs.find(p => idCandidates.includes(String(p.id || '').trim()));
+    if (prog) return prog;
+
+    // 3) Normalized exact name
+    prog = programs.find(p => normalizeProgramName(p.nama_program) === nameNorm);
+    if (prog) return prog;
+
+    // 4) Contains name match
+    prog = programs.find(p => {
+      const pNorm = normalizeProgramName(p.nama_program);
+      return pNorm.indexOf(nameNorm) !== -1 || nameNorm.indexOf(pNorm) !== -1;
+    });
+    if (prog) return prog;
+
+    // 5) Alphanumeric fuzzy name match
+    if (nameAlnum) {
+      prog = programs.find(p => {
+        const pAl = normalizeAlnum(p.nama_program || '');
+        return pAl === nameAlnum || pAl.indexOf(nameAlnum) !== -1 || nameAlnum.indexOf(pAl) !== -1;
+      });
+      if (prog) return prog;
+    }
+
+    return null;
+  }
+
   async function renderProgramChart(anakId, programIdOrName) {
     const chartEl = document.getElementById('programApexChart');
     const titleEl = document.getElementById('programChartTitle');
@@ -658,9 +633,11 @@
       return;
     }
 
-    // fetch program history and build monthly series (default)
+    // Always fetch full program history first. Month filter is applied client-side
+    // to avoid stale previous selections affecting newly opened programs.
     try {
-      const res = await fetch(`/assessment/${anakId}/program-history`, {
+      const url = `/assessment/${anakId}/program-history`;
+      const res = await fetch(url, {
         credentials: 'same-origin'
       });
       if (!res.ok) {
@@ -673,36 +650,13 @@
         return;
       }
 
-      // tolerant matching: programIdOrName may be an id or a label like "PEN120 - D17...."
-      const rawProgramId = String(programIdOrName || '');
-      const strippedProgramId = rawProgramId.replace(/^id:/i, '').replace(/^name:/i, '').trim();
-      const normProgId = (window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName(strippedProgramId) : String(strippedProgramId || '').toLowerCase();
-      // try id match first
-      let prog = json.programs.find(p => String(p.id) === String(strippedProgramId));
+      const prog = findProgramFromHistory(json.programs, programIdOrName);
       if (!prog) {
-        // try normalized exact name
-        prog = json.programs.find(p => ((window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName(p.nama_program) : String(p.nama_program || '').toLowerCase()) === normProgId);
-      }
-      if (!prog) {
-        // try contains
-        prog = json.programs.find(p => ((window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName(p.nama_program) : String(p.nama_program || '').toLowerCase()).indexOf(normProgId) !== -1 || normProgId.indexOf(((window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName(p.nama_program) : String(p.nama_program || '').toLowerCase())) !== -1);
-      }
-      if (!prog) {
-        // fuzzy alphanumeric match: strip non-alnum and compare
-        const normalizeAlnum = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        const normAl = normalizeAlnum(normProgId);
-        if (normAl) {
-          prog = json.programs.find(p => {
-            try {
-              const pAl = normalizeAlnum(p.nama_program || '');
-              return pAl === normAl || pAl.indexOf(normAl) !== -1 || normAl.indexOf(pAl) !== -1;
-            } catch (e) {
-              return false;
-            }
-          });
-        }
-      }
-      if (!prog) {
+        try {
+          if (window._programApexChartInstance && typeof window._programApexChartInstance.destroy === 'function') {
+            window._programApexChartInstance.destroy();
+          }
+        } catch (e) {}
         if (titleEl) titleEl.textContent = 'Program tidak ditemukan.';
         return;
       }
@@ -989,54 +943,15 @@
   window.selectProgramAndClose = async function(anakId, programId) {
     // Pre-check: fetch program history and ensure the selected program has datapoints
     try {
-      // ensure we have a normalize helper available locally
-      const normalizeProgramName = (window.normalizeProgramName && typeof window.normalizeProgramName === 'function') ? window.normalizeProgramName : function(s) {
-        let str = String(s || '').trim();
-        if (!str) return '';
-        if (str.indexOf(' - ') !== -1) {
-          const parts = str.split(' - ');
-          const left = parts[0] || '';
-          if (/^[A-Za-z0-9\-\.]{1,10}$/.test(left)) {
-            str = parts.slice(1).join(' - ').trim();
-          }
-        }
-        return str.toLowerCase();
-      };
       const res = await fetch(`/assessment/${anakId}/program-history`, {
         credentials: 'same-origin'
       });
       if (res && res.ok) {
         const json = await res.json().catch(() => null);
         const programs = json && Array.isArray(json.programs) ? json.programs : [];
-        // Robust matching: try id, normalized exact name, contains, and strip common prefixes like 'id:' or 'name:'
-        const rawProgramId = String(programId || '');
-        const strippedProgramId = rawProgramId.replace(/^id:/i, '').replace(/^name:/i, '').trim();
-        const normProgId = normalizeProgramName(strippedProgramId);
+        const prog = findProgramFromHistory(programs, programId);
         // debug logs removed
-        let prog = programs.find(p => String(p.id) === String(strippedProgramId));
-        if (!prog) {
-          prog = programs.find(p => normalizeProgramName(p.nama_program) === normProgId);
-        }
-        if (!prog) {
-          prog = programs.find(p => normalizeProgramName(p.nama_program).indexOf(normProgId) !== -1 || normProgId.indexOf(normalizeProgramName(p.nama_program)) !== -1);
-        }
-        // extra fuzzy match: compare only alphanumeric characters (strip dots, spaces, hyphens)
-        if (!prog) {
-          const normalizeAlnum = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-          const normAl = normalizeAlnum(normProgId);
-          prog = programs.find(p => {
-            try {
-              const pAl = normalizeAlnum(p.nama_program || '');
-              if (!pAl || !normAl) return false;
-              return pAl === normAl || pAl.indexOf(normAl) !== -1 || normAl.indexOf(pAl) !== -1;
-            } catch (e) {
-              return false;
-            }
-          });
-          // debug logs removed
-        }
-        // debug logs removed
-        if (!prog || !Array.isArray(prog.datapoints) || prog.datapoints.length === 0) {
+        if (prog && (!Array.isArray(prog.datapoints) || prog.datapoints.length === 0)) {
           // show Bootstrap toast (fallback for toastr/alert)
           if (typeof showBootstrapToast === 'function') {
             showBootstrapToast('Belum ada penilaian pada program ini.', {
