@@ -189,6 +189,18 @@ $isKepalaTerapis = true;
                 // Only show badge if ada jadwal terapi (schedules)
                 $jenisRaw = $assign->jenis_terapi ?? '';
                 $schedules = isset($assign->schedules) ? $assign->schedules : [];
+                $toLower = function ($value) {
+                $value = (string) $value;
+                return function_exists('mb_strtolower') ? mb_strtolower($value) : strtolower($value);
+                };
+                $hasText = function ($needle, $haystack) {
+                if (function_exists('mb_strpos')) return mb_strpos($haystack, $needle) !== false;
+                return strpos($haystack, $needle) !== false;
+                };
+                $slice = function ($value, $start, $length) {
+                if (function_exists('mb_substr')) return mb_substr((string) $value, $start, $length);
+                return substr((string) $value, $start, $length);
+                };
                 $badgeShown = false;
                 if (empty(trim($jenisRaw))) {
                 echo '-';
@@ -196,10 +208,11 @@ $isKepalaTerapis = true;
                 $parts = preg_split('/[|,]+/', $jenisRaw);
                 foreach ($parts as $p) {
                 $t = trim($p);
+                $tLower = $toLower($t);
                 // cek apakah ada jadwal untuk jenis terapi ini
                 $adaJadwal = false;
                 foreach ($schedules as $sch) {
-                if (isset($sch['jenis_terapi']) && trim(mb_strtolower($sch['jenis_terapi'])) === mb_strtolower($t)) {
+                if (isset($sch['jenis_terapi']) && trim($toLower($sch['jenis_terapi'])) === $tLower) {
                 $adaJadwal = true;
                 break;
                 }
@@ -208,23 +221,23 @@ $isKepalaTerapis = true;
                 $badgeShown = true;
                 $abbr = null;
                 $cls = null;
-                $low = mb_strtolower($t);
-                if (mb_strpos($low, 'wicara') !== false) {
+                $low = $tLower;
+                if ($hasText('wicara', $low)) {
                 $abbr = 'TW';
                 $cls = 'bg-primary';
-                } elseif (mb_strpos($low, 'sensori') !== false || mb_strpos($low, 'integrasi') !== false) {
+                } elseif ($hasText('sensori', $low) || $hasText('integrasi', $low)) {
                 $abbr = 'SI';
                 $cls = 'bg-success';
-                } elseif (mb_strpos($low, 'perilaku') !== false) {
+                } elseif ($hasText('perilaku', $low)) {
                 $abbr = 'TP';
                 $cls = 'bg-warning text-dark';
                 } else {
                 $partsWords = preg_split('/\s+/', trim($t));
                 $initials = '';
                 foreach (array_slice($partsWords, 0, 2) as $pw) {
-                $initials .= strtoupper(mb_substr($pw, 0, 1));
+                $initials .= strtoupper($slice($pw, 0, 1));
                 }
-                $abbr = $initials ?: strtoupper(mb_substr($t, 0, 2));
+                $abbr = $initials ?: strtoupper($slice($t, 0, 2));
                 $cls = 'bg-info';
                 }
                 echo '<span class="badge '.e($cls).' me-1">'.e($abbr).'</span>';
