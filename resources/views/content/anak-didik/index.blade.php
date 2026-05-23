@@ -156,14 +156,14 @@
                 <!-- Tombol aksi untuk desktop -->
                 <div class="d-none d-md-flex gap-2 align-items-center">
                   <a
-                    href="{{ route('anak-didik.show', $anak->id) }}"
+                    href="{{ route('anak-didik.show', $anak->id) }}?page={{ $anakDidiks->currentPage() }}"
                     class="btn btn-sm btn-icon btn-outline-primary"
                     title="Lihat Detail">
                     <i class="ri-eye-line"></i>
                   </a>
                   @if(auth()->user() && auth()->user()->role === 'admin')
                   <a
-                    href="{{ route('anak-didik.edit', $anak->id) }}"
+                    href="{{ route('anak-didik.edit', $anak->id) }}?page={{ $anakDidiks->currentPage() }}"
                     class="btn btn-sm btn-icon btn-outline-warning"
                     title="Edit Data">
                     <i class="ri-edit-line"></i>
@@ -184,9 +184,9 @@
                     <i class="ri-more-2-fill" style="font-weight: bold; font-size: 1.5em;"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{{ route('anak-didik.show', $anak->id) }}"><i class="ri-eye-line me-1"></i> Lihat</a></li>
+                    <li><a class="dropdown-item" href="{{ route('anak-didik.show', $anak->id) }}?page={{ $anakDidiks->currentPage() }}"><i class="ri-eye-line me-1"></i> Lihat</a></li>
                     @if(auth()->user() && auth()->user()->role === 'admin')
-                    <li><a class="dropdown-item" href="{{ route('anak-didik.edit', $anak->id) }}"><i class="ri-edit-line me-1"></i> Edit</a></li>
+                    <li><a class="dropdown-item" href="{{ route('anak-didik.edit', $anak->id) }}?page={{ $anakDidiks->currentPage() }}"><i class="ri-edit-line me-1"></i> Edit</a></li>
                     <li><a class="dropdown-item text-danger" href="#" onclick="deleteDataDropdown(this, {{ $anak->id }});return false;"><i class="ri-delete-bin-line me-1"></i> Hapus</a></li>
                     @endif
                   </ul>

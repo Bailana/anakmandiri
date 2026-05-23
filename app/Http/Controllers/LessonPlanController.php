@@ -344,15 +344,42 @@ class LessonPlanController extends Controller
     $periodeMulai   = $ppi && $ppi->periode_mulai   ? Carbon::parse($ppi->periode_mulai)->locale('id')->translatedFormat('F Y') : '-';
     $periodeSelesai = $ppi && $ppi->periode_selesai ? Carbon::parse($ppi->periode_selesai)->locale('id')->translatedFormat('F Y') : '-';
 
-    // Build program data from active PPI items
+    // Build program data from programs referenced in this Lesson Plan (preferred)
     $programData = [];
     if ($ppi) {
-      $activeItems = PpiItem::with('programKonsultan.konsultan')
-        ->where('ppi_id', $ppi->id)
-        ->where('aktif', 1)
-        ->get();
+      // collect referenced ppi_item ids from schedules
+      $selectedIds = $lp->schedules->pluck('ppi_item_ids')
+        ->filter()
+        ->flatMap(function ($json) {
+          return $this->decodePpiItemIds($json);
+        })
+        ->unique()
+        ->values()
+        ->toArray();
 
-      foreach ($activeItems as $item) {
+      // collect referenced names (backward compat)
+      $selectedNames = $lp->schedules->pluck('nama_program')
+        ->filter()
+        ->flatMap(function ($v) {
+          return $this->decodeProgramNames($v);
+        })
+        ->unique()
+        ->values()
+        ->toArray();
+
+      $itemsQuery = PpiItem::with('programKonsultan.konsultan')->where('ppi_id', $ppi->id);
+      if (!empty($selectedIds)) {
+        $itemsQuery->whereIn('id', $selectedIds);
+      } elseif (!empty($selectedNames)) {
+        $itemsQuery->whereIn('nama_program', $selectedNames);
+      } else {
+        // fallback to aktif items
+        $itemsQuery->where('aktif', 1);
+      }
+
+      $items = $itemsQuery->get();
+
+      foreach ($items as $item) {
         $pk = $item->programKonsultan;
 
         $dispKode = '-';
@@ -377,7 +404,7 @@ class LessonPlanController extends Controller
         } else {
           $kode = null;
           $nm = (string)($item->nama_program ?? '');
-          if (preg_match('/^([A-Za-z]{2,3})\s*-?\s*(\d{2,4})/i', $nm, $m)) {
+          if (preg_match('/^([A-Za-z]{2,3})\\s*-?\\s*(\\d{2,4})/i', $nm, $m)) {
             $kode = strtoupper($m[1] . $m[2]);
           }
 
@@ -387,7 +414,7 @@ class LessonPlanController extends Controller
               if ($kode) {
                 $q->orWhereRaw("REPLACE(UPPER(kode_program),'-','') = ?", [str_replace('-', '', strtoupper($kode))]);
               }
-              $san = strtolower(preg_replace('/[\s\.-]+/', '', $nm));
+              $san = strtolower(preg_replace('/[\\s\\.-]+/', '', $nm));
               if ($san !== '') {
                 $q->orWhereRaw("REPLACE(REPLACE(REPLACE(LOWER(nama_program),' ',''),'.',''),'-','') = ?", [$san]);
               }
@@ -435,6 +462,10 @@ class LessonPlanController extends Controller
           'notes'                  => $item->notes ?? null,
         ];
       }
+
+      usort($programData, function ($a, $b) {
+        return strnatcasecmp($a['kode_program'] ?? '', $b['kode_program'] ?? '');
+      });
     }
 
     // Build nama_program → kategori lookup for schedule badges

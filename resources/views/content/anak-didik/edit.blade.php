@@ -21,10 +21,10 @@
               </label>
             </div>
           </form>
-          <a href="{{ route('anak-didik.index') }}" class="btn p-0 border-0 bg-transparent d-inline-flex d-sm-none align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
+          <a href="{{ route('anak-didik.index') }}{{ request('page') ? '?page=' . request('page') : '' }}" class="btn p-0 border-0 bg-transparent d-inline-flex d-sm-none align-items-center justify-content-center" style="width:44px;height:44px;border-radius:12px;min-width:44px;min-height:44px;">
             <i class="ri-arrow-left-circle-fill" style="font-size:2em;font-weight:bold;"></i>
           </a>
-          <a href="{{ route('anak-didik.index') }}" class="btn btn-secondary btn-sm d-none d-sm-inline-flex align-items-center">
+          <a href="{{ route('anak-didik.index') }}{{ request('page') ? '?page=' . request('page') : '' }}" class="btn btn-secondary btn-sm d-none d-sm-inline-flex align-items-center">
             <i class="ri-arrow-left-line me-2"></i>Kembali
           </a>
         </div>

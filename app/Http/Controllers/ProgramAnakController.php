@@ -116,7 +116,7 @@ class ProgramAnakController extends Controller
       ->whereHas('programKonsultan', function ($q) use ($konsultanId) {
         $q->where('konsultan_id', $konsultanId);
       })
-      ->orderByDesc('created_at')
+      ->orderBy('kode_program', 'asc')
       ->get();
 
     $out = [];
@@ -168,7 +168,7 @@ class ProgramAnakController extends Controller
       ->when($dateOnly, fn($q) => $q->whereDate('created_at', $dateOnly))
       ->when($periodeMulai, fn($q) => $q->whereDate('periode_mulai', $periodeMulai))
       ->when($periodeSelesai, fn($q) => $q->whereDate('periode_selesai', $periodeSelesai))
-      ->orderByDesc('created_at')
+      ->orderBy('kode_program', 'asc')
       ->get();
 
     $out = [];

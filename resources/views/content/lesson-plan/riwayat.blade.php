@@ -305,6 +305,16 @@
   const elpAnakId = parseInt(document.getElementById('lpRiwayatTable').dataset.anakId, 10);
   const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
+  function elpSortPrograms(programs) {
+    return (programs || []).slice().sort((a, b) => {
+      const nameA = (a.nama || '').toString().toLowerCase();
+      const nameB = (b.nama || '').toString().toLowerCase();
+      return nameA.localeCompare(nameB, 'id', {
+        sensitivity: 'base'
+      });
+    });
+  }
+
   function elpFmtMY(d) {
     if (!d) return '';
     const dt = new Date(d.replace(' ', 'T'));
@@ -507,7 +517,7 @@
             alert('Gagal memuat data lesson plan.');
             return;
           }
-          _elpProgramList = res.ppi_programs || [];
+          _elpProgramList = elpSortPrograms(res.ppi_programs || []);
           document.getElementById('elpTanggal').value = res.tanggal;
 
           fetch('/ppi/riwayat/' + elpAnakId)
@@ -526,10 +536,10 @@
                   opt.textContent = label;
                   if (p.id == res.ppi_id) opt.selected = true;
                   ppiSelect.appendChild(opt);
-                  _elpRiwayat[p.id] = (p.items || []).map(it => ({
+                  _elpRiwayat[p.id] = elpSortPrograms((p.items || []).map(it => ({
                     id: it.id,
                     nama: it.nama_program
-                  })).filter(it => it.id && it.nama);
+                  })).filter(it => it.id && it.nama));
                 });
                 ppiSelect.disabled = false;
               }
@@ -552,7 +562,7 @@
   // PPI change in edit modal — rebuild pickers
   document.getElementById('elpPpiSelect').addEventListener('change', function() {
     const ppiId = this.value;
-    _elpProgramList = (ppiId && _elpRiwayat[ppiId]) ? _elpRiwayat[ppiId] : [];
+    _elpProgramList = (ppiId && _elpRiwayat[ppiId]) ? elpSortPrograms(_elpRiwayat[ppiId]) : [];
     document.querySelectorAll('#editLpForm .elp-row .elp-prog-picker').forEach(sel => {
       const wrap = sel.closest('.elp-program-wrap');
       const picked = Array.from(wrap.querySelectorAll('input[type=hidden]')).map(i => i.dataset.prog);

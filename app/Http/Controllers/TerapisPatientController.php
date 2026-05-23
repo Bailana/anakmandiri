@@ -69,7 +69,8 @@ class TerapisPatientController extends Controller
 
     // Admin can browse all assignments and optionally filter by therapist.
     // Terapis users should only see their own assignments.
-    if ($user->role === 'admin') {
+    // Kepala Klinik can also browse all assignments like admin.
+    if ($user->role === 'admin' || ($user->role === 'terapis' && $this->isKepalaKlinik($user))) {
       if ($selectedTherapisId) {
         $query->where('user_id', $selectedTherapisId);
       } else {
@@ -264,18 +265,31 @@ class TerapisPatientController extends Controller
     // Check if an assignment already exists for this terapis + anak_didik.
     // The DB has a unique constraint on (user_id, anak_didik_id) so if an
     // assignment exists we must update/merge it instead of inserting.
-    $existsQuery = GuruAnakDidik::where('anak_didik_id', $data['anak_didik_id']);
-    if ($user->role === 'admin') {
-      $existsQuery->where('user_id', $terapisId);
-    } elseif (!$this->isKepalaKlinik($user)) {
-      // Non-kepala therapist should attach new schedules to the existing child row.
-      $existsQuery->where(function ($q) use ($terapisId) {
-        $q->where('user_id', $terapisId)
-          ->orWhereNull('user_id');
-      });
+    $exists = null;
+    if ($this->isKepalaKlinik($user)) {
+      // For Kepala Klinik: first check if assignment already exists for the target therapist
+      $exists = GuruAnakDidik::where('user_id', $terapisId)
+        ->where('anak_didik_id', $data['anak_didik_id'])
+        ->first();
+      if (!$exists) {
+        // If not, check for any existing assignment for this anak_didik (to merge into)
+        $exists = GuruAnakDidik::where('anak_didik_id', $data['anak_didik_id'])
+          ->orderBy('id', 'asc')
+          ->first();
+      }
+    } else {
+      $existsQuery = GuruAnakDidik::where('anak_didik_id', $data['anak_didik_id']);
+      if ($user->role === 'admin') {
+        $existsQuery->where('user_id', $terapisId);
+      } else {
+        // Non-kepala therapist should attach new schedules to the existing child row.
+        $existsQuery->where(function ($q) use ($terapisId) {
+          $q->where('user_id', $terapisId)
+            ->orWhereNull('user_id');
+        });
+      }
+      $exists = $existsQuery->orderBy('id', 'asc')->first();
     }
-
-    $exists = $existsQuery->orderBy('id', 'asc')->first();
     if ($exists) {
       // DB has unique constraint on (user_id, anak_didik_id) so we cannot insert another
       // assignment row. Instead, update the existing assignment: merge jenis_terapi
