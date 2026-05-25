@@ -33,6 +33,7 @@
     max-width: 100%;
     position: relative;
     counter-reset: section-counter;
+    page-break-after: avoid;
   }
 
   /* Section Title */
@@ -82,6 +83,19 @@
   /* Subsection Group */
   .subsection-group {
     page-break-inside: avoid;
+  }
+
+  .preview-group-block {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  .preview-group-block:first-of-type {
+    page-break-before: auto;
+  }
+
+  .preview-group-block+.preview-group-block {
+    page-break-before: always;
   }
 
   /* Meta Information */
@@ -359,6 +373,7 @@
     line-height: 1.6;
     color: var(--gray-900);
     white-space: pre-wrap;
+    text-align: justify;
   }
 
   /* Signature Section */
@@ -504,12 +519,19 @@
 
     .preview-table {
       page-break-inside: avoid;
+      break-inside: avoid;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
 
     .subsection-group {
       page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .preview-group-block {
+      page-break-inside: auto;
+      break-inside: auto;
     }
 
     .preview-table-catatan {
@@ -634,84 +656,86 @@
   }
   @endphp
   @foreach($previewGroups as $group)
-  <div class="section-title">{{ $group['label'] }}</div>
+  <div class="preview-group-block">
+    <div class="section-title">{{ $group['label'] }}</div>
 
-  @php
-  // build subgroups by initial letter (A, B, etc.)
-  $subMap = [];
-  foreach($group['programs'] as $p) {
-  $name = trim($p['nama_program'] ?? '');
-  if (preg_match('/^([A-Za-z])/i', $name, $m)) {
-  $k = strtoupper($m[1]);
-  } else {
-  $k = '_';
-  }
-  $subMap[$k][] = $p;
-  }
-  ksort($subMap);
-  $groupNoteText = !empty($group['group_note']) ? $group['group_note'] : null;
-  $subTitles = [
-  'A' => 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
-  'B' => 'Kemampuan Visual (B1-B27)',
-  'C' => 'Bahasa Reseptif (Reseptive Language) (C1-C57)',
-  'D' => 'Menirukan (Imitation) (D1-D27)',
-  'E' => 'Menirukan Secara Lisan (E1-E20)',
-  'F' => 'Kemampuan Permintaan (F1-F29)',
-  'G' => 'Menamakan (Labeling) (G1-G47)',
-  'H' => 'Kemampuan Intraverbal (Intraverbal) (H1-H49)',
-  'I' => 'Spontan Secara Lisan (I1-I9)',
-  'J' => 'Aturan Penyusunan Kata dan Tata Bahasa (Syntax and Grammar) (J1-J20)',
-  'K' => 'Kemampuan Bermain (K1-K15)',
-  'L' => 'Interaksi Sosial (L1-L34)',
-  'M' => 'Belajar Berkelompok (M1-M12)',
-  'N' => 'Mengikuti Rutinitas di dalam Kelas (N1-N10)',
-  'P' => 'Menggeneralisasikan Respon (Generalized Respon) (P1-P6)',
-  'Q' => 'Kemampuan Membaca (Reading Skills) (Q1-Q17)',
-  'R' => 'Kemampuan Berhitung (Math Skills) (R1-R29)',
-  'S' => 'Kemampuan Menulis (Writing Skills) (S1-S10)',
-  'T' => 'Mengeja (Spelling) (T1-T7)',
-  'U' => 'Kemampuan Berpakaian (Dressing Skill) (U1-U15)',
-  'V' => 'Kemampuan/Tata Cara Makan (Eating Skills) (V1-V10)',
-  'W' => 'Kebersihan Diri (Grooming Skills) (W1-W7)',
-  'X' => 'Kemampuan Menggunakan Toilet (Toileting Skills) (X1-X10)',
-  'Y' => 'Kemampuan Motorik Kasar (Gross Motor Skills) (Y1-Y30)',
-  'Z' => 'Kemampuan Motorik Halus (Fine Motor Skills) (Z1-Z28)'
-  ];
-  @endphp
+    @php
+    // build subgroups by initial letter (A, B, etc.)
+    $subMap = [];
+    foreach($group['programs'] as $p) {
+    $name = trim($p['nama_program'] ?? '');
+    if (preg_match('/^([A-Za-z])/i', $name, $m)) {
+    $k = strtoupper($m[1]);
+    } else {
+    $k = '_';
+    }
+    $subMap[$k][] = $p;
+    }
+    ksort($subMap);
+    $groupNoteText = !empty($group['group_note']) ? $group['group_note'] : null;
+    $subTitles = [
+    'A' => 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
+    'B' => 'Kemampuan Visual (B1-B27)',
+    'C' => 'Bahasa Reseptif (Reseptive Language) (C1-C57)',
+    'D' => 'Menirukan (Imitation) (D1-D27)',
+    'E' => 'Menirukan Secara Lisan (E1-E20)',
+    'F' => 'Kemampuan Permintaan (F1-F29)',
+    'G' => 'Menamakan (Labeling) (G1-G47)',
+    'H' => 'Kemampuan Intraverbal (Intraverbal) (H1-H49)',
+    'I' => 'Spontan Secara Lisan (I1-I9)',
+    'J' => 'Aturan Penyusunan Kata dan Tata Bahasa (Syntax and Grammar) (J1-J20)',
+    'K' => 'Kemampuan Bermain (K1-K15)',
+    'L' => 'Interaksi Sosial (L1-L34)',
+    'M' => 'Belajar Berkelompok (M1-M12)',
+    'N' => 'Mengikuti Rutinitas di dalam Kelas (N1-N10)',
+    'P' => 'Menggeneralisasikan Respon (Generalized Respon) (P1-P6)',
+    'Q' => 'Kemampuan Membaca (Reading Skills) (Q1-Q17)',
+    'R' => 'Kemampuan Berhitung (Math Skills) (R1-R29)',
+    'S' => 'Kemampuan Menulis (Writing Skills) (S1-S10)',
+    'T' => 'Mengeja (Spelling) (T1-T7)',
+    'U' => 'Kemampuan Berpakaian (Dressing Skill) (U1-U15)',
+    'V' => 'Kemampuan/Tata Cara Makan (Eating Skills) (V1-V10)',
+    'W' => 'Kebersihan Diri (Grooming Skills) (W1-W7)',
+    'X' => 'Kemampuan Menggunakan Toilet (Toileting Skills) (X1-X10)',
+    'Y' => 'Kemampuan Motorik Kasar (Gross Motor Skills) (Y1-Y30)',
+    'Z' => 'Kemampuan Motorik Halus (Fine Motor Skills) (Z1-Z28)'
+    ];
+    @endphp
 
-  @foreach($subMap as $subKey => $programs)
-  <div class="subsection-group">
-    @if(isset($subTitles[$subKey]))
-    <div class="subsection-title">{{ $subTitles[$subKey] }}</div>
-    @endif
-    <table class="preview-table">
-      <thead>
-        <tr>
-          <th class="preview-col-program">Program</th>
-          <th class="preview-col-nilai">Nilai</th>
-          <th class="preview-col-catatan">Catatan Program</th>
-        </tr>
-      </thead>
-      <tbody>
-        @foreach($programs as $item)
-        <tr>
-          <td class="preview-col-program">{{ $item['nama_program'] }}</td>
-          <td class="preview-cell-nilai"><span class="badge {{ strtolower($item['nilai_huruf'] ?? '-') }}">{{ $item['nilai_huruf'] ?? '-' }}</span></td>
-          <td class="preview-col-catatan">{!! nl2br(e($item['catatan'] ?? '-')) !!}</td>
-        </tr>
-        @endforeach
-      </tbody>
-    </table>
-    <table class="preview-table-catatan">
-      <tbody>
-        <tr>
-          <td class="catatan-kategori-label">Catatan {{ $group['label'] }}:</td>
-          <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
+    @foreach($subMap as $subKey => $programs)
+    <div class="subsection-group">
+      @if(isset($subTitles[$subKey]))
+      <div class="subsection-title">{{ $subTitles[$subKey] }}</div>
+      @endif
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th class="preview-col-program">Program</th>
+            <th class="preview-col-nilai">Nilai</th>
+            <th class="preview-col-catatan">Catatan Program</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($programs as $item)
+          <tr>
+            <td class="preview-col-program">{{ $item['nama_program'] }}</td>
+            <td class="preview-cell-nilai"><span class="badge {{ strtolower($item['nilai_huruf'] ?? '-') }}">{{ $item['nilai_huruf'] ?? '-' }}</span></td>
+            <td class="preview-col-catatan">{!! nl2br(e($item['catatan'] ?? '-')) !!}</td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+      <table class="preview-table-catatan">
+        <tbody>
+          <tr>
+            <td class="catatan-kategori-label">Catatan {{ $group['label'] }}:</td>
+            <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    @endforeach
   </div>
-  @endforeach
   @endforeach
   @else
   @php
@@ -741,84 +765,86 @@
   @endphp
 
   @foreach($grouped as $kategori => $items)
-  <div class="section-title">{{ $kategori }}</div>
+  <div class="preview-group-block">
+    <div class="section-title">{{ $kategori }}</div>
 
-  @php
-  $groupNoteText = (isset($rapor->group_notes[$kategori]) && !empty($rapor->group_notes[$kategori])) ? $rapor->group_notes[$kategori] : null;
-  // subgroup within this category
-  $subMap = [];
-  foreach($items as $p) {
-  $name = trim($p->nama_program ?? '');
-  if (preg_match('/^([A-Za-z])/i', $name, $m)) {
-  $k = strtoupper($m[1]);
-  } else {
-  $k = '_';
-  }
-  $subMap[$k][] = $p;
-  }
-  ksort($subMap);
-  $subTitles = [
-  'A' => 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
-  'B' => 'Kemampuan Visual (B1-B27)',
-  'C' => 'Bahasa Reseptif (Reseptive Language) (C1-C57)',
-  'D' => 'Menirukan (Imitation) (D1-D27)',
-  'E' => 'Menirukan Secara Lisan (E1-E20)',
-  'F' => 'Kemampuan Permintaan (F1-F29)',
-  'G' => 'Menamakan (Labeling) (G1-G47)',
-  'H' => 'Kemampuan Intraverbal (Intraverbal) (H1-H49)',
-  'I' => 'Spontan Secara Lisan (I1-I9)',
-  'J' => 'Aturan Penyusunan Kata dan Tata Bahasa (Syntax and Grammar) (J1-J20)',
-  'K' => 'Kemampuan Bermain (K1-K15)',
-  'L' => 'Interaksi Sosial (L1-L34)',
-  'M' => 'Belajar Berkelompok (M1-M12)',
-  'N' => 'Mengikuti Rutinitas di dalam Kelas (N1-N10)',
-  'P' => 'Menggeneralisasikan Respon (Generalized Respon) (P1-P6)',
-  'Q' => 'Kemampuan Membaca (Reading Skills) (Q1-Q17)',
-  'R' => 'Kemampuan Berhitung (Math Skills) (R1-R29)',
-  'S' => 'Kemampuan Menulis (Writing Skills) (S1-S10)',
-  'T' => 'Mengeja (Spelling) (T1-T7)',
-  'U' => 'Kemampuan Berpakaian (Dressing Skill) (U1-U15)',
-  'V' => 'Kemampuan/Tata Cara Makan (Eating Skills) (V1-V10)',
-  'W' => 'Kebersihan Diri (Grooming Skills) (W1-W7)',
-  'X' => 'Kemampuan Menggunakan Toilet (Toileting Skills) (X1-X10)',
-  'Y' => 'Kemampuan Motorik Kasar (Gross Motor Skills) (Y1-Y30)',
-  'Z' => 'Kemampuan Motorik Halus (Fine Motor Skills) (Z1-Z28)'
-  ];
-  @endphp
+    @php
+    $groupNoteText = (isset($rapor->group_notes[$kategori]) && !empty($rapor->group_notes[$kategori])) ? $rapor->group_notes[$kategori] : null;
+    // subgroup within this category
+    $subMap = [];
+    foreach($items as $p) {
+    $name = trim($p->nama_program ?? '');
+    if (preg_match('/^([A-Za-z])/i', $name, $m)) {
+    $k = strtoupper($m[1]);
+    } else {
+    $k = '_';
+    }
+    $subMap[$k][] = $p;
+    }
+    ksort($subMap);
+    $subTitles = [
+    'A' => 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
+    'B' => 'Kemampuan Visual (B1-B27)',
+    'C' => 'Bahasa Reseptif (Reseptive Language) (C1-C57)',
+    'D' => 'Menirukan (Imitation) (D1-D27)',
+    'E' => 'Menirukan Secara Lisan (E1-E20)',
+    'F' => 'Kemampuan Permintaan (F1-F29)',
+    'G' => 'Menamakan (Labeling) (G1-G47)',
+    'H' => 'Kemampuan Intraverbal (Intraverbal) (H1-H49)',
+    'I' => 'Spontan Secara Lisan (I1-I9)',
+    'J' => 'Aturan Penyusunan Kata dan Tata Bahasa (Syntax and Grammar) (J1-J20)',
+    'K' => 'Kemampuan Bermain (K1-K15)',
+    'L' => 'Interaksi Sosial (L1-L34)',
+    'M' => 'Belajar Berkelompok (M1-M12)',
+    'N' => 'Mengikuti Rutinitas di dalam Kelas (N1-N10)',
+    'P' => 'Menggeneralisasikan Respon (Generalized Respon) (P1-P6)',
+    'Q' => 'Kemampuan Membaca (Reading Skills) (Q1-Q17)',
+    'R' => 'Kemampuan Berhitung (Math Skills) (R1-R29)',
+    'S' => 'Kemampuan Menulis (Writing Skills) (S1-S10)',
+    'T' => 'Mengeja (Spelling) (T1-T7)',
+    'U' => 'Kemampuan Berpakaian (Dressing Skill) (U1-U15)',
+    'V' => 'Kemampuan/Tata Cara Makan (Eating Skills) (V1-V10)',
+    'W' => 'Kebersihan Diri (Grooming Skills) (W1-W7)',
+    'X' => 'Kemampuan Menggunakan Toilet (Toileting Skills) (X1-X10)',
+    'Y' => 'Kemampuan Motorik Kasar (Gross Motor Skills) (Y1-Y30)',
+    'Z' => 'Kemampuan Motorik Halus (Fine Motor Skills) (Z1-Z28)'
+    ];
+    @endphp
 
-  @foreach($subMap as $subKey => $programs)
-  <div class="subsection-group">
-    @if(isset($subTitles[$subKey]))
-    <div class="subsection-title">{{ $subTitles[$subKey] }}</div>
-    @endif
-    <table class="preview-table">
-      <thead>
-        <tr>
-          <th class="preview-col-program">Program</th>
-          <th class="preview-col-nilai">Nilai</th>
-          <th class="preview-col-catatan">Catatan Program</th>
-        </tr>
-      </thead>
-      <tbody>
-        @foreach($programs as $item)
-        <tr>
-          <td class="preview-col-program">{{ $item->nama_program }}</td>
-          <td class="preview-cell-nilai"><span class="badge {{ strtolower($item->nilai_huruf) }}">{{ $item->nilai_huruf }}</span></td>
-          <td class="preview-col-catatan">{!! nl2br(e($item->catatan ?: '-')) !!}</td>
-        </tr>
-        @endforeach
-      </tbody>
-    </table>
-    <table class="preview-table-catatan">
-      <tbody>
-        <tr>
-          <td class="catatan-kategori-label">Catatan {{ $kategori }}:</td>
-          <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
+    @foreach($subMap as $subKey => $programs)
+    <div class="subsection-group">
+      @if(isset($subTitles[$subKey]))
+      <div class="subsection-title">{{ $subTitles[$subKey] }}</div>
+      @endif
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th class="preview-col-program">Program</th>
+            <th class="preview-col-nilai">Nilai</th>
+            <th class="preview-col-catatan">Catatan Program</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach($programs as $item)
+          <tr>
+            <td class="preview-col-program">{{ $item->nama_program }}</td>
+            <td class="preview-cell-nilai"><span class="badge {{ strtolower($item->nilai_huruf) }}">{{ $item->nilai_huruf }}</span></td>
+            <td class="preview-col-catatan">{!! nl2br(e($item->catatan ?: '-')) !!}</td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+      <table class="preview-table-catatan">
+        <tbody>
+          <tr>
+            <td class="catatan-kategori-label">Catatan {{ $kategori }}:</td>
+            <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    @endforeach
   </div>
-  @endforeach
   @endforeach
 
   @if($grouped->isEmpty())

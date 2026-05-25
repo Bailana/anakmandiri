@@ -11,6 +11,7 @@ use App\Models\Rapor;
 use App\Models\RaporItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class RaporAnakController extends Controller
 {
@@ -146,6 +147,26 @@ class RaporAnakController extends Controller
             ->whereNotNull('guru_fokus_id')
             ->orderBy('nama')
             ->get();
+    }
+
+    protected function hasRaporItemKategoriColumn(): bool
+    {
+        return Schema::hasColumn('rapor_items', 'kategori');
+    }
+
+    protected function buildRaporItemPayload(array $program): array
+    {
+        $payload = [
+            'nama_program' => $program['nama_program'],
+            'nilai_huruf' => $program['nilai_huruf'],
+            'catatan' => $program['catatan'] ?? null,
+        ];
+
+        if ($this->hasRaporItemKategoriColumn() && array_key_exists('kategori', $program)) {
+            $payload['kategori'] = $program['kategori'];
+        }
+
+        return $payload;
     }
 
     protected function normalizeSemester(?string $semester): string
@@ -525,6 +546,7 @@ class RaporAnakController extends Controller
             'group_notes' => 'nullable|array',
             'saran_guru' => 'nullable|string',
             'saran_orang_tua' => 'nullable|string',
+            'programs.*.kategori' => 'nullable|string|max:255',
             'programs.*.nama_program' => 'required|string|max:255',
             'programs.*.nilai_huruf' => 'required|in:A,B,C,D,-',
             'programs.*.catatan' => 'nullable|string',
@@ -556,12 +578,9 @@ class RaporAnakController extends Controller
 
             // Create rapor items
             foreach ($validated['programs'] as $program) {
-                RaporItem::create([
+                RaporItem::create(array_merge([
                     'rapor_id' => $rapor->id,
-                    'nama_program' => $program['nama_program'],
-                    'nilai_huruf' => $program['nilai_huruf'],
-                    'catatan' => $program['catatan'] ?? null,
-                ]);
+                ], $this->buildRaporItemPayload($program)));
             }
 
             return response()->json([
@@ -601,6 +620,7 @@ class RaporAnakController extends Controller
             'group_notes' => 'nullable|array',
             'saran_guru' => 'nullable|string',
             'saran_orang_tua' => 'nullable|string',
+            'programs.*.kategori' => 'nullable|string|max:255',
             'programs.*.nama_program' => 'required|string|max:255',
             'programs.*.nilai_huruf' => 'required|in:A,B,C,D,-',
             'programs.*.catatan' => 'nullable|string',
@@ -632,12 +652,9 @@ class RaporAnakController extends Controller
             // Delete old items and create new ones
             $rapor->items()->delete();
             foreach ($validated['programs'] as $program) {
-                RaporItem::create([
+                RaporItem::create(array_merge([
                     'rapor_id' => $rapor->id,
-                    'nama_program' => $program['nama_program'],
-                    'nilai_huruf' => $program['nilai_huruf'],
-                    'catatan' => $program['catatan'] ?? null,
-                ]);
+                ], $this->buildRaporItemPayload($program)));
             }
 
             return response()->json([
@@ -817,6 +834,15 @@ class RaporAnakController extends Controller
                 }
             }
 
+            $storedKategori = trim((string) ($item->kategori ?? ''));
+            if ($storedKategori !== '') {
+                $item->kategori = $storedKategori;
+                $item->kategori_label = $storedKategori;
+                $item->kode_program = $matched?->kode_program;
+                $item->nama_program = $matched ? $this->displayProgramName($matched) : $this->stripCodePrefix((string) $item->nama_program);
+                continue;
+            }
+
             $kategori = $matched ? $this->normalizeCategory($matched->kategori) : 'lainnya';
             $item->nama_program = $matched ? $this->displayProgramName($matched) : $this->stripCodePrefix((string) $item->nama_program);
             $item->kategori = $kategori;
@@ -889,27 +915,34 @@ class RaporAnakController extends Controller
             }
         }
 
-        // Remaining items -> Lainnya
-        $others = [];
+        // Remaining items -> group by stored category if available, otherwise Lainnya
+        $remainingByCategory = [];
         foreach ($rapor->items as $item) {
-            if (!in_array($item->id, $usedIds, true)) {
-                $others[] = [
-                    'nama_program' => $item->nama_program,
-                    'nilai_huruf' => $item->nilai_huruf,
-                    'catatan' => $item->catatan,
-                ];
+            if (in_array($item->id, $usedIds, true)) {
+                continue;
             }
+
+            $label = trim((string) ($item->kategori_label ?? $item->kategori ?? 'Lainnya'));
+            if ($label === '') {
+                $label = 'Lainnya';
+            }
+
+            $remainingByCategory[$label][] = [
+                'nama_program' => $item->nama_program,
+                'nilai_huruf' => $item->nilai_huruf,
+                'catatan' => $item->catatan,
+            ];
         }
 
-        if (count($others) > 0) {
+        foreach ($remainingByCategory as $label => $programs) {
             $groupNote = '';
-            if ($rapor->group_notes && is_array($rapor->group_notes) && isset($rapor->group_notes['Lainnya'])) {
-                $groupNote = $rapor->group_notes['Lainnya'] ?? '';
+            if ($rapor->group_notes && is_array($rapor->group_notes) && isset($rapor->group_notes[$label])) {
+                $groupNote = $rapor->group_notes[$label] ?? '';
             }
 
             $previewGroups[] = [
-                'label' => 'Lainnya',
-                'programs' => $others,
+                'label' => $label,
+                'programs' => $programs,
                 'group_note' => $groupNote,
             ];
         }

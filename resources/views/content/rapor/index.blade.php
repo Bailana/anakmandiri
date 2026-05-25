@@ -168,6 +168,19 @@
             <div class="text-center text-body-secondary py-4" id="programPlaceholder">Belum ada program yang dimuat.</div>
           </div>
 
+          <div class="mt-4 pt-4 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <h6 class="mb-0">Program Kustom</h6>
+                <p class="text-body-secondary mb-0 small">Tambahkan program sendiri jika belum tersedia pada daftar semester.</p>
+              </div>
+              <button type="button" class="btn btn-sm btn-success" id="btnTambahProgramGlobal">
+                <i class="ri-add-line me-1"></i>Tambah Program Kustom
+              </button>
+            </div>
+            <div id="customProgramsContainer"></div>
+          </div>
+
           <div class="row mt-3 g-3">
             <div class="col-12 col-md-6">
               <label for="saran_guru" class="form-label">Saran Guru</label>
@@ -258,7 +271,7 @@
   // Global variables for edit mode tracking
   let isEditMode = false;
   let editingRaporId = null;
-  let isConsultantEducation = {{ isset($isConsultantEducation) && $isConsultantEducation ? 'true' : 'false'}};
+  let isConsultantEducation = {{ isset($isConsultantEducation) && $isConsultantEducation ? 'true' : 'false' }};
 
   // Configure toastr
   toastr.options = {
@@ -315,6 +328,9 @@
     const programSummary = document.getElementById('programSummary');
     const programGroupsContainer = document.getElementById('programGroupsContainer');
     const programPlaceholder = document.getElementById('programPlaceholder');
+    const customProgramsContainer = document.getElementById('customProgramsContainer');
+    const btnTambahKategori = document.getElementById('btnTambahKategori');
+    const btnTambahProgramGlobal = document.getElementById('btnTambahProgramGlobal');
 
     function getDefaultSemester() {
       const month = new Date().getMonth() + 1;
@@ -332,6 +348,106 @@
       programGroupsContainer.innerHTML = `<div class="text-center text-body-secondary py-4">${message}</div>`;
     }
 
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function normalizeProgramName(value) {
+      return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function createCustomProgramRow(name = '', nilai = 'A', catatan = '') {
+      return `
+        <tr>
+          <td>
+            <input type="text" class="form-control form-control-sm custom-program-name" value="${escapeHtml(name)}" placeholder="Nama program kustom">
+          </td>
+          <td class="text-center align-middle">
+            <select class="form-select form-select-sm custom-program-nilai">
+              <option value="A" ${nilai === 'A' ? 'selected' : ''}>A</option>
+              <option value="B" ${nilai === 'B' ? 'selected' : ''}>B</option>
+              <option value="C" ${nilai === 'C' ? 'selected' : ''}>C</option>
+              <option value="D" ${nilai === 'D' ? 'selected' : ''}>D</option>
+              <option value="-" ${nilai === '-' ? 'selected' : ''}>-</option>
+            </select>
+          </td>
+          <td>
+            <div class="d-flex gap-2 align-items-start">
+              <textarea class="form-control form-control-sm custom-program-catatan" rows="3" style="min-height: 90px; resize: vertical;" placeholder="Catatan program">${escapeHtml(catatan)}</textarea>
+              <button type="button" class="btn btn-sm btn-outline-danger btn-remove-custom-row" title="Hapus program">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+    }
+
+    function createCustomGroupMarkup(groupName = '', note = '', rows = []) {
+      const safeGroupName = escapeHtml(groupName || 'Kategori baru');
+      const safeNote = escapeHtml(note || '');
+      const rowMarkup = (rows.length > 0 ? rows.map(row => createCustomProgramRow(row.name, row.nilai, row.catatan)).join('') : createCustomProgramRow());
+
+      return `
+        <div class="program-group custom-program-group mb-4" data-custom-group="true">
+          <div class="border rounded p-3">
+            <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+              <div class="flex-grow-1">
+                <label class="form-label small mb-1">Nama Kategori</label>
+                <input type="text" class="form-control form-control-sm custom-group-name" value="${safeGroupName}" placeholder="Masukkan nama kategori">
+              </div>
+              <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-remove-custom-group" title="Hapus kategori">
+                <i class="ri-delete-bin-line"></i>
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th class="text-center" style="width:40%;">Program</th>
+                    <th class="text-center" style="width:12%;">Nilai</th>
+                    <th class="text-center">Catatan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rowMarkup}
+                </tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
+              <button type="button" class="btn btn-sm btn-primary btn-add-custom-row">
+                <i class="ri-add-line me-1"></i>Tambah Baris Program
+              </button>
+              <div class="text-muted small">Kategori kustom akan disimpan bersama catatan dan penilaian.</div>
+            </div>
+            <div class="mt-3">
+              <label class="form-label small">Catatan Kategori</label>
+              <textarea class="form-control form-control-sm group-note" rows="3" placeholder="Catatan untuk kategori ini">${safeNote}</textarea>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function addCustomGroup(groupName = '', note = '', rows = []) {
+      if (!customProgramsContainer) return;
+      customProgramsContainer.insertAdjacentHTML('beforeend', createCustomGroupMarkup(groupName, note, rows));
+    }
+
+    function renderCustomGroups(groups = []) {
+      if (!customProgramsContainer) return;
+      customProgramsContainer.innerHTML = '';
+      if (!Array.isArray(groups) || groups.length === 0) {
+        return;
+      }
+      groups.forEach(group => addCustomGroup(group.label, group.note || '', group.programs || []));
+    }
+
+    window.renderCustomGroups = renderCustomGroups;
+
     function formatSemesterLabel(semester, tahun) {
       if (!tahun) {
         tahun = getDefaultAcademicYear();
@@ -345,6 +461,9 @@
     }
 
     function renderPrograms(groups) {
+      if (customProgramsContainer) {
+        customProgramsContainer.innerHTML = '';
+      }
       // ensure groups are shown in desired priority order
       const preferredOrder = ['Basic Learning', 'Akademik', 'Bina Diri', 'Motorik'];
       const orderMap = {};
@@ -500,6 +619,9 @@
       if (!selectedChild) {
         setPlaceholderState('Pilih anak didik untuk menampilkan program semester ini.');
         programSummary.textContent = 'Pilih anak didik untuk memuat daftar program.';
+        if (customProgramsContainer) {
+          customProgramsContainer.innerHTML = '';
+        }
         return;
       }
 
@@ -553,11 +675,67 @@
       semesterSelect.value = getDefaultSemester();
       tahunInput.value = getDefaultAcademicYear();
       setPlaceholderState('Pilih anak didik untuk menampilkan program semester ini.');
+      if (customProgramsContainer) {
+        customProgramsContainer.innerHTML = '';
+      }
       // clear saran fields
       const saranGuruInput = document.getElementById('saran_guru');
       const saranOrtuInput = document.getElementById('saran_orang_tua');
       if (saranGuruInput) saranGuruInput.value = '';
       if (saranOrtuInput) saranOrtuInput.value = '';
+    }
+
+    if (btnTambahKategori) {
+      btnTambahKategori.addEventListener('click', function() {
+        addCustomGroup('Kategori baru');
+      });
+    }
+
+    if (btnTambahProgramGlobal) {
+      btnTambahProgramGlobal.addEventListener('click', function() {
+        const existingGroups = customProgramsContainer ? customProgramsContainer.querySelectorAll('.custom-program-group') : [];
+        if (existingGroups.length === 0) {
+          addCustomGroup('Kategori baru');
+          return;
+        }
+
+        const lastGroup = existingGroups[existingGroups.length - 1];
+        const tbody = lastGroup.querySelector('tbody');
+        if (tbody) {
+          tbody.insertAdjacentHTML('beforeend', createCustomProgramRow());
+        }
+      });
+    }
+
+    if (customProgramsContainer) {
+      customProgramsContainer.addEventListener('click', function(event) {
+        const removeRowBtn = event.target.closest('.btn-remove-custom-row');
+        if (removeRowBtn) {
+          const row = removeRowBtn.closest('tr');
+          if (row) {
+            row.remove();
+          }
+          return;
+        }
+
+        const removeGroupBtn = event.target.closest('.btn-remove-custom-group');
+        if (removeGroupBtn) {
+          const group = removeGroupBtn.closest('.custom-program-group');
+          if (group) {
+            group.remove();
+          }
+          return;
+        }
+
+        const addRowBtn = event.target.closest('.btn-add-custom-row');
+        if (addRowBtn) {
+          const group = addRowBtn.closest('.custom-program-group');
+          const tbody = group ? group.querySelector('tbody') : null;
+          if (tbody) {
+            tbody.insertAdjacentHTML('beforeend', createCustomProgramRow());
+          }
+        }
+      });
     }
 
     modalEl.addEventListener('shown.bs.modal', async function() {
@@ -621,7 +799,7 @@
         return;
       }
 
-      // Collect catatan from program-level textareas and group-level notes
+      // Collect catatan from standard and custom program textareas and group-level notes
       const programs = [];
       const groupNotes = {};
 
@@ -648,12 +826,48 @@
                 nama_program: namaProgram,
                 nilai_huruf: nilaiHuruf,
                 catatan: catatan,
-                kategori_label: groupLabel
+                kategori: groupLabel
               });
             }
           }
         });
       });
+
+      if (customProgramsContainer) {
+        const customGroups = customProgramsContainer.querySelectorAll('.custom-program-group');
+        customGroups.forEach(groupEl => {
+          const groupNameInput = groupEl.querySelector('.custom-group-name');
+          const groupName = groupNameInput ? groupNameInput.value.trim() : '';
+          const groupNote = groupEl.querySelector('.group-note') ? groupEl.querySelector('.group-note').value.trim() : '';
+
+          if (!groupName) {
+            return;
+          }
+
+          groupNotes[groupName] = groupNote;
+
+          const rows = groupEl.querySelectorAll('tbody tr');
+          rows.forEach(row => {
+            const nameInput = row.querySelector('.custom-program-name');
+            const nilaiSelect = row.querySelector('.custom-program-nilai');
+            const catatanInput = row.querySelector('.custom-program-catatan');
+            const namaProgram = nameInput ? nameInput.value.trim() : '';
+            const nilaiHuruf = nilaiSelect ? nilaiSelect.value.trim() : '';
+            const catatan = catatanInput ? catatanInput.value.trim() : '';
+
+            if (!namaProgram) {
+              return;
+            }
+
+            programs.push({
+              nama_program: namaProgram,
+              nilai_huruf: nilaiHuruf || 'A',
+              catatan: catatan,
+              kategori: groupName
+            });
+          });
+        });
+      }
 
       if (programs.length === 0) {
         showToastr('error', 'Tidak ada program untuk disimpan', 'Error');
@@ -774,6 +988,15 @@
     loadRapors();
   })();
 
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // Global functions untuk detail, edit, delete rapor
   async function loadDetailRapor(raporId) {
     // Keep behavior consistent with edit modal: fetch rapor, then fetch program groups
@@ -853,16 +1076,19 @@
       });
 
       let groupHtml = '';
-      const used = new Set();
+      let nextGroupIndex = 1;
+      const standardNames = new Set();
+      const customGroups = [];
 
       if (pgData.groups && pgData.groups.length > 0) {
-        let gIndex = 1;
         pgData.groups.forEach((group) => {
           const programs = (group.programs || []).filter(p => !!p.nama_program);
           if (programs.length === 0) return;
 
+          programs.forEach(p => standardNames.add(normalize(p.nama_program)));
+
           // Build header with numbering
-          groupHtml += `<div style="font-weight:700;font-size:15px;margin-top:18px;margin-bottom:6px;">${gIndex}. ${group.label}</div>`;
+          groupHtml += `<div style="font-weight:700;font-size:15px;margin-top:18px;margin-bottom:6px;">${nextGroupIndex}. ${escapeHtml(group.label)}</div>`;
 
           // create subgroups by initial letter (A, B, etc.) inside this category
           const subMap = {};
@@ -912,10 +1138,9 @@
             subPrograms.forEach(p => {
               const key = normalize(p.nama_program);
               const matched = itemsMap[key];
-              if (matched) used.add(matched.id);
               const nilai = matched ? matched.nilai_huruf : '-';
               const cat = matched && matched.catatan ? String(matched.catatan).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '-';
-              groupHtml += `<tr><td class="rapor-cell-program">${p.nama_program}</td><td class="rapor-cell-nilai text-center align-middle"><span class="badge ${getBadgeClass(nilai)}">${nilai}</span></td><td class="rapor-cell-catatan" style="white-space: pre-wrap; word-break: break-word; vertical-align: top;">${cat}</td></tr>`;
+              groupHtml += `<tr><td class="rapor-cell-program">${escapeHtml(p.nama_program)}</td><td class="rapor-cell-nilai text-center align-middle"><span class="badge ${getBadgeClass(nilai)}">${nilai}</span></td><td class="rapor-cell-catatan" style="white-space: pre-wrap; word-break: break-word; vertical-align: top;">${cat}</td></tr>`;
             });
 
             groupHtml += `</tbody></table></div>`;
@@ -923,27 +1148,54 @@
 
           const gNote = (rapor && rapor.group_notes && rapor.group_notes[group.label]) ? rapor.group_notes[group.label] : null;
           const safe = gNote ? String(gNote).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '-';
-          groupHtml += `<div style="margin-top:8px; font-size:13px; color:#374151;">\n<strong>Catatan (${group.label}):</strong><div style="margin-top:6px;">${safe}</div></div>`;
-          gIndex++;
+          groupHtml += `<div style="margin-top:8px; font-size:13px; color:#374151;">\n<strong>Catatan (${escapeHtml(group.label)}):</strong><div style="margin-top:6px;">${safe}</div></div>`;
+          nextGroupIndex++;
         });
       }
 
-      // Any remaining items that weren't matched -> Lainnya
-      const others = (rapor.items || []).filter(it => !used.has(it.id));
-      if (others.length > 0) {
-        // number for Lainnya should continue after existing groups
-        const otherLabelNumber = typeof gIndex !== 'undefined' ? gIndex : 1;
-        groupHtml += `<div style="font-weight:700;font-size:15px;margin-top:18px;margin-bottom:6px;">${otherLabelNumber}. Lainnya</div>`;
-        groupHtml += `<div class="table-responsive"><table class="table table-bordered mb-2 rapor-table" style="table-layout:fixed;width:100%;"><thead class="table-light"><tr><th style="width:58%;">Program</th><th class="text-center" style="width:18%;">Nilai</th><th>Catatan</th></tr></thead><tbody>`;
-        others.forEach(item => {
-          const cat = item.catatan ? String(item.catatan).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '-';
-          groupHtml += `<tr><td class="rapor-cell-program">${item.nama_program}</td><td class="rapor-cell-nilai text-center align-middle"><span class="badge ${getBadgeClass(item.nilai_huruf)}">${item.nilai_huruf}</span></td><td class="rapor-cell-catatan" style="white-space: pre-wrap; word-break: break-word; vertical-align: top;">${cat}</td></tr>`;
+      (rapor.items || []).forEach(item => {
+        const normalizedName = normalize(item.nama_program);
+        if (!normalizedName || standardNames.has(normalizedName)) {
+          return;
+        }
+
+        const label = (item.kategori_label || item.kategori || 'Lainnya').toString().trim();
+        const existingGroup = customGroups.find(group => group.label === label);
+        if (existingGroup) {
+          existingGroup.programs.push({
+            name: item.nama_program,
+            nilai: item.nilai_huruf || 'A',
+            catatan: item.catatan || ''
+          });
+          return;
+        }
+
+        customGroups.push({
+          label,
+          note: (rapor.group_notes && (rapor.group_notes[label] || rapor.group_notes[String(label).toLowerCase()] || '')) || '',
+          programs: [{
+            name: item.nama_program,
+            nilai: item.nilai_huruf || 'A',
+            catatan: item.catatan || ''
+          }]
         });
+      });
+
+      customGroups.forEach((group) => {
+        const currentIndex = nextGroupIndex;
+        nextGroupIndex++;
+        const groupNote = group.note ? String(group.note).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '-';
+        groupHtml += `<div style="font-weight:700;font-size:15px;margin-top:18px;margin-bottom:6px;">${currentIndex}. ${escapeHtml(group.label)}</div>`;
+        groupHtml += `<div class="table-responsive"><table class="table table-bordered mb-2 rapor-table" style="table-layout:fixed;width:100%;"><thead class="table-light"><tr><th style="width:58%;">Program</th><th class="text-center" style="width:18%;">Nilai</th><th>Catatan</th></tr></thead><tbody>`;
+
+        group.programs.forEach(item => {
+          const cat = item.catatan ? String(item.catatan).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '-';
+          groupHtml += `<tr><td class="rapor-cell-program">${escapeHtml(item.name)}</td><td class="rapor-cell-nilai text-center align-middle"><span class="badge ${getBadgeClass(item.nilai)}">${item.nilai}</span></td><td class="rapor-cell-catatan" style="white-space: pre-wrap; word-break: break-word; vertical-align: top;">${cat}</td></tr>`;
+        });
+
         groupHtml += `</tbody></table></div>`;
-        const gNote = (rapor && rapor.group_notes && (rapor.group_notes['Lainnya'] || rapor.group_notes['lainnya'])) ? (rapor.group_notes['Lainnya'] || rapor.group_notes['lainnya']) : null;
-        const safe = gNote ? String(gNote).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '-';
-        groupHtml += `<div style="margin-top:8px; font-size:13px; color:#374151;">\n<strong>Catatan (Lainnya):</strong><div style="margin-top:6px;">${safe}</div></div>`;
-      }
+        groupHtml += `<div style="margin-top:8px; font-size:13px; color:#374151;">\n<strong>Catatan (${escapeHtml(group.label)}):</strong><div style="margin-top:6px;">${groupNote}</div></div>`;
+      });
 
       content.innerHTML = `
         <div class="row g-3 mb-4">
@@ -968,11 +1220,11 @@
         <div class="row g-3 mt-4">
           <div class="col-md-6">
             <p class="mb-1"><strong>Saran Guru:</strong></p>
-            <p style="white-space: pre-wrap;">${saranGuru || '-'}</p>
+            <p style="white-space: pre-wrap; text-align: justify;">${saranGuru || '-'}</p>
           </div>
           <div class="col-md-6">
             <p class="mb-1"><strong>Saran Orang Tua:</strong></p>
-            <p style="white-space: pre-wrap;">${saranOrtu || '-'}</p>
+            <p style="white-space: pre-wrap; text-align: justify;">${saranOrtu || '-'}</p>
           </div>
         </div>
       `;
@@ -1196,6 +1448,8 @@
               if (programData.groups && programData.groups.length > 0) {
                 const normalizeProgramName = (value) => String(value || '').toLowerCase().trim().replace(/\s+/g, ' ');
                 const itemsMap = {};
+                const standardNames = new Set();
+                const customGroups = [];
 
                 rapor.items.forEach(item => {
                   itemsMap[normalizeProgramName(item.nama_program)] = item;
@@ -1204,6 +1458,7 @@
                 // Update groups with catatan from rapor and collect group notes
                 programData.groups.forEach(group => {
                   group.programs.forEach(program => {
+                    standardNames.add(normalizeProgramName(program.nama_program));
                     const matchedItem = itemsMap[normalizeProgramName(program.nama_program)];
                     if (matchedItem) {
                       program.catatan = matchedItem.catatan || '';
@@ -1283,8 +1538,48 @@
                   tableHtmlParts.push(`</div>`);
                 });
 
+                (rapor.items || []).forEach(item => {
+                  const normalizedName = normalizeProgramName(item.nama_program);
+                  if (!normalizedName || standardNames.has(normalizedName)) {
+                    return;
+                  }
+
+                  const label = (item.kategori_label || item.kategori || 'Kategori Baru').toString().trim();
+                  if (!label) {
+                    return;
+                  }
+
+                  const existingGroup = customGroups.find(group => group.label === label);
+                  if (existingGroup) {
+                    existingGroup.programs.push({
+                      name: item.nama_program,
+                      nilai: item.nilai_huruf || 'A',
+                      catatan: item.catatan || ''
+                    });
+                    return;
+                  }
+
+                  customGroups.push({
+                    label,
+                    note: (rapor.group_notes && rapor.group_notes[label]) ? rapor.group_notes[label] : '',
+                    programs: [{
+                      name: item.nama_program,
+                      nilai: item.nilai_huruf || 'A',
+                      catatan: item.catatan || ''
+                    }]
+                  });
+                });
+
                 programGroupsContainer.innerHTML = tableHtmlParts.join('');
                 programSummary.textContent = `${totalPrograms} program ditemukan untuk semester ini.`;
+
+                if (customGroups.length > 0 && typeof window.renderCustomGroups === 'function') {
+                  const customProgramsContainer = document.getElementById('customProgramsContainer');
+                  if (customProgramsContainer) {
+                    customProgramsContainer.innerHTML = '';
+                    window.renderCustomGroups(customGroups);
+                  }
+                }
               }
 
               // Open modal
