@@ -118,6 +118,17 @@
       ]
     },
     {
+      "url": "rapor-anak",
+      "name": "Rapor Anak",
+      "icon": "menu-icon icon-base ri ri-file-text-line",
+      "slug": "rapor-anak.index",
+      "roles": [
+        "admin",
+        "guru",
+        "konsultan"
+      ]
+    },
+    {
       "url": "terapis/pasien",
       "name": "Pasien Terapis",
       "icon": "menu-icon icon-base ri ri-heart-pulse-line",

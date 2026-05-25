@@ -260,6 +260,24 @@ Route::middleware(['auth'])->group(function () {
     Route::post('absensi/{id}/jemput', [App\Http\Controllers\AbsensiController::class, 'jemput'])->name('absensi.jemput');
   });
 
+  Route::get('rapor-anak', [App\Http\Controllers\RaporAnakController::class, 'index'])->name('rapor-anak.index');
+  Route::get('rapor-anak/data', [App\Http\Controllers\RaporAnakController::class, 'data'])->name('rapor-anak.data');
+  Route::get('rapor-anak/list', [App\Http\Controllers\RaporAnakController::class, 'list'])->name('rapor-anak.list');
+  Route::get('rapor-anak/{anakDidik}/riwayat', [App\Http\Controllers\RaporAnakController::class, 'riwayat'])->name('rapor-anak.riwayat');
+
+  // Rapor CRUD with role-based access
+  Route::middleware(['auth', 'role:admin,guru'])->group(function () {
+    Route::post('rapor-anak/store', [App\Http\Controllers\RaporAnakController::class, 'store'])->name('rapor-anak.store');
+    Route::patch('rapor-anak/{rapor}', [App\Http\Controllers\RaporAnakController::class, 'update'])->name('rapor-anak.update');
+    Route::delete('rapor-anak/{rapor}', [App\Http\Controllers\RaporAnakController::class, 'destroy'])->name('rapor-anak.destroy');
+  });
+
+  // Rapor view/preview accessible to all authorized roles
+  Route::middleware(['auth', 'role:admin,guru,konsultan'])->group(function () {
+    Route::get('rapor-anak/{rapor}/preview', [App\Http\Controllers\RaporAnakController::class, 'preview'])->name('rapor-anak.preview');
+    Route::get('rapor-anak/{rapor}', [App\Http\Controllers\RaporAnakController::class, 'show'])->name('rapor-anak.show');
+  });
+
   // Absensi Export PDF (Admin only)
   Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('absensi-export-pdf', [App\Http\Controllers\AbsensiController::class, 'exportPdf'])->name('absensi.export-pdf');
