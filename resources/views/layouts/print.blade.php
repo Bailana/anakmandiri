@@ -11,13 +11,6 @@
       size: A4;
       margin: 12mm;
 
-      @top-center {
-        content: "LAPORAN HASIL BELAJAR";
-        font-size: 12px;
-        font-weight: bold;
-        color: #000;
-      }
-
       @bottom-right {
         content: "Halaman " counter(page);
         font-size: 10px;
@@ -39,6 +32,8 @@
       padding: 0;
       font-family: Arial, Helvetica, sans-serif;
       color: #000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
     .print-container {
@@ -55,6 +50,8 @@
       max-width: 100%;
       height: auto;
       display: block;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
     /* Hide helper UI when printing */
@@ -70,6 +67,11 @@
 
       .content {
         margin-top: 0;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
     }
   </style>
