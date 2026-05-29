@@ -281,6 +281,9 @@ class RaporAnakController extends Controller
             if ($metadata['kategori'] === 'vokasi') {
                 continue;
             }
+            if (trim((string) ($metadata['nama_program'] ?? '')) === '') {
+                continue;
+            }
             $programKey = $this->programKey($assessment, $metadata);
             if (isset($seen[$programKey])) {
                 continue;
@@ -508,7 +511,7 @@ class RaporAnakController extends Controller
             return trim((string) $assessment->hasil_penilaian);
         }
 
-        return 'Program';
+        return '';
     }
 
     protected function extractScore(Assessment $assessment): ?float
