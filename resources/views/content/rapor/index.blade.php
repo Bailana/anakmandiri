@@ -717,15 +717,57 @@
       groups.forEach(group => {
         if (!group.programs || group.programs.length === 0) return;
         totalPrograms += group.programs.length;
-        const isVokasiGroup = String(group.label || group.kategori || '').toLowerCase() === 'vokasi';
-
         html += `<div class="program-group mb-4" data-group-index="${idx}">`;
         html += `<div class="d-flex justify-content-between align-items-center mb-2"><div><h6 class="mb-0">${idx}. ${group.label}</h6><div class="text-muted small">${group.programs.length} program</div></div></div>`;
 
-        if (isVokasiGroup) {
+        const subMap = {};
+        group.programs.forEach(p => {
+          const name = (p.nama_program || '').trim();
+          const m = name.match(/^([A-Za-z])/);
+          const key = m ? m[1].toUpperCase() : '_';
+          if (!subMap[key]) subMap[key] = [];
+          subMap[key].push(p);
+        });
+
+        const subgroupTitles = {
+          'A': 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
+          'B': 'Kemampuan Visual (B1-B27)',
+          'C': 'Bahasa Reseptif (Reseptive Language) (C1-C57)',
+          'D': 'Menirukan (Imitation) (D1-D27)',
+          'E': 'Menirukan Secara Lisan (E1-E20)',
+          'F': 'Kemampuan Permintaan (F1-F29)',
+          'G': 'Menamakan (Labeling) (G1-G47)',
+          'H': 'Kemampuan Intraverbal (Intraverbal) (H1-H49)',
+          'I': 'Spontan Secara Lisan (I1-I9)',
+          'J': 'Aturan Penyusunan Kata dan Tata Bahasa (Syntax and Grammar) (J1-J20)',
+          'K': 'Kemampuan Bermain (K1-K15)',
+          'L': 'Interaksi Sosial (L1-L34)',
+          'M': 'Belajar Berkelompok (M1-M12)',
+          'N': 'Mengikuti Rutinitas di dalam Kelas (N1-N10)',
+          'P': 'Menggeneralisasikan Respon (Generalized Respon) (P1-P6)',
+          'Q': 'Kemampuan Membaca (Reading Skills) (Q1-Q17)',
+          'R': 'Kemampuan Berhitung (Math Skills) (R1-R29)',
+          'S': 'Kemampuan Menulis (Writing Skills) (S1-S10)',
+          'T': 'Mengeja (Spelling) (T1-T7)',
+          'U': 'Kemampuan Berpakaian (Dressing Skill) (U1-U15)',
+          'V': 'Kemampuan/Tata Cara Makan (Eating Skills) (V1-V10)',
+          'W': 'Kebersihan Diri (Grooming Skills) (W1-W7)',
+          'X': 'Kemampuan Menggunakan Toilet (Toileting Skills) (X1-X10)',
+          'Y': 'Kemampuan Motorik Kasar (Gross Motor Skills) (Y1-Y30)',
+          'Z': 'Kemampuan Motorik Halus (Fine Motor Skills) (Z1-Z28)'
+        };
+
+        Object.keys(subMap).sort().forEach(subKey => {
+          const programs = subMap[subKey];
+          const title = subgroupTitles[subKey] || (subKey === '_' ? '' : subKey);
+
+          if (title) {
+            html += `<div style="font-weight:700;margin-top:8px;margin-bottom:6px;">${title}</div>`;
+          }
+
           html += `<div class="table-responsive"><table class="table table-bordered align-middle mb-0"><thead class="table-light"><tr><th class="text-center" style="width:58%;">Program</th><th class="text-center" style="width:18%;">Nilai</th><th class="text-center">Catatan</th></tr></thead><tbody>`;
 
-          group.programs.forEach(program => {
+          programs.forEach(program => {
             const safeCatatan = (program.catatan || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             html += `
               <tr>
@@ -737,71 +779,7 @@
           });
 
           html += `</tbody></table></div>`;
-        } else {
-          // Build subgroups by program code prefix (A, B, etc.)
-          const subMap = {};
-          group.programs.forEach(p => {
-            const name = (p.nama_program || '').trim();
-            const m = name.match(/^([A-Za-z])/);
-            const key = m ? m[1].toUpperCase() : '_';
-            if (!subMap[key]) subMap[key] = [];
-            subMap[key].push(p);
-          });
-
-          // mapping for special subgroup titles
-          const subgroupTitles = {
-            'A': 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
-            'B': 'Kemampuan Visual (B1-B27)',
-            'C': 'Bahasa Reseptif (Reseptive Language) (C1-C57)',
-            'D': 'Menirukan (Imitation) (D1-D27)',
-            'E': 'Menirukan Secara Lisan (E1-E20)',
-            'F': 'Kemampuan Permintaan (F1-F29)',
-            'G': 'Menamakan (Labeling) (G1-G47)',
-            'H': 'Kemampuan Intraverbal (Intraverbal) (H1-H49)',
-            'I': 'Spontan Secara Lisan (I1-I9)',
-            'J': 'Aturan Penyusunan Kata dan Tata Bahasa (Syntax and Grammar) (J1-J20)',
-            'K': 'Kemampuan Bermain (K1-K15)',
-            'L': 'Interaksi Sosial (L1-L34)',
-            'M': 'Belajar Berkelompok (M1-M12)',
-            'N': 'Mengikuti Rutinitas di dalam Kelas (N1-N10)',
-            'P': 'Menggeneralisasikan Respon (Generalized Respon) (P1-P6)',
-            'Q': 'Kemampuan Membaca (Reading Skills) (Q1-Q17)',
-            'R': 'Kemampuan Berhitung (Math Skills) (R1-R29)',
-            'S': 'Kemampuan Menulis (Writing Skills) (S1-S10)',
-            'T': 'Mengeja (Spelling) (T1-T7)',
-            'U': 'Kemampuan Berpakaian (Dressing Skill) (U1-U15)',
-            'V': 'Kemampuan/Tata Cara Makan (Eating Skills) (V1-V10)',
-            'W': 'Kebersihan Diri (Grooming Skills) (W1-W7)',
-            'X': 'Kemampuan Menggunakan Toilet (Toileting Skills) (X1-X10)',
-            'Y': 'Kemampuan Motorik Kasar (Gross Motor Skills) (Y1-Y30)',
-            'Z': 'Kemampuan Motorik Halus (Fine Motor Skills) (Z1-Z28)'
-          };
-
-          // render each subgroup inside the category
-          Object.keys(subMap).sort().forEach(subKey => {
-            const programs = subMap[subKey];
-            const title = subgroupTitles[subKey] || (subKey === '_' ? '' : subKey);
-
-            if (title) {
-              html += `<div style="font-weight:700;margin-top:8px;margin-bottom:6px;">${title}</div>`;
-            }
-
-            html += `<div class="table-responsive"><table class="table table-bordered align-middle mb-0"><thead class="table-light"><tr><th class="text-center" style="width:58%;">Program</th><th class="text-center" style="width:18%;">Nilai</th><th class="text-center">Catatan</th></tr></thead><tbody>`;
-
-            programs.forEach(program => {
-              const safeCatatan = (program.catatan || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-              html += `
-                <tr>
-                  <td><div class="fw-medium">${program.nama_program}</div></td>
-                  <td class="text-center align-middle"><span class="badge ${getBadgeClass(program.nilai_huruf)}">${program.nilai_huruf}</span></td>
-                  <td><textarea class="form-control form-control-sm program-note" rows="3" style="min-height: 90px; resize: vertical;" placeholder="Tambah catatan program">${safeCatatan}</textarea></td>
-                </tr>
-              `;
-            });
-
-            html += `</tbody></table></div>`;
-          });
-        }
+        });
 
         // Group-level note textarea (spans the group)
         html += `<div class="mt-2"><label class="form-label small">Catatan (${group.label})</label><textarea class="form-control form-control-sm group-note" rows="3" placeholder="Catatan untuk seluruh program dalam kelompok ini"></textarea></div>`;

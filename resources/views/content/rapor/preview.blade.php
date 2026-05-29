@@ -23,6 +23,7 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
     color: #4a4a4a;
     line-height: 1.5;
     background: white;
@@ -38,7 +39,7 @@
 
   /* Section Title */
   .section-title {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: 700;
     color: var(--gray-900);
     margin-top: 16px;
@@ -59,7 +60,7 @@
 
   /* Group Catatan */
   .group-catatan {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--gray-700);
     margin-bottom: 8px;
     padding: 8px 12px;
@@ -70,7 +71,7 @@
 
   /* Subsection Title */
   .subsection-title {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--gray-900);
     margin-top: 10px;
@@ -116,7 +117,7 @@
   }
 
   .meta-label {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--gray-600);
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -125,7 +126,7 @@
   }
 
   .meta-value {
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--gray-900);
   }
@@ -136,7 +137,7 @@
     border-collapse: separate;
     border-spacing: 0;
     table-layout: fixed;
-    font-size: 12px;
+    font-size: 14px;
     margin-bottom: 16px;
     page-break-inside: avoid;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -161,7 +162,7 @@
     padding: 9px 10px;
     text-align: center;
     font-weight: 700;
-    font-size: 11px;
+    font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.02em;
     border: none;
@@ -200,16 +201,18 @@
     width: 50%;
     font-weight: 500;
     color: var(--gray-900);
+    font-size: 14px;
   }
 
   .preview-col-nilai {
     width: 12%;
+    font-size: 14px;
   }
 
   .preview-col-catatan-kategori {
     width: 38%;
     padding: 12px 10px;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.3;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -217,7 +220,7 @@
 
   .preview-col-catatan {
     width: 38%;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--gray-600);
     text-align: justify;
     line-height: 1.5;
@@ -225,7 +228,7 @@
   }
 
   .group-catatan-below {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--gray-700);
     margin-top: 8px;
     margin-bottom: 16px;
@@ -252,7 +255,7 @@
   .preview-table-catatan td {
     padding: 10px 12px;
     vertical-align: top;
-    font-size: 11px;
+    font-size: 13px;
     color: var(--gray-700);
   }
 
@@ -285,7 +288,7 @@
     padding: 0 8px;
     border-radius: 50px;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.01em;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
@@ -368,7 +371,7 @@
   }
 
   .suggestion-label {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--primary);
     text-transform: uppercase;
@@ -377,7 +380,7 @@
   }
 
   .suggestion-content {
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.6;
     color: var(--gray-900);
     white-space: pre-wrap;
@@ -391,7 +394,7 @@
   }
 
   .signature-location {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
     color: var(--gray-900);
     margin-bottom: 4px;
@@ -399,7 +402,7 @@
   }
 
   .signature-approval-text {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--gray-900);
     margin-bottom: 24px;
     text-align: center;
@@ -431,14 +434,14 @@
   }
 
   .signature-name {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--gray-900);
     margin-bottom: 2px;
   }
 
   .signature-title {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--gray-600);
     line-height: 1.4;
   }
@@ -450,7 +453,7 @@
     padding: 4px 0;
     background: transparent;
     border-radius: 0;
-    font-size: 8px;
+    font-size: 10px;
     color: #6b7280;
     line-height: 1.2;
   }
@@ -459,7 +462,7 @@
     color: #4b5563;
     display: inline;
     margin-bottom: 0;
-    font-size: 8px;
+    font-size: 10px;
   }
 
   .print-footer p {
@@ -611,6 +614,15 @@
     display: block;
     margin-bottom: 8px;
   }
+
+  .preview-shell .badge,
+  .preview-shell td,
+  .preview-shell th,
+  .preview-shell .catatan-kategori-value,
+  .preview-shell .preview-col-catatan,
+  .preview-shell .suggestion-content {
+    font-size: inherit;
+  }
 </style>
 @endpush
 
@@ -664,9 +676,45 @@
   }
   @endphp
   @foreach($previewGroups as $group)
+  @if(preg_match('/vokasi/i', trim((string) ($group['label'] ?? $group['kategori'] ?? ''))))
+  @continue
+  @endif
+  @php
+  $groupLabelText = trim((string) ($group['label'] ?? ''));
+  $isCustomGroup = !empty($groupLabelText) && !preg_match('/^(Basic Learning|Akademik|Bina Diri|Motorik|Lainnya)$/i', $groupLabelText);
+  $groupNoteText = !empty($group['group_note']) ? $group['group_note'] : null;
+  @endphp
   <div class="preview-group-block">
     <div class="section-title">{{ $group['label'] }}</div>
 
+    @if($isCustomGroup)
+    <table class="preview-table">
+      <thead>
+        <tr>
+          <th class="preview-col-program">Program</th>
+          <th class="preview-col-nilai">Nilai</th>
+          <th class="preview-col-catatan">Catatan Program</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach($group['programs'] as $item)
+        <tr>
+          <td class="preview-col-program">{{ $item['nama_program'] }}</td>
+          <td class="preview-cell-nilai"><span class="badge {{ strtolower($item['nilai_huruf'] ?? '-') }}">{{ $item['nilai_huruf'] ?? '-' }}</span></td>
+          <td class="preview-col-catatan">{!! nl2br(e($item['catatan'] ?? '-')) !!}</td>
+        </tr>
+        @endforeach
+      </tbody>
+    </table>
+    <table class="preview-table-catatan">
+      <tbody>
+        <tr>
+          <td class="catatan-kategori-label">Catatan {{ $group['label'] }}:</td>
+          <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    @else
     @php
     // build subgroups by initial letter (A, B, etc.)
     $subMap = [];
@@ -680,7 +728,6 @@
     $subMap[$k][] = $p;
     }
     ksort($subMap);
-    $groupNoteText = !empty($group['group_note']) ? $group['group_note'] : null;
     $subTitles = [
     'A' => 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
     'B' => 'Kemampuan Visual (B1-B27)',
@@ -743,6 +790,7 @@
       </table>
     </div>
     @endforeach
+    @endif
     <div class="print-footer" style="margin-top: 16px; page-break-inside: avoid;">
       <strong>Keterangan Penilaian:</strong>
       <p style="margin: 8px 0 0; font-size: 11px;"><strong>A</strong> = Tercapai sesuai kriteria | <strong>B</strong> = Tercapai 80% | <strong>C</strong> = Tercapai 50% | <strong>D</strong> = Belum tercapai | <strong>-</strong> = Belum Terlaksana</p>
@@ -777,11 +825,47 @@
   @endphp
 
   @foreach($grouped as $kategori => $items)
+  @if(preg_match('/vokasi/i', trim((string) $kategori)))
+  @continue
+  @endif
+  @php
+  $isCustomGroup = !preg_match('/^(Basic Learning|Akademik|Bina Diri|Motorik|Lainnya)$/i', trim((string) $kategori));
+  @endphp
   <div class="preview-group-block">
     <div class="section-title">{{ $kategori }}</div>
 
     @php
     $groupNoteText = (isset($rapor->group_notes[$kategori]) && !empty($rapor->group_notes[$kategori])) ? $rapor->group_notes[$kategori] : null;
+    @endphp
+
+    @if($isCustomGroup)
+    <table class="preview-table">
+      <thead>
+        <tr>
+          <th class="preview-col-program">Program</th>
+          <th class="preview-col-nilai">Nilai</th>
+          <th class="preview-col-catatan">Catatan Program</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach($items as $item)
+        <tr>
+          <td class="preview-col-program">{{ $item->nama_program }}</td>
+          <td class="preview-cell-nilai"><span class="badge {{ strtolower($item->nilai_huruf) }}">{{ $item->nilai_huruf }}</span></td>
+          <td class="preview-col-catatan">{!! nl2br(e($item->catatan ?: '-')) !!}</td>
+        </tr>
+        @endforeach
+      </tbody>
+    </table>
+    <table class="preview-table-catatan">
+      <tbody>
+        <tr>
+          <td class="catatan-kategori-label">Catatan {{ $kategori }}:</td>
+          <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    @else
     // subgroup within this category
     $subMap = [];
     foreach($items as $p) {
@@ -856,6 +940,7 @@
       </table>
     </div>
     @endforeach
+    @endif
     <div class="print-footer" style="margin-top: 16px; page-break-inside: avoid;">
       <strong>Keterangan Penilaian:</strong>
       <p style="margin: 8px 0 0; font-size: 11px;"><strong>A</strong> = Tercapai sesuai kriteria | <strong>B</strong> = Tercapai 80% | <strong>C</strong> = Tercapai 50% | <strong>D</strong> = Belum tercapai | <strong>-</strong> = Belum Terlaksana</p>
@@ -873,8 +958,6 @@
   @endif
   @endif
 
-  <div class="page-break"></div>
-  <div class="section-title">Keterangan Perkembangan Terapi</div>
   @php
   $therapyNotes = $rapor->therapy_notes;
   $therapyLabels = [
@@ -882,23 +965,33 @@
   'wicara' => 'Perkembangan Terapi Wicara',
   'perilaku' => 'Perkembangan Terapi Perilaku',
   ];
+  $therapyNotesHasContent = is_array($therapyNotes)
+  ? collect($therapyNotes)->filter(function ($text) {
+  return trim((string) $text) !== '';
+  })->isNotEmpty()
+  : false;
+  $hasTherapyScheduleSummary = !empty($therapyScheduleSummary) && is_array($therapyScheduleSummary);
+  $showTherapySection = $therapyNotesHasContent || $hasTherapyScheduleSummary;
   @endphp
+
+  @if($showTherapySection)
+  <div class="page-break"></div>
+
+  @if($therapyNotesHasContent)
+  <div class="section-title">Keterangan Perkembangan Terapi</div>
   <div class="preview-table-wrapper" style="margin-bottom: 16px;">
-    @if(is_array($therapyNotes) && count($therapyNotes) > 0)
     @foreach($therapyNotes as $key => $text)
-    @if(!empty($text))
+    @if(!empty(trim((string) $text)))
     <div style="margin-bottom: 16px; padding: 12px; border: 1px solid #d2d6dc; border-radius: 8px; background: #f8fafc;">
       <div style="font-weight: 600; margin-bottom: 8px;">{{ $therapyLabels[$key] ?? ucfirst(str_replace(['_','-'], ' ', $key)) }}</div>
       <div style="white-space: pre-wrap; text-align: justify; line-height: 1.5;">{!! nl2br(e($text)) !!}</div>
     </div>
     @endif
     @endforeach
-    @else
-    <div style="padding: 12px; border: 1px solid #d2d6dc; border-radius: 8px; background: #f8fafc;">-</div>
-    @endif
   </div>
+  @endif
 
-  @if(!empty($therapyScheduleSummary) && is_array($therapyScheduleSummary))
+  @if($hasTherapyScheduleSummary)
   <div class="section-title">Rekap Jumlah Jam Terapi per Jenis</div>
   <div class="preview-table-wrapper">
     <table class="preview-table">
@@ -910,13 +1003,6 @@
         </tr>
       </thead>
       <tbody>
-        @php
-        $therapyLabels = [
-        'si' => 'Perkembangan Terapi Senso-motor Integrasi',
-        'wicara' => 'Perkembangan Terapi Wicara',
-        'perilaku' => 'Perkembangan Terapi Perilaku',
-        ];
-        @endphp
         @foreach($therapyScheduleSummary as $summary)
         <tr>
           <td class="preview-col-program">{{ $therapyLabels[$summary['jenis_terapi']] ?? ucfirst(str_replace(['_','-'], ' ', $summary['jenis_terapi'])) }}</td>
@@ -927,6 +1013,11 @@
       </tbody>
     </table>
   </div>
+  @endif
+  @endif
+
+  @if($showTherapySection)
+  <div class="page-break"></div>
   @endif
 
   <div class="page-break"></div>

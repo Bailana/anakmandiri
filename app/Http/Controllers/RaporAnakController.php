@@ -278,6 +278,9 @@ class RaporAnakController extends Controller
         // First, add programs that have assessments
         foreach ($assessments as $assessment) {
             $metadata = $this->resolveProgramMetadata($anakDidikId, $assessment, $programAnaks);
+            if ($metadata['kategori'] === 'vokasi') {
+                continue;
+            }
             $programKey = $this->programKey($assessment, $metadata);
             if (isset($seen[$programKey])) {
                 continue;
@@ -303,6 +306,9 @@ class RaporAnakController extends Controller
         foreach ($programAnaksInPeriode as $programAnak) {
             $namaProgram = $this->displayProgramName($programAnak);
             $kategori = $this->normalizeCategory($programAnak->kategori);
+            if ($kategori === 'vokasi') {
+                continue;
+            }
             $programKey = 'pk:' . $programAnak->program_konsultan_id;
 
             // Skip if already added from assessments
@@ -358,7 +364,7 @@ class RaporAnakController extends Controller
     {
         // Preferred display order: Basic Learning (perilaku), Akademik, Bina Diri, Motorik
         // followed by other categories
-        return ['perilaku', 'akademik', 'bina_diri', 'motorik', 'vokasi', 'lainnya'];
+        return ['perilaku', 'akademik', 'bina_diri', 'motorik', 'lainnya'];
     }
 
     protected function normalizeCategory(?string $kategori): string
@@ -900,6 +906,11 @@ class RaporAnakController extends Controller
         $previewGroups = [];
 
         foreach ($groups as $grp) {
+            $groupLabel = trim((string) ($grp['label'] ?? $this->categoryLabel($grp['kategori'] ?? 'lainnya')));
+            if ($groupLabel !== '' && preg_match('/vokasi/i', $groupLabel)) {
+                continue;
+            }
+
             $programs = [];
             if (!empty($grp['programs'])) {
                 foreach ($grp['programs'] as $p) {
@@ -930,7 +941,7 @@ class RaporAnakController extends Controller
                 }
 
                 $previewGroups[] = [
-                    'label' => $grp['label'] ?? $this->categoryLabel($grp['kategori'] ?? 'lainnya'),
+                    'label' => $groupLabel,
                     'programs' => $programs,
                     'group_note' => $groupNote,
                 ];
@@ -957,6 +968,10 @@ class RaporAnakController extends Controller
         }
 
         foreach ($remainingByCategory as $label => $programs) {
+            if ($label !== '' && preg_match('/vokasi/i', $label)) {
+                continue;
+            }
+
             $groupNote = '';
             if ($rapor->group_notes && is_array($rapor->group_notes) && isset($rapor->group_notes[$label])) {
                 $groupNote = $rapor->group_notes[$label] ?? '';
