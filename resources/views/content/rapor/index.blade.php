@@ -275,6 +275,8 @@
   let isEditMode = false;
   let editingRaporId = null;
   let isConsultantEducation = document.getElementById('buatRaporModal')?.dataset.isConsultantEducation === '1';
+  let createRaporModalIsDirty = false;
+  let createRaporModalAllowClose = false;
 
   // Configure toastr
   toastr.options = {
@@ -334,6 +336,15 @@
     const customProgramsContainer = document.getElementById('customProgramsContainer');
     const btnTambahKategori = document.getElementById('btnTambahKategori');
     const btnTambahProgramGlobal = document.getElementById('btnTambahProgramGlobal');
+
+    function setCreateRaporModalDirty(isDirty) {
+      createRaporModalIsDirty = Boolean(isDirty);
+    }
+
+    function resetCreateRaporModalState() {
+      setCreateRaporModalDirty(false);
+      createRaporModalAllowClose = false;
+    }
 
     function getDefaultSemester() {
       const month = new Date().getMonth() + 1;
@@ -896,6 +907,7 @@
     function resetFormToCreateMode() {
       isEditMode = false;
       editingRaporId = null;
+      resetCreateRaporModalState();
 
       // Update modal title
       const modalTitle = modalEl.querySelector('.modal-title');
@@ -965,6 +977,18 @@
       });
     }
 
+    modalEl.addEventListener('input', function(event) {
+      if (event.target.matches('input, textarea, select')) {
+        setCreateRaporModalDirty(true);
+      }
+    });
+
+    modalEl.addEventListener('change', function(event) {
+      if (event.target.matches('input, textarea, select')) {
+        setCreateRaporModalDirty(true);
+      }
+    });
+
     modalEl.addEventListener('shown.bs.modal', async function() {
       // Avoid overwriting edit form data when opening the modal in edit mode
       if (isEditMode) {
@@ -983,9 +1007,29 @@
       }
     });
 
-    // When modal is fully hidden, always reset to create mode to avoid leftover edit state
+    // Confirm closing the create modal if there are unsaved changes.
+    modalEl.addEventListener('hide.bs.modal', function(event) {
+      if (createRaporModalAllowClose || !createRaporModalIsDirty) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const shouldClose = window.confirm('Inputan yang belum disimpan akan terhapus. Yakin ingin menutup modal ini?');
+      if (shouldClose) {
+        createRaporModalAllowClose = true;
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modalInstance.hide();
+      }
+    });
+
+    // Keep the current input state while the modal is hidden unless close was confirmed.
     modalEl.addEventListener('hidden.bs.modal', function() {
-      resetFormToCreateMode();
+      if (createRaporModalAllowClose) {
+        resetFormToCreateMode();
+      } else {
+        resetCreateRaporModalState();
+      }
     });
 
     anakSelect.addEventListener('change', loadPrograms);
@@ -1143,6 +1187,7 @@
 
           // Reset form and mode
           resetFormToCreateMode();
+          createRaporModalAllowClose = true;
 
           // Close modal
           const modalInstance = bootstrap.Modal.getInstance(modalEl);
