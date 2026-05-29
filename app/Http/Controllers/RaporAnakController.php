@@ -9,6 +9,7 @@ use App\Models\Konsultan;
 use App\Models\ProgramAnak;
 use App\Models\Rapor;
 use App\Models\RaporItem;
+use App\Models\GuruAnakDidikSchedule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -71,6 +72,21 @@ class RaporAnakController extends Controller
                 'end' => $periode['end']->toDateString(),
             ],
             'groups' => $groups,
+            // include therapy schedules that overlap the semester period for the selected child
+            'therapies' => $child ? \App\Models\GuruAnakDidikSchedule::with('assignment')
+                ->whereHas('assignment', function ($q) use ($selectedChildId) {
+                    $q->where('anak_didik_id', $selectedChildId);
+                })
+                ->whereBetween('tanggal_mulai', [$periode['start']->toDateString(), $periode['end']->toDateString()])
+                ->get()->map(function ($schedule) {
+                    return [
+                        'id' => $schedule->id,
+                        'jenis_terapi' => $schedule->jenis_terapi,
+                        'terapis_nama' => $schedule->terapis_nama,
+                        'tanggal_mulai' => $schedule->tanggal_mulai?->toDateString(),
+                        'hari' => $schedule->hari,
+                    ];
+                })->values() : [],
         ]);
     }
 
@@ -546,6 +562,8 @@ class RaporAnakController extends Controller
             'group_notes' => 'nullable|array',
             'saran_guru' => 'nullable|string',
             'saran_orang_tua' => 'nullable|string',
+            'therapy_notes' => 'nullable|array',
+            'therapy_notes.*' => 'nullable|string',
             'programs.*.kategori' => 'nullable|string|max:255',
             'programs.*.nama_program' => 'required|string|max:255',
             'programs.*.nilai_huruf' => 'required|in:A,B,C,D,-',
@@ -574,6 +592,7 @@ class RaporAnakController extends Controller
                 'group_notes' => $validated['group_notes'] ?? null,
                 'saran_guru' => $validated['saran_guru'] ?? null,
                 'saran_orang_tua' => $validated['saran_orang_tua'] ?? null,
+                'therapy_notes' => $validated['therapy_notes'] ?? null,
             ]);
 
             // Create rapor items
@@ -647,6 +666,7 @@ class RaporAnakController extends Controller
                 'group_notes' => $validated['group_notes'] ?? null,
                 'saran_guru' => $validated['saran_guru'] ?? null,
                 'saran_orang_tua' => $validated['saran_orang_tua'] ?? null,
+                'therapy_notes' => $request->input('therapy_notes') ?? null,
             ]);
 
             // Delete old items and create new ones
@@ -792,6 +812,7 @@ class RaporAnakController extends Controller
                 'group_notes' => $rapor->group_notes ?? [],
                 'saran_guru' => $rapor->saran_guru ?? null,
                 'saran_orang_tua' => $rapor->saran_orang_tua ?? null,
+                'therapy_notes' => $rapor->therapy_notes ?? null,
                 'items' => $rapor->items->map(function ($item) {
                     return [
                         'id' => $item->id,
@@ -867,6 +888,7 @@ class RaporAnakController extends Controller
 
         // Build groups for preview so grouping matches create/edit/detail modals
         $groups = $this->buildProgramGroups($rapor->anak_didik_id, $rapor->semester, $rapor->tahun_pelajaran);
+        $periode = $this->semesterRange($rapor->semester, $rapor->tahun_pelajaran);
 
         // Map rapor items by normalized name
         $itemsMap = [];
@@ -950,7 +972,28 @@ class RaporAnakController extends Controller
         // Get absensi data for the semester
         $absensiSummary = $this->getAbsensiSummaryBySemester($rapor->anak_didik_id, $rapor->semester, $rapor->tahun_pelajaran);
 
-        return view('content.rapor.preview', compact('rapor', 'previewGroups', 'absensiSummary'));
+        $therapyScheduleSummary = GuruAnakDidikSchedule::with('assignment')
+            ->whereHas('assignment', function ($q) use ($rapor) {
+                $q->where('anak_didik_id', $rapor->anak_didik_id);
+            })
+            ->whereBetween('tanggal_mulai', [$periode['start']->toDateString(), $periode['end']->toDateString()])
+            ->get()
+            ->filter(function ($schedule) {
+                return !empty($schedule->jenis_terapi);
+            })
+            ->groupBy(function ($schedule) {
+                return strtolower(trim((string) $schedule->jenis_terapi));
+            })
+            ->map(function ($group, $jenis) {
+                return [
+                    'jenis_terapi' => $jenis,
+                    'count' => $group->count(),
+                ];
+            })
+            ->values()
+            ->all();
+
+        return view('content.rapor.preview', compact('rapor', 'previewGroups', 'absensiSummary', 'therapyScheduleSummary'));
     }
 
     protected function getAbsensiSummaryBySemester(int $anakDidikId, string $semester, string $tahunPelajaran): array

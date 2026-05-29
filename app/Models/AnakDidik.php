@@ -62,9 +62,14 @@ class AnakDidik extends Model
         'surat_pernyataan' => 'boolean',
     ];
 
-    public function therapyPrograms()
+    public function therapySchedules()
     {
-        return $this->hasMany(TherapyProgram::class);
+        return $this->hasManyThrough(
+            GuruAnakDidikSchedule::class,
+            GuruAnakDidik::class,
+            'anak_didik_id',
+            'guru_anak_didik_id'
+        );
     }
 
     public function assessments()
@@ -95,9 +100,11 @@ class AnakDidik extends Model
     // Get therapy types as array
     public function getTherapyTypesAttribute()
     {
-        return $this->therapyPrograms()
-            ->where('is_active', true)
-            ->pluck('type_therapy')
+        return $this->therapySchedules()
+            ->whereHas('assignment', function ($q) {
+                $q->where('status', 'aktif');
+            })
+            ->pluck('jenis_terapi')
             ->toArray();
     }
 }

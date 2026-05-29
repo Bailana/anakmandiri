@@ -103,7 +103,7 @@
   </div>
 </div>
 
-<div class="modal fade" id="buatRaporModal" tabindex="-1" aria-labelledby="buatRaporModalLabel" aria-hidden="true">
+<div class="modal fade" id="buatRaporModal" tabindex="-1" aria-labelledby="buatRaporModalLabel" aria-hidden="true" data-is-consultant-education="{{ isset($isConsultantEducation) && $isConsultantEducation ? '1' : '0' }}">
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -182,6 +182,9 @@
           </div>
 
           <div class="row mt-3 g-3">
+            <div class="col-12" id="therapyNotesContainer" style="display:none;">
+              <div id="therapyNotesFields"></div>
+            </div>
             <div class="col-12 col-md-6">
               <label for="saran_guru" class="form-label">Saran Guru</label>
               <textarea id="saran_guru" class="form-control" rows="4" placeholder="Masukkan saran dari guru..."></textarea>
@@ -271,7 +274,7 @@
   // Global variables for edit mode tracking
   let isEditMode = false;
   let editingRaporId = null;
-  let isConsultantEducation = {{ isset($isConsultantEducation) && $isConsultantEducation ? 'true' : 'false' }};
+  let isConsultantEducation = document.getElementById('buatRaporModal')?.dataset.isConsultantEducation === '1';
 
   // Configure toastr
   toastr.options = {
@@ -361,6 +364,221 @@
       return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
     }
 
+    function detectTherapyTypesFromText(raw) {
+      const text = String(raw || '').toLowerCase();
+      const types = [];
+
+      // Raw fields may contain combined values like "SI | TW", "TW, Perilaku", or "SI TW".
+      if (text.match(/(?:\b|[^a-z])(si|senso\s*-?motor\s*integrasi|sensori\s*integrasi)(?:\b|[^a-z])/)) {
+        types.push('si');
+      }
+      if (text.match(/(?:\b|[^a-z])(wicara|tw|terapi\s*wicara|terapi\s*tw)(?:\b|[^a-z])/)) {
+        types.push('wicara');
+      }
+      if (text.match(/(?:\b|[^a-z])(perilaku|tp|terapi\s*perilaku|terapi\s*tp)(?:\b|[^a-z])/)) {
+        types.push('perilaku');
+      }
+
+      return types;
+    }
+
+    function getTherapyLabel(therapies) {
+      if (!Array.isArray(therapies) || therapies.length === 0) {
+        return 'Keterangan Perkembangan Terapi';
+      }
+
+      const detected = therapies
+        .flatMap(t => detectTherapyTypesFromText(t.jenis_terapi || t.type_therapy || t.therapy_type || ''))
+        .filter(Boolean);
+
+      if (detected.includes('si')) {
+        return 'Perkembangan Terapi Senso-motor Integrasi';
+      }
+      if (detected.includes('wicara')) {
+        return 'Perkembangan Terapi Wicara';
+      }
+      if (detected.includes('perilaku')) {
+        return 'Perkembangan Terapi Perilaku';
+      }
+
+      return 'Keterangan Perkembangan Terapi';
+    }
+
+    function getTherapyTypes(therapies) {
+      if (!Array.isArray(therapies) || therapies.length === 0) {
+        return [];
+      }
+
+      const types = therapies
+        .flatMap(t => detectTherapyTypesFromText(t.jenis_terapi || t.type_therapy || t.therapy_type || ''))
+        .filter(Boolean);
+
+      const unique = [];
+      types.forEach(type => {
+        if (!unique.includes(type)) unique.push(type);
+      });
+
+      return unique.length > 0 ? unique : ['generic'];
+    }
+
+    function getTherapyLabelForType(type) {
+      switch (type) {
+        case 'si':
+          return 'Perkembangan Terapi Senso-motor Integrasi';
+        case 'wicara':
+          return 'Perkembangan Terapi Wicara';
+        case 'perilaku':
+          return 'Perkembangan Terapi Perilaku';
+        default:
+          return 'Keterangan Perkembangan Terapi';
+      }
+    }
+
+    function parseTherapyNotesByType(noteString) {
+      if (!noteString) return {
+        generic: ''
+      };
+      if (typeof noteString === 'object') {
+        return noteString;
+      }
+
+      const raw = String(noteString || '').trim();
+      const result = {
+        generic: raw
+      };
+      if (!raw) {
+        return result;
+      }
+
+      const typeMap = {
+        'perkembangan terapi senso-motor integrasi': 'si',
+        'perkembangan terapi wicara': 'wicara',
+        'perkembangan terapi perilaku': 'perilaku'
+      };
+
+      const lines = raw.split(/\r?\n/);
+      let currentType = 'generic';
+      let buffer = [];
+
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        const normalized = trimmed.replace(/[:]+$/, '').toLowerCase();
+        if (typeMap[normalized]) {
+          if (buffer.length) {
+            result[currentType] = buffer.join('\n').trim();
+            buffer = [];
+          }
+          currentType = typeMap[normalized];
+          return;
+        }
+        buffer.push(line);
+      });
+
+      result[currentType] = buffer.join('\n').trim();
+      return result;
+    }
+
+    function buildTherapyNotesString() {
+      const textareas = Array.from(document.querySelectorAll('.therapy-notes-field'));
+      if (textareas.length === 0) {
+        return '';
+      }
+
+      const parts = textareas.map(textarea => {
+        const type = textarea.dataset.therapyType || textarea.id.replace('therapy_notes_', '');
+        const value = String(textarea.value || '').trim();
+        if (!value) {
+          return null;
+        }
+        const label = getTherapyLabelForType(type);
+        return `${label}:\n${value}`;
+      }).filter(Boolean);
+
+      return parts.join('\n\n');
+    }
+
+    function gatherTherapyNotesObject() {
+      const textareas = Array.from(document.querySelectorAll('.therapy-notes-field'));
+      if (textareas.length === 0) return {};
+
+      const result = {};
+      textareas.forEach(textarea => {
+        const type = textarea.dataset.therapyType || textarea.id.replace('therapy_notes_', '');
+        const value = String(textarea.value || '').trim();
+        if (value) result[type] = value;
+      });
+
+      return result;
+    }
+
+    function updateTherapyNotesField(therapies, existingNotes = '') {
+      const therapyContainer = document.getElementById('therapyNotesContainer');
+      const therapyFields = document.getElementById('therapyNotesFields');
+
+      // Debug logs to help diagnose why dynamic therapy fields may not appear
+      try {
+        console.log('updateTherapyNotesField called', {
+          therapies: therapies,
+          existingNotes: existingNotes
+        });
+      } catch (e) {}
+
+      if (!therapyContainer || !therapyFields) {
+        return;
+      }
+
+      const therapyTypes = getTherapyTypes(therapies);
+      try {
+        console.log('detected therapyTypes:', therapyTypes);
+      } catch (e) {}
+      if (therapyTypes.length === 0) {
+        therapyContainer.style.display = 'none';
+        therapyFields.innerHTML = '';
+        return;
+      }
+
+      const parsedNotes = parseTherapyNotesByType(existingNotes);
+      const noteValues = {
+        ...parsedNotes
+      };
+      if (therapyTypes.length > 1 && parsedNotes.generic) {
+        noteValues[therapyTypes[0]] = parsedNotes.generic;
+        noteValues.generic = '';
+      }
+
+      therapyFields.innerHTML = therapyTypes.map(type => {
+        const labelText = getTherapyLabelForType(type);
+        const value = noteValues[type] || '';
+        return `
+          <div class="mb-3">
+            <label class="form-label" for="therapy_notes_${type}">${labelText}</label>
+            <textarea id="therapy_notes_${type}" data-therapy-type="${type}" class="form-control therapy-notes-field" rows="4" placeholder="Isi ${labelText.toLowerCase()}...">${escapeHtml(value)}</textarea>
+          </div>
+        `;
+      }).join('');
+
+      therapyContainer.style.display = '';
+    }
+
+    window.updateTherapyNotesField = updateTherapyNotesField;
+
+    function getNextCustomCategoryLabel() {
+      if (!customProgramsContainer) return 'Kategori baru';
+
+      const existingLabels = Array.from(customProgramsContainer.querySelectorAll('.custom-group-name'))
+        .map(input => String(input.value || '').trim().toLowerCase())
+        .filter(Boolean);
+
+      let index = 1;
+      let label = 'Kategori baru';
+      while (existingLabels.includes(label.toLowerCase())) {
+        index += 1;
+        label = `Kategori baru ${index}`;
+      }
+
+      return label;
+    }
+
     function createCustomProgramRow(name = '', nilai = 'A', catatan = '') {
       return `
         <tr>
@@ -422,7 +640,6 @@
               <button type="button" class="btn btn-sm btn-primary btn-add-custom-row">
                 <i class="ri-add-line me-1"></i>Tambah Baris Program
               </button>
-              <div class="text-muted small">Kategori kustom akan disimpan bersama catatan dan penilaian.</div>
             </div>
             <div class="mt-3">
               <label class="form-label small">Catatan Kategori</label>
@@ -489,61 +706,15 @@
       groups.forEach(group => {
         if (!group.programs || group.programs.length === 0) return;
         totalPrograms += group.programs.length;
+        const isVokasiGroup = String(group.label || group.kategori || '').toLowerCase() === 'vokasi';
 
         html += `<div class="program-group mb-4" data-group-index="${idx}">`;
         html += `<div class="d-flex justify-content-between align-items-center mb-2"><div><h6 class="mb-0">${idx}. ${group.label}</h6><div class="text-muted small">${group.programs.length} program</div></div></div>`;
 
-        // Build subgroups by program code prefix (A, B, etc.)
-        const subMap = {};
-        group.programs.forEach(p => {
-          const name = (p.nama_program || '').trim();
-          const m = name.match(/^([A-Za-z])/);
-          const key = m ? m[1].toUpperCase() : '_';
-          if (!subMap[key]) subMap[key] = [];
-          subMap[key].push(p);
-        });
-
-        // mapping for special subgroup titles
-        const subgroupTitles = {
-          'A': 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
-          'B': 'Kemampuan Visual (B1-B27)',
-          'C': 'Bahasa Reseptif (Reseptive Language) (C1-C57)',
-          'D': 'Menirukan (Imitation) (D1-D27)',
-          'E': 'Menirukan Secara Lisan (E1-E20)',
-          'F': 'Kemampuan Permintaan (F1-F29)',
-          'G': 'Menamakan (Labeling) (G1-G47)',
-          'H': 'Kemampuan Intraverbal (Intraverbal) (H1-H49)',
-          'I': 'Spontan Secara Lisan (I1-I9)',
-          'J': 'Aturan Penyusunan Kata dan Tata Bahasa (Syntax and Grammar) (J1-J20)',
-          'K': 'Kemampuan Bermain (K1-K15)',
-          'L': 'Interaksi Sosial (L1-L34)',
-          'M': 'Belajar Berkelompok (M1-M12)',
-          'N': 'Mengikuti Rutinitas di dalam Kelas (N1-N10)',
-          'P': 'Menggeneralisasikan Respon (Generalized Respon) (P1-P6)',
-          'Q': 'Kemampuan Membaca (Reading Skills) (Q1-Q17)',
-          'R': 'Kemampuan Berhitung (Math Skills) (R1-R29)',
-          'S': 'Kemampuan Menulis (Writing Skills) (S1-S10)',
-          'T': 'Mengeja (Spelling) (T1-T7)',
-          'U': 'Kemampuan Berpakaian (Dressing Skill) (U1-U15)',
-          'V': 'Kemampuan/Tata Cara Makan (Eating Skills) (V1-V10)',
-          'W': 'Kebersihan Diri (Grooming Skills) (W1-W7)',
-          'X': 'Kemampuan Menggunakan Toilet (Toileting Skills) (X1-X10)',
-          'Y': 'Kemampuan Motorik Kasar (Gross Motor Skills) (Y1-Y30)',
-          'Z': 'Kemampuan Motorik Halus (Fine Motor Skills) (Z1-Z28)'
-        };
-
-        // render each subgroup inside the category
-        Object.keys(subMap).sort().forEach(subKey => {
-          const programs = subMap[subKey];
-          const title = subgroupTitles[subKey] || (subKey === '_' ? '' : subKey);
-
-          if (title) {
-            html += `<div style="font-weight:700;margin-top:8px;margin-bottom:6px;">${title}</div>`;
-          }
-
+        if (isVokasiGroup) {
           html += `<div class="table-responsive"><table class="table table-bordered align-middle mb-0"><thead class="table-light"><tr><th class="text-center" style="width:58%;">Program</th><th class="text-center" style="width:18%;">Nilai</th><th class="text-center">Catatan</th></tr></thead><tbody>`;
 
-          programs.forEach(program => {
+          group.programs.forEach(program => {
             const safeCatatan = (program.catatan || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             html += `
               <tr>
@@ -555,7 +726,71 @@
           });
 
           html += `</tbody></table></div>`;
-        });
+        } else {
+          // Build subgroups by program code prefix (A, B, etc.)
+          const subMap = {};
+          group.programs.forEach(p => {
+            const name = (p.nama_program || '').trim();
+            const m = name.match(/^([A-Za-z])/);
+            const key = m ? m[1].toUpperCase() : '_';
+            if (!subMap[key]) subMap[key] = [];
+            subMap[key].push(p);
+          });
+
+          // mapping for special subgroup titles
+          const subgroupTitles = {
+            'A': 'Sikap Kooperatif dan Penguatan Kemampuan yang Efektif (A1-A19)',
+            'B': 'Kemampuan Visual (B1-B27)',
+            'C': 'Bahasa Reseptif (Reseptive Language) (C1-C57)',
+            'D': 'Menirukan (Imitation) (D1-D27)',
+            'E': 'Menirukan Secara Lisan (E1-E20)',
+            'F': 'Kemampuan Permintaan (F1-F29)',
+            'G': 'Menamakan (Labeling) (G1-G47)',
+            'H': 'Kemampuan Intraverbal (Intraverbal) (H1-H49)',
+            'I': 'Spontan Secara Lisan (I1-I9)',
+            'J': 'Aturan Penyusunan Kata dan Tata Bahasa (Syntax and Grammar) (J1-J20)',
+            'K': 'Kemampuan Bermain (K1-K15)',
+            'L': 'Interaksi Sosial (L1-L34)',
+            'M': 'Belajar Berkelompok (M1-M12)',
+            'N': 'Mengikuti Rutinitas di dalam Kelas (N1-N10)',
+            'P': 'Menggeneralisasikan Respon (Generalized Respon) (P1-P6)',
+            'Q': 'Kemampuan Membaca (Reading Skills) (Q1-Q17)',
+            'R': 'Kemampuan Berhitung (Math Skills) (R1-R29)',
+            'S': 'Kemampuan Menulis (Writing Skills) (S1-S10)',
+            'T': 'Mengeja (Spelling) (T1-T7)',
+            'U': 'Kemampuan Berpakaian (Dressing Skill) (U1-U15)',
+            'V': 'Kemampuan/Tata Cara Makan (Eating Skills) (V1-V10)',
+            'W': 'Kebersihan Diri (Grooming Skills) (W1-W7)',
+            'X': 'Kemampuan Menggunakan Toilet (Toileting Skills) (X1-X10)',
+            'Y': 'Kemampuan Motorik Kasar (Gross Motor Skills) (Y1-Y30)',
+            'Z': 'Kemampuan Motorik Halus (Fine Motor Skills) (Z1-Z28)'
+          };
+
+          // render each subgroup inside the category
+          Object.keys(subMap).sort().forEach(subKey => {
+            const programs = subMap[subKey];
+            const title = subgroupTitles[subKey] || (subKey === '_' ? '' : subKey);
+
+            if (title) {
+              html += `<div style="font-weight:700;margin-top:8px;margin-bottom:6px;">${title}</div>`;
+            }
+
+            html += `<div class="table-responsive"><table class="table table-bordered align-middle mb-0"><thead class="table-light"><tr><th class="text-center" style="width:58%;">Program</th><th class="text-center" style="width:18%;">Nilai</th><th class="text-center">Catatan</th></tr></thead><tbody>`;
+
+            programs.forEach(program => {
+              const safeCatatan = (program.catatan || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              html += `
+                <tr>
+                  <td><div class="fw-medium">${program.nama_program}</div></td>
+                  <td class="text-center align-middle"><span class="badge ${getBadgeClass(program.nilai_huruf)}">${program.nilai_huruf}</span></td>
+                  <td><textarea class="form-control form-control-sm program-note" rows="3" style="min-height: 90px; resize: vertical;" placeholder="Tambah catatan program">${safeCatatan}</textarea></td>
+                </tr>
+              `;
+            });
+
+            html += `</tbody></table></div>`;
+          });
+        }
 
         // Group-level note textarea (spans the group)
         html += `<div class="mt-2"><label class="form-label small">Catatan (${group.label})</label><textarea class="form-control form-control-sm group-note" rows="3" placeholder="Catatan untuk seluruh program dalam kelompok ini"></textarea></div>`;
@@ -646,6 +881,7 @@
         }
 
         renderPrograms(data.groups);
+        updateTherapyNotesField(data.therapies);
       } catch (error) {
         console.error('Error loading programs:', error);
         setPlaceholderState('Terjadi kesalahan saat memuat program.');
@@ -683,27 +919,18 @@
       const saranOrtuInput = document.getElementById('saran_orang_tua');
       if (saranGuruInput) saranGuruInput.value = '';
       if (saranOrtuInput) saranOrtuInput.value = '';
+      updateTherapyNotesField([]);
     }
 
     if (btnTambahKategori) {
       btnTambahKategori.addEventListener('click', function() {
-        addCustomGroup('Kategori baru');
+        addCustomGroup(getNextCustomCategoryLabel());
       });
     }
 
     if (btnTambahProgramGlobal) {
       btnTambahProgramGlobal.addEventListener('click', function() {
-        const existingGroups = customProgramsContainer ? customProgramsContainer.querySelectorAll('.custom-program-group') : [];
-        if (existingGroups.length === 0) {
-          addCustomGroup('Kategori baru');
-          return;
-        }
-
-        const lastGroup = existingGroups[existingGroups.length - 1];
-        const tbody = lastGroup.querySelector('tbody');
-        if (tbody) {
-          tbody.insertAdjacentHTML('beforeend', createCustomProgramRow());
-        }
+        addCustomGroup(getNextCustomCategoryLabel());
       });
     }
 
@@ -900,7 +1127,8 @@
             programs: programs,
             group_notes: groupNotes,
             saran_guru: (document.getElementById('saran_guru') || {}).value || '',
-            saran_orang_tua: (document.getElementById('saran_orang_tua') || {}).value || ''
+            saran_orang_tua: (document.getElementById('saran_orang_tua') || {}).value || '',
+            therapy_notes: gatherTherapyNotesObject()
           })
         });
 
@@ -1197,34 +1425,83 @@
         groupHtml += `<div style="margin-top:8px; font-size:13px; color:#374151;">\n<strong>Catatan (${escapeHtml(group.label)}):</strong><div style="margin-top:6px;">${groupNote}</div></div>`;
       });
 
+      const therapyHtml = (() => {
+        const notes = rapor.therapy_notes;
+
+        if (!notes) {
+          return '<p>-</p>';
+        }
+
+        if (typeof notes === 'object') {
+          const order = ['si', 'wicara', 'perilaku'];
+          const labels = {
+            si: 'Perkembangan Terapi Senso-motor Integrasi',
+            wicara: 'Perkembangan Terapi Wicara',
+            perilaku: 'Perkembangan Terapi Perilaku'
+          };
+          const parts = [];
+
+          order.forEach((key) => {
+            if (notes[key]) {
+              parts.push(`
+              <div>
+                <p class="mb-1"><strong>${labels[key]}</strong></p>
+                <p style="white-space: pre-wrap; text-align: justify;">${escapeHtml(notes[key])}</p>
+              </div>
+            `);
+            }
+          });
+
+          Object.keys(notes).forEach((key) => {
+            if (!order.includes(key) && notes[key]) {
+              parts.push(`
+              <div>
+                <p class="mb-1"><strong>${escapeHtml(key)}</strong></p>
+                <p style="white-space: pre-wrap; text-align: justify;">${escapeHtml(notes[key])}</p>
+              </div>
+            `);
+            }
+          });
+
+          return parts.length > 0 ? parts.join('<hr class="my-2">') : '<p>-</p>';
+        }
+
+        return `<p style="white-space: pre-wrap; text-align: justify;">${escapeHtml(notes)}</p>`;
+      })();
+
       content.innerHTML = `
         <div class="row g-3 mb-4">
           <div class="col-md-6">
             <p class="mb-1"><strong>Nama Anak Didik:</strong></p>
-            <p>${rapor.anak_didik_nama}</p>
+            <p>${escapeHtml(rapor.anak_didik_nama)}</p>
           </div>
           <div class="col-md-6">
             <p class="mb-1"><strong>Kelas:</strong></p>
-            <p>${rapor.kelas || '-'}</p>
+            <p>${escapeHtml(rapor.kelas || '-')}</p>
           </div>
           <div class="col-md-6">
             <p class="mb-1"><strong>Semester:</strong></p>
-            <p>Semester ${rapor.semester}</p>
+            <p>Semester ${escapeHtml(rapor.semester)}</p>
           </div>
           <div class="col-md-6">
             <p class="mb-1"><strong>Tahun Pelajaran:</strong></p>
-            <p>${rapor.tahun_pelajaran}</p>
+            <p>${escapeHtml(rapor.tahun_pelajaran || '-')}</p>
           </div>
         </div>
         ${groupHtml}
+        <div class="row g-3 mt-2">
+          <div class="col-12">
+            ${therapyHtml}
+          </div>
+        </div>
         <div class="row g-3 mt-4">
           <div class="col-md-6">
             <p class="mb-1"><strong>Saran Guru:</strong></p>
-            <p style="white-space: pre-wrap; text-align: justify;">${saranGuru || '-'}</p>
+            <p style="white-space: pre-wrap; text-align: justify;">${escapeHtml(saranGuru || '-')}</p>
           </div>
           <div class="col-md-6">
             <p class="mb-1"><strong>Saran Orang Tua:</strong></p>
-            <p style="white-space: pre-wrap; text-align: justify;">${saranOrtu || '-'}</p>
+            <p style="white-space: pre-wrap; text-align: justify;">${escapeHtml(saranOrtu || '-')}</p>
           </div>
         </div>
       `;
@@ -1247,6 +1524,13 @@
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Failed to load riwayat:', response.status, response.statusText, text);
+        throw new Error('Gagal memuat riwayat rapor. Silakan coba lagi.');
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -1412,6 +1696,7 @@
           // set saran fields
           const saranGuruInput = document.getElementById('saran_guru');
           const saranOrtuInput = document.getElementById('saran_orang_tua');
+          const existingTherapyNotes = rapor.therapy_notes || '';
           if (saranGuruInput) saranGuruInput.value = rapor.saran_guru || '';
           if (saranOrtuInput) saranOrtuInput.value = rapor.saran_orang_tua || '';
 
@@ -1572,6 +1857,7 @@
 
                 programGroupsContainer.innerHTML = tableHtmlParts.join('');
                 programSummary.textContent = `${totalPrograms} program ditemukan untuk semester ini.`;
+                updateTherapyNotesField(programData.therapies, existingTherapyNotes);
 
                 if (customGroups.length > 0 && typeof window.renderCustomGroups === 'function') {
                   const customProgramsContainer = document.getElementById('customProgramsContainer');

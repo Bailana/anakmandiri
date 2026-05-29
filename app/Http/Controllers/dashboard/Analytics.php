@@ -52,9 +52,11 @@ class Analytics extends Controller
       ->pluck('count', 'role')
       ->toArray();
 
-    // Total active anak didik (those with an active therapy program)
-    $totalActiveAnakDidik = AnakDidik::whereHas('therapyPrograms', function ($q) {
-      $q->where('is_active', true);
+    // Total active anak didik (those with an active therapy schedule)
+    $totalActiveAnakDidik = AnakDidik::whereHas('therapySchedules', function ($q) {
+      $q->whereHas('assignment', function ($query) {
+        $query->where('status', 'aktif');
+      });
     })->count();
 
     // Data anak didik per bulan dalam 1 tahun

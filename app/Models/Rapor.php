@@ -15,10 +15,12 @@ class Rapor extends Model
         'group_notes',
         'saran_guru',
         'saran_orang_tua',
+        'therapy_notes',
     ];
 
     protected $casts = [
         'group_notes' => 'array',
+        'therapy_notes' => 'array',
     ];
 
     public function getGroupNotesAttribute($value)

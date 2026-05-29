@@ -144,6 +144,14 @@
     overflow: hidden;
   }
 
+  .page-break {
+    page-break-before: always;
+    break-before: page;
+    display: block;
+    height: 0;
+    visibility: hidden;
+  }
+
   .preview-table thead tr {
     background: linear-gradient(135deg, var(--primary) 0%, #5a5dff 100%);
     color: white;
@@ -735,6 +743,10 @@
       </table>
     </div>
     @endforeach
+    <div class="print-footer" style="margin-top: 16px; page-break-inside: avoid;">
+      <strong>Keterangan Penilaian:</strong>
+      <p style="margin: 8px 0 0; font-size: 11px;"><strong>A</strong> = Tercapai sesuai kriteria | <strong>B</strong> = Tercapai 80% | <strong>C</strong> = Tercapai 50% | <strong>D</strong> = Belum tercapai | <strong>-</strong> = Belum Terlaksana</p>
+    </div>
   </div>
   @endforeach
   @else
@@ -844,6 +856,10 @@
       </table>
     </div>
     @endforeach
+    <div class="print-footer" style="margin-top: 16px; page-break-inside: avoid;">
+      <strong>Keterangan Penilaian:</strong>
+      <p style="margin: 8px 0 0; font-size: 11px;"><strong>A</strong> = Tercapai sesuai kriteria | <strong>B</strong> = Tercapai 80% | <strong>C</strong> = Tercapai 50% | <strong>D</strong> = Belum tercapai | <strong>-</strong> = Belum Terlaksana</p>
+    </div>
   </div>
   @endforeach
 
@@ -857,11 +873,63 @@
   @endif
   @endif
 
-  <!-- Keterangan Penilaian Section -->
-  <div class="print-footer" style="margin-top: 20px; page-break-inside: avoid;">
-    <strong>Keterangan Penilaian:</strong>
-    <p><strong>A</strong> = Tercapai sesuai kriteria | <strong>B</strong> = Tercapai 80% | <strong>C</strong> = Tercapai 50% | <strong>D</strong> = Belum tercapai | <strong>-</strong> = Belum Terlaksana</p>
+  <div class="page-break"></div>
+  <div class="section-title">Keterangan Perkembangan Terapi</div>
+  @php
+  $therapyNotes = $rapor->therapy_notes;
+  $therapyLabels = [
+  'si' => 'Perkembangan Terapi Senso-motor Integrasi',
+  'wicara' => 'Perkembangan Terapi Wicara',
+  'perilaku' => 'Perkembangan Terapi Perilaku',
+  ];
+  @endphp
+  <div class="preview-table-wrapper" style="margin-bottom: 16px;">
+    @if(is_array($therapyNotes) && count($therapyNotes) > 0)
+    @foreach($therapyNotes as $key => $text)
+    @if(!empty($text))
+    <div style="margin-bottom: 16px; padding: 12px; border: 1px solid #d2d6dc; border-radius: 8px; background: #f8fafc;">
+      <div style="font-weight: 600; margin-bottom: 8px;">{{ $therapyLabels[$key] ?? ucfirst(str_replace(['_','-'], ' ', $key)) }}</div>
+      <div style="white-space: pre-wrap; text-align: justify; line-height: 1.5;">{!! nl2br(e($text)) !!}</div>
+    </div>
+    @endif
+    @endforeach
+    @else
+    <div style="padding: 12px; border: 1px solid #d2d6dc; border-radius: 8px; background: #f8fafc;">-</div>
+    @endif
   </div>
+
+  @if(!empty($therapyScheduleSummary) && is_array($therapyScheduleSummary))
+  <div class="section-title">Rekap Jumlah Jam Terapi per Jenis</div>
+  <div class="preview-table-wrapper">
+    <table class="preview-table">
+      <thead>
+        <tr>
+          <th class="preview-col-program">Jenis Terapi</th>
+          <th class="preview-col-nilai text-center">Jumlah Sesi</th>
+          <th class="preview-col-catatan text-center">Jumlah Jam</th>
+        </tr>
+      </thead>
+      <tbody>
+        @php
+        $therapyLabels = [
+        'si' => 'Perkembangan Terapi Senso-motor Integrasi',
+        'wicara' => 'Perkembangan Terapi Wicara',
+        'perilaku' => 'Perkembangan Terapi Perilaku',
+        ];
+        @endphp
+        @foreach($therapyScheduleSummary as $summary)
+        <tr>
+          <td class="preview-col-program">{{ $therapyLabels[$summary['jenis_terapi']] ?? ucfirst(str_replace(['_','-'], ' ', $summary['jenis_terapi'])) }}</td>
+          <td class="preview-cell-nilai text-center">{{ $summary['count'] }}</td>
+          <td class="preview-cell-nilai text-center">{{ $summary['count'] }} jam</td>
+        </tr>
+        @endforeach
+      </tbody>
+    </table>
+  </div>
+  @endif
+
+  <div class="page-break"></div>
 
   <!-- Attendance Summary Section -->
   @if(isset($absensiSummary) && !empty($absensiSummary['monthly']))
@@ -928,7 +996,7 @@
 
       <!-- Guru Kelas/Fokus -->
       <div class="signature-item">
-        <div class="signature-name">Guru Kelas/Fokus</div>
+        <div class="signature-name">Guru Fokus</div>
         <div class="signature-space"></div>
         <div class="signature-line"></div>
         <div class="signature-name" style="margin-top: 4px; font-weight: 500; font-size: 11px;">{{ $rapor->anakDidik->guruFokus->nama ?? '(Nama Guru)' }}</div>
@@ -936,8 +1004,8 @@
 
       <!-- Pimpinan Lembaga -->
       <div class="signature-item">
-        <div class="signature-name">Pimpinan Lembaga</div>
-        <div class="signature-title">Pendidikan Sekolah Luar Biasa Anak Mandiri</div>
+        <div class="signature-name">Pimpinan Yayasan</div>
+        <div class="signature-title">Klinik Terapi & Sekolah Khusus Anak Mandiri</div>
         <div class="signature-space"></div>
         <div class="signature-line"></div>
         <div class="signature-name" style="margin-top: 4px; font-weight: 500; font-size: 11px;">Rovanita Rama, S.E., M.H.</div>
@@ -946,7 +1014,7 @@
       <!-- Kepala Sekolah -->
       <div class="signature-item">
         <div class="signature-name">Kepala Sekolah</div>
-        <div class="signature-title">Sekolah Luar Biasa Anak Mandiri</div>
+        <div class="signature-title">Sekolah Khusus Anak Mandiri</div>
         <div class="signature-space"></div>
         <div class="signature-line"></div>
         <div class="signature-name" style="margin-top: 4px; font-weight: 500; font-size: 11px;">Rovaldi Rama, S.E.</div>

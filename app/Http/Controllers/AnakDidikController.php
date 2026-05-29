@@ -163,7 +163,7 @@ class AnakDidikController extends Controller
    */
   public function show(string $id)
   {
-    $anakDidik = AnakDidik::with(['guruFokus', 'therapyPrograms'])->findOrFail($id);
+    $anakDidik = AnakDidik::with(['guruFokus', 'therapySchedules.assignment'])->findOrFail($id);
 
     if (request()->wantsJson() || request()->ajax()) {
       return response()->json([
@@ -296,7 +296,7 @@ class AnakDidikController extends Controller
    */
   public function exportPdf(string $id)
   {
-    $anakDidik = AnakDidik::with(['assessments', 'therapyPrograms'])->findOrFail($id);
+    $anakDidik = AnakDidik::with(['assessments', 'therapySchedules.assignment'])->findOrFail($id);
 
     return view('content.anak-didik.pdf', ['anakDidik' => $anakDidik]);
   }

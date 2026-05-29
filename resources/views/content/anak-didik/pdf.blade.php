@@ -554,16 +554,16 @@
     </div>
 
     <!-- Program Terapi -->
-    @if($anakDidik->therapyPrograms && $anakDidik->therapyPrograms->count() > 0)
+    @if($anakDidik->therapySchedules && $anakDidik->therapySchedules->count() > 0)
     <div class="section compact-section">
       <h2>Program Terapi yang Diikuti</h2>
       <div style="margin-bottom: 10px;">
-        @foreach($anakDidik->therapyPrograms as $therapy)
-        @if($therapy->type_therapy === 'si')
+        @foreach($anakDidik->therapySchedules as $therapy)
+        @if($therapy->jenis_terapi === 'si')
         <span class="therapy-badge therapy-si">Sensori Integrasi</span>
-        @elseif($therapy->type_therapy === 'wicara')
+        @elseif($therapy->jenis_terapi === 'wicara')
         <span class="therapy-badge therapy-wicara">Terapi Wicara</span>
-        @elseif($therapy->type_therapy === 'perilaku')
+        @elseif($therapy->jenis_terapi === 'perilaku')
         <span class="therapy-badge therapy-perilaku">Terapi Perilaku</span>
         @endif
         @endforeach
@@ -579,21 +579,21 @@
           </tr>
         </thead>
         <tbody>
-          @foreach($anakDidik->therapyPrograms as $therapy)
+          @foreach($anakDidik->therapySchedules as $therapy)
           <tr>
             <td>
-              @if($therapy->type_therapy === 'si')
+              @if($therapy->jenis_terapi === 'si')
               <span class="badge badge-primary">Sensori Integrasi</span>
-              @elseif($therapy->type_therapy === 'wicara')
+              @elseif($therapy->jenis_terapi === 'wicara')
               <span class="badge badge-success">Terapi Wicara</span>
-              @elseif($therapy->type_therapy === 'perilaku')
+              @elseif($therapy->jenis_terapi === 'perilaku')
               <span class="badge badge-warning">Terapi Perilaku</span>
               @endif
             </td>
             <td>{{ $therapy->tanggal_mulai ? $therapy->tanggal_mulai->format('d/m/Y') : '-' }}</td>
-            <td>{{ $therapy->tanggal_selesai ? $therapy->tanggal_selesai->format('d/m/Y') : '-' }}</td>
+            <td>{{ optional($therapy->assignment)->tanggal_selesai ? optional($therapy->assignment)->tanggal_selesai->format('d/m/Y') : '-' }}</td>
             <td>
-              @if($therapy->is_active)
+              @if(optional($therapy->assignment)->status === 'aktif')
               <span class="badge badge-success">Aktif</span>
               @else
               <span class="badge badge-danger">Tidak Aktif</span>
