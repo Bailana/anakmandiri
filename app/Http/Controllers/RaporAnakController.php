@@ -881,7 +881,7 @@ class RaporAnakController extends Controller
         }
     }
 
-    public function preview(Rapor $rapor)
+    public function preview(Request $request, Rapor $rapor)
     {
         $this->authorizeRaporAccess();
 
@@ -894,6 +894,13 @@ class RaporAnakController extends Controller
 
         $rapor->load(['anakDidik', 'items']);
         $this->hydrateRaporItems($rapor);
+
+        $tanggalPenerimaanInput = $request->input('tanggal_penerimaan', session('rapor_receipt_date', now()->toDateString()));
+        try {
+            $tanggalPenerimaan = Carbon::parse($tanggalPenerimaanInput)->locale('id');
+        } catch (\Throwable $e) {
+            $tanggalPenerimaan = Carbon::now()->locale('id');
+        }
 
         // Build groups for preview so grouping matches create/edit/detail modals
         $groups = $this->buildProgramGroups($rapor->anak_didik_id, $rapor->semester, $rapor->tahun_pelajaran);
@@ -1011,7 +1018,27 @@ class RaporAnakController extends Controller
             ->values()
             ->all();
 
-        return view('content.rapor.preview', compact('rapor', 'previewGroups', 'absensiSummary', 'therapyScheduleSummary'));
+        return view('content.rapor.preview', compact('rapor', 'previewGroups', 'absensiSummary', 'therapyScheduleSummary', 'tanggalPenerimaan'));
+    }
+
+    public function setReceiptDate(Request $request)
+    {
+        $this->authorizeRaporAccess();
+
+        abort_unless($request->user()?->role === 'admin', 403, 'Anda tidak memiliki akses ke fitur ini.');
+
+        $validated = $request->validate([
+            'tanggal_penerimaan' => 'required|date',
+        ]);
+
+        session()->put('rapor_receipt_date', $validated['tanggal_penerimaan']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tanggal penerimaan rapor berhasil disimpan.',
+            'tanggal_penerimaan' => $validated['tanggal_penerimaan'],
+            'tanggal_penerimaan_label' => Carbon::parse($validated['tanggal_penerimaan'])->locale('id')->isoFormat('D MMMM Y'),
+        ]);
     }
 
     protected function getAbsensiSummaryBySemester(int $anakDidikId, string $semester, string $tahunPelajaran): array

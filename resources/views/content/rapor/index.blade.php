@@ -3,6 +3,11 @@
 @section('title', 'Rapor Anak')
 
 @section('content')
+@php
+$isAdmin = auth()->user()?->role === 'admin';
+$selectedReceiptDate = session('rapor_receipt_date');
+$selectedReceiptDateLabel = $selectedReceiptDate ? \Carbon\Carbon::parse($selectedReceiptDate)->locale('id')->isoFormat('D MMMM Y') : null;
+@endphp
 <!-- Toastr CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
@@ -43,11 +48,25 @@
             <h4 class="mb-1">Rapor Anak</h4>
             <p class="text-body-secondary mb-0">Buat rapor berdasarkan penilaian program yang telah dilakukan untuk anak didik fokus Anda.</p>
           </div>
-          @if(!isset($isConsultantEducation) || !$isConsultantEducation)
+          @if((!isset($isConsultantEducation) || !$isConsultantEducation) && !$isAdmin)
           <div class="align-self-md-center">
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#buatRaporModal">
               <i class="ri-add-line me-2"></i>Buat Rapor
             </button>
+          </div>
+          @else
+          <div class="align-self-md-center d-flex flex-wrap gap-2">
+            @if($isAdmin)
+            <button type="button" class="btn btn-outline-secondary" id="btnTanggalPenerimaanRapor" data-bs-toggle="modal" data-bs-target="#tanggalPenerimaanModal">
+              <i class="ri-calendar-event-line me-2"></i>
+              <span id="selectedReceiptDateText">{{ $selectedReceiptDateLabel ? 'Tanggal: ' . $selectedReceiptDateLabel : 'Tentukan Tanggal Penerimaan' }}</span>
+            </button>
+            @endif
+            @if(!isset($isConsultantEducation) || !$isConsultantEducation)
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#buatRaporModal">
+              <i class="ri-add-line me-2"></i>Buat Rapor
+            </button>
+            @endif
           </div>
           @endif
         </div>
@@ -102,6 +121,32 @@
     </div>
   </div>
 </div>
+
+<div id="raporReceiptDateData" class="d-none" data-value="{{ $selectedReceiptDate ?? '' }}"></div>
+
+@if($isAdmin)
+<div class="modal fade" id="tanggalPenerimaanModal" tabindex="-1" aria-labelledby="tanggalPenerimaanModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tanggalPenerimaanModalLabel">Tanggal Penerimaan Rapor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body">
+        <label for="tanggal_penerimaan_rapor" class="form-label">Pilih Tanggal</label>
+        <input type="date" id="tanggal_penerimaan_rapor" class="form-control" value="{{ $selectedReceiptDate ?? now()->toDateString() }}">
+        <div class="form-text">Tanggal ini akan dipakai pada baris tanda tangan di preview PDF rapor.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-primary" id="btnSimpanTanggalPenerimaan">
+          <i class="ri-save-line me-2"></i>Simpan Tanggal
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+@endif
 
 <div class="modal fade" id="buatRaporModal" tabindex="-1" aria-labelledby="buatRaporModalLabel" aria-hidden="true" data-is-consultant-education="{{ isset($isConsultantEducation) && $isConsultantEducation ? '1' : '0' }}">
   <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -277,6 +322,35 @@
   let isConsultantEducation = document.getElementById('buatRaporModal')?.dataset.isConsultantEducation === '1';
   let createRaporModalIsDirty = false;
   let createRaporModalAllowClose = false;
+  window.selectedRaporReceiptDate = document.getElementById('raporReceiptDateData')?.dataset.value || null;
+
+  function formatReceiptDateLabel(value) {
+    if (!value) {
+      return 'Tentukan Tanggal Penerimaan';
+    }
+
+    try {
+      return `Tanggal: ${new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }).format(new Date(`
+      $ {
+        value
+      }
+      T00: 00: 00`))}`;
+    } catch (error) {
+      return `Tanggal: ${value}`;
+    }
+  }
+
+  window.buildRaporPreviewUrl = function(raporId) {
+    const previewUrl = new URL(`/rapor-anak/${raporId}/preview`, window.location.origin);
+    if (window.selectedRaporReceiptDate) {
+      previewUrl.searchParams.set('tanggal_penerimaan', window.selectedRaporReceiptDate);
+    }
+    return previewUrl.toString();
+  };
 
   // Configure toastr
   toastr.options = {
@@ -325,6 +399,11 @@
 
   (function() {
     const raporDataUrl = "{{ route('rapor-anak.data') }}";
+    const receiptDateModalEl = document.getElementById('tanggalPenerimaanModal');
+    const receiptDateInput = document.getElementById('tanggal_penerimaan_rapor');
+    const receiptDateSaveButton = document.getElementById('btnSimpanTanggalPenerimaan');
+    const receiptDateText = document.getElementById('selectedReceiptDateText');
+    const receiptDateStoreUrl = "{{ route('rapor-anak.receipt-date') }}";
     const modalEl = document.getElementById('buatRaporModal');
     const anakSelect = document.getElementById('anak_didik_id');
     const semesterSelect = document.getElementById('semester');
@@ -336,6 +415,74 @@
     const customProgramsContainer = document.getElementById('customProgramsContainer');
     const btnTambahKategori = document.getElementById('btnTambahKategori');
     const btnTambahProgramGlobal = document.getElementById('btnTambahProgramGlobal');
+
+    function syncReceiptDateButton() {
+      if (receiptDateText) {
+        receiptDateText.textContent = formatReceiptDateLabel(window.selectedRaporReceiptDate);
+      }
+      if (receiptDateInput && window.selectedRaporReceiptDate) {
+        receiptDateInput.value = window.selectedRaporReceiptDate;
+      }
+    }
+
+    async function saveReceiptDate() {
+      if (!receiptDateInput || !receiptDateSaveButton) return;
+
+      const tanggalPenerimaan = receiptDateInput.value;
+      if (!tanggalPenerimaan) {
+        showToastr('warning', 'Pilih tanggal penerimaan terlebih dahulu.', 'Peringatan');
+        return;
+      }
+
+      const originalText = receiptDateSaveButton.innerHTML;
+      receiptDateSaveButton.disabled = true;
+      receiptDateSaveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Menyimpan...';
+
+      try {
+        const response = await fetch(receiptDateStoreUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          body: JSON.stringify({
+            tanggal_penerimaan: tanggalPenerimaan
+          })
+        });
+
+        const responseText = await response.text();
+        let data = null;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error(responseText.trim().slice(0, 200) || `Respons server tidak valid (HTTP ${response.status})`);
+        }
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || `Gagal menyimpan tanggal penerimaan rapor (HTTP ${response.status})`);
+        }
+
+        window.selectedRaporReceiptDate = data.tanggal_penerimaan;
+        syncReceiptDateButton();
+
+        const modalInstance = bootstrap.Modal.getInstance(receiptDateModalEl) || bootstrap.Modal.getOrCreateInstance(receiptDateModalEl);
+        modalInstance.hide();
+        showToastr('success', data.message || 'Tanggal penerimaan rapor berhasil disimpan.', 'Berhasil');
+      } catch (error) {
+        console.error('Error saving receipt date:', error);
+        showToastr('error', error.message || 'Terjadi kesalahan saat menyimpan tanggal penerimaan rapor.', 'Error');
+      } finally {
+        receiptDateSaveButton.disabled = false;
+        receiptDateSaveButton.innerHTML = originalText;
+      }
+    }
+
+    syncReceiptDateButton();
+
+    if (receiptDateSaveButton) {
+      receiptDateSaveButton.addEventListener('click', saveReceiptDate);
+    }
 
     function setCreateRaporModalDirty(isDirty) {
       createRaporModalIsDirty = Boolean(isDirty);
@@ -1138,6 +1285,7 @@
           method: method,
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
           },
           // include saran fields
@@ -1154,10 +1302,22 @@
           })
         });
 
-        const data = await response.json();
+        const responseText = await response.text();
+        let data = {};
+
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          const previewText = responseText.trim().slice(0, 200);
+          throw new Error(previewText || `Respons server tidak valid (HTTP ${response.status})`);
+        }
 
         console.log('Response status:', response.status);
         console.log('Response data:', data);
+
+        if (!response.ok) {
+          throw new Error(data.message || `Server mengembalikan status ${response.status}`);
+        }
 
         if (data.success) {
           const successMessage = isEditMode ? 'Rapor berhasil diubah' : 'Rapor berhasil disimpan';
@@ -1262,7 +1422,7 @@
     const modal = new bootstrap.Modal(document.getElementById('detailRaporModal'));
     const content = document.getElementById('detailRaporContent');
     const pdfBtn = document.getElementById('detailRaporPdfBtn');
-    const previewUrl = `/rapor-anak/${raporId}/preview`;
+    const previewUrl = window.buildRaporPreviewUrl ? window.buildRaporPreviewUrl(raporId) : `/rapor-anak/${raporId}/preview`;
     pdfBtn.href = previewUrl;
     pdfBtn.rel = 'noopener noreferrer';
     pdfBtn.onclick = (e) => {

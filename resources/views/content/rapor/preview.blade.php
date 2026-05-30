@@ -706,14 +706,6 @@
         @endforeach
       </tbody>
     </table>
-    <table class="preview-table-catatan">
-      <tbody>
-        <tr>
-          <td class="catatan-kategori-label">Catatan {{ $group['label'] }}:</td>
-          <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
     @else
     @php
     // build subgroups by initial letter (A, B, etc.)
@@ -780,16 +772,18 @@
           @endforeach
         </tbody>
       </table>
-      <table class="preview-table-catatan">
-        <tbody>
-          <tr>
-            <td class="catatan-kategori-label">Catatan {{ $group['label'] }}:</td>
-            <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
     @endforeach
+    @endif
+    @if(!empty($groupNoteText))
+    <table class="preview-table-catatan">
+      <tbody>
+        <tr>
+          <td class="catatan-kategori-label">Catatan {{ $group['label'] }}:</td>
+          <td class="catatan-kategori-value">{{ $groupNoteText }}</td>
+        </tr>
+      </tbody>
+    </table>
     @endif
     <div class="print-footer" style="margin-top: 16px; page-break-inside: avoid;">
       <strong>Keterangan Penilaian:</strong>
@@ -857,14 +851,6 @@
         @endforeach
       </tbody>
     </table>
-    <table class="preview-table-catatan">
-      <tbody>
-        <tr>
-          <td class="catatan-kategori-label">Catatan {{ $kategori }}:</td>
-          <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
     @else
     // subgroup within this category
     $subMap = [];
@@ -930,16 +916,18 @@
           @endforeach
         </tbody>
       </table>
-      <table class="preview-table-catatan">
-        <tbody>
-          <tr>
-            <td class="catatan-kategori-label">Catatan {{ $kategori }}:</td>
-            <td class="catatan-kategori-value">{{ !empty($groupNoteText) ? $groupNoteText : '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
     @endforeach
+    @endif
+    @if(!empty($groupNoteText))
+    <table class="preview-table-catatan">
+      <tbody>
+        <tr>
+          <td class="catatan-kategori-label">Catatan {{ $kategori }}:</td>
+          <td class="catatan-kategori-value">{{ $groupNoteText }}</td>
+        </tr>
+      </tbody>
+    </table>
     @endif
     <div class="print-footer" style="margin-top: 16px; page-break-inside: avoid;">
       <strong>Keterangan Penilaian:</strong>
@@ -1016,10 +1004,6 @@
   @endif
   @endif
 
-  @if($showTherapySection)
-  <div class="page-break"></div>
-  @endif
-
   <div class="page-break"></div>
 
   <!-- Attendance Summary Section -->
@@ -1074,7 +1058,7 @@
 
   <!-- Signature Section -->
   <div class="signature-section">
-    <div class="signature-location">Pekanbaru, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</div>
+    <div class="signature-location">Pekanbaru, {{ isset($tanggalPenerimaan) ? $tanggalPenerimaan->isoFormat('D MMMM Y') : \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}</div>
     <div class="signature-approval-text">Mengetahui,</div>
 
     <div class="signature-grid">

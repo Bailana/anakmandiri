@@ -272,6 +272,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('rapor-anak/{rapor}', [App\Http\Controllers\RaporAnakController::class, 'destroy'])->name('rapor-anak.destroy');
   });
 
+  Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::post('rapor-anak/tanggal-penerimaan', [App\Http\Controllers\RaporAnakController::class, 'setReceiptDate'])->name('rapor-anak.receipt-date');
+  });
+
   // Rapor view/preview accessible to all authorized roles
   Route::middleware(['auth', 'role:admin,guru,konsultan'])->group(function () {
     Route::get('rapor-anak/{rapor}/preview', [App\Http\Controllers\RaporAnakController::class, 'preview'])->name('rapor-anak.preview');
