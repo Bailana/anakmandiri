@@ -43,6 +43,9 @@
               <input type="hidden" name="konsultan_id" value="{{ $currentKonsultanId }}">
               @endif
             </div>
+            @php
+            $isPendidikan = isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw);
+            @endphp
             <div class="col-md-6">
               <label for="anak_didik_id" class="form-label">Nama Anak Didik</label>
               <select name="anak_didik_id" id="anak_didik_id" class="form-select" required>
@@ -102,6 +105,47 @@
               </table>
             </div>
           </div>
+          @if($isPendidikan)
+          <div class="col-md-12 mt-4" id="manualProgramWrapper">
+            <label class="form-label">Tambah Program Manual</label>
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle mb-0" id="manualProgramItemsTable" style="table-layout:fixed">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width:20%">Nama Program</th>
+                    <th style="width:25%">Tujuan</th>
+                    <th style="width:25%">Aktivitas</th>
+                    <th style="width:15%">Kategori</th>
+                    <th style="width:10%">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="manualProgramItemsTbody">
+                  <tr>
+                    <td><input type="text" name="manual_program_items[0][nama_program]" class="form-control nama-input" placeholder="Masukkan nama program..."></td>
+                    <td><textarea name="manual_program_items[0][tujuan]" class="form-control tujuan-input" rows="1"></textarea></td>
+                    <td><textarea name="manual_program_items[0][aktivitas]" class="form-control aktivitas-input" rows="1"></textarea></td>
+                    <td>
+                      <select name="manual_program_items[0][kategori]" class="form-select kategori-select">
+                        <option value="">Pilih Kategori</option>
+                        <option value="Akademik">Akademik</option>
+                        <option value="Bina Diri">Bina Diri</option>
+                        <option value="Motorik">Motorik</option>
+                        <option value="Perilaku">Basic Learning</option>
+                        <option value="Vokasi">Vokasi</option>
+                      </select>
+                    </td>
+                    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
+                  </tr>
+                </tbody>
+                <tr>
+                  <td colspan="5">
+                    <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="btnTambahManualBaris"><i class="ri-add-line"></i> Tambah Baris</button>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+          @endif
           @csrf
 
           <div class="row mb-3 mt-2">
@@ -202,6 +246,24 @@
     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
   </tr>
 </template>
+<template id="manualRowTemplate">
+  <tr>
+    <td><input type="text" name="manual_program_items[ROWIDX][nama_program]" class="form-control nama-input" placeholder="Masukkan nama program..."></td>
+    <td><textarea name="manual_program_items[ROWIDX][tujuan]" class="form-control tujuan-input" rows="1"></textarea></td>
+    <td><textarea name="manual_program_items[ROWIDX][aktivitas]" class="form-control aktivitas-input" rows="1"></textarea></td>
+    <td>
+      <select name="manual_program_items[ROWIDX][kategori]" class="form-select kategori-select">
+        <option value="">Pilih Kategori</option>
+        <option value="Akademik">Akademik</option>
+        <option value="Bina Diri">Bina Diri</option>
+        <option value="Motorik">Motorik</option>
+        <option value="Perilaku">Basic Learning</option>
+        <option value="Vokasi">Vokasi</option>
+      </select>
+    </td>
+    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
+  </tr>
+</template>
 @push('page-script')
 <script>
   // program master templates grouped by konsultan_id
@@ -213,7 +275,19 @@
   }
 
   let barisIdx = 1;
+  let manualBarisIdx = 1;
   const isPendidikan = @json(isset($currentKonsultanSpesRaw) && (bool) preg_match('/pendidikan/i', $currentKonsultanSpesRaw));
+
+  const manualProgramItemsTbody = document.getElementById('manualProgramItemsTbody');
+
+  function cloneManualRowTemplate(idx) {
+    const tmpl = document.getElementById('manualRowTemplate');
+    const tr = tmpl.content.cloneNode(true).querySelector('tr');
+    tr.querySelectorAll('[name]').forEach(el => {
+      el.name = el.name.replace(/ROWIDX/g, idx);
+    });
+    return tr;
+  }
 
   // Opsi kode-select diisi secara lazy (hanya saat user buka select)
   // sehingga cloneNode hanya menduplikasi 1 option, bukan ratusan
@@ -305,6 +379,21 @@
       if (programItemsTbody.children.length > 1) tr.remove();
     }
   });
+
+  if (manualProgramItemsTbody) {
+    document.getElementById('btnTambahManualBaris').addEventListener('click', function() {
+      const tr = cloneManualRowTemplate(manualBarisIdx);
+      manualProgramItemsTbody.appendChild(tr);
+      manualBarisIdx++;
+    });
+
+    manualProgramItemsTbody.addEventListener('click', function(e) {
+      if (e.target.closest('.btn-hapus-baris')) {
+        const tr = e.target.closest('tr');
+        if (manualProgramItemsTbody.children.length > 1) tr.remove();
+      }
+    });
+  }
 
   // Populate kode-select secara lazy saat user pertama kali membukanya
   programItemsTbody.addEventListener('mousedown', function(e) {
@@ -494,6 +583,17 @@
     });
     const addBtn = document.getElementById('btnTambahBaris');
     if (addBtn) addBtn.disabled = hidden;
+
+    const manualWrapper = document.getElementById('manualProgramWrapper');
+    if (manualWrapper) {
+      const manualHidden = (spesialisasi !== 'pendidikan');
+      manualWrapper.style.display = manualHidden ? 'none' : '';
+      manualWrapper.querySelectorAll('input,textarea,select').forEach(el => {
+        el.disabled = manualHidden;
+      });
+      const manualAddBtn = document.getElementById('btnTambahManualBaris');
+      if (manualAddBtn) manualAddBtn.disabled = manualHidden;
+    }
   }
   document.getElementById('konsultan_id').addEventListener('change', function() {
     toggleDaftarProgramAnak();

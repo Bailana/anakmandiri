@@ -111,16 +111,32 @@ class ProgramAnakController extends Controller
    */
   public function riwayatProgramByKonsultan($anakDidikId, $konsultanId)
   {
+    $konsultanRec = \App\Models\Konsultan::find($konsultanId);
+    $konsultanUserId = $konsultanRec ? $konsultanRec->user_id : null;
+
     $items = ProgramAnak::with('programKonsultan.konsultan')
       ->where('anak_didik_id', $anakDidikId)
-      ->whereHas('programKonsultan', function ($q) use ($konsultanId) {
-        $q->where('konsultan_id', $konsultanId);
+      ->where(function ($q) use ($konsultanId, $konsultanUserId) {
+        $q->whereHas('programKonsultan', function ($q2) use ($konsultanId) {
+          $q2->where('konsultan_id', $konsultanId);
+        });
+        if ($konsultanUserId) {
+          $q->orWhere(function ($q3) use ($konsultanUserId) {
+            $q3->whereNull('program_konsultan_id')->where('created_by', $konsultanUserId);
+          });
+        }
       })
       ->orderBy('kode_program', 'asc')
       ->get();
 
     $out = [];
     foreach ($items as $it) {
+      $konsultanData = null;
+      if ($it->programKonsultan && $it->programKonsultan->konsultan) {
+        $konsultanData = ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null];
+      } elseif ($it->program_konsultan_id === null && $konsultanRec && $it->created_by && $it->created_by == $konsultanUserId) {
+        $konsultanData = ['id' => $konsultanRec->id, 'nama' => $konsultanRec->nama, 'spesialisasi' => $konsultanRec->spesialisasi ?? null];
+      }
       $out[] = [
         'id' => $it->id,
         'kode_program' => $it->kode_program,
@@ -133,7 +149,7 @@ class ProgramAnakController extends Controller
         'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
         'created_at' => $it->created_at ? $it->created_at->toDateString() : null,
         'is_suggested' => $it->is_suggested ? 1 : 0,
-        'konsultan' => ($it->programKonsultan && $it->programKonsultan->konsultan) ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null] : null,
+        'konsultan' => $konsultanData,
         'keterangan' => $it->keterangan ?? null,
       ];
     }
@@ -160,10 +176,20 @@ class ProgramAnakController extends Controller
     $periodeMulai = request('periode_mulai');
     $periodeSelesai = request('periode_selesai');
 
+    $konsultanRec = \App\Models\Konsultan::find($konsultanId);
+    $konsultanUserId = $konsultanRec ? $konsultanRec->user_id : null;
+
     $items = ProgramAnak::with(['programKonsultan.konsultan'])
       ->where('anak_didik_id', $anakDidikId)
-      ->whereHas('programKonsultan', function ($q) use ($konsultanId) {
-        $q->where('konsultan_id', $konsultanId);
+      ->where(function ($q) use ($konsultanId, $konsultanUserId) {
+        $q->whereHas('programKonsultan', function ($q2) use ($konsultanId) {
+          $q2->where('konsultan_id', $konsultanId);
+        });
+        if ($konsultanUserId) {
+          $q->orWhere(function ($q3) use ($konsultanUserId) {
+            $q3->whereNull('program_konsultan_id')->where('created_by', $konsultanUserId);
+          });
+        }
       })
       ->when($dateOnly, fn($q) => $q->whereDate('created_at', $dateOnly))
       ->when($periodeMulai, fn($q) => $q->whereDate('periode_mulai', $periodeMulai))
@@ -173,6 +199,12 @@ class ProgramAnakController extends Controller
 
     $out = [];
     foreach ($items as $it) {
+      $konsultanData = null;
+      if ($it->programKonsultan && $it->programKonsultan->konsultan) {
+        $konsultanData = ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null];
+      } elseif ($it->program_konsultan_id === null && $konsultanRec && $it->created_by && $it->created_by == $konsultanUserId) {
+        $konsultanData = ['id' => $konsultanRec->id, 'nama' => $konsultanRec->nama, 'spesialisasi' => $konsultanRec->spesialisasi ?? null];
+      }
       $out[] = [
         'id' => $it->id,
         'kode_program' => $it->kode_program,
@@ -183,7 +215,7 @@ class ProgramAnakController extends Controller
         'program_konsultan_id' => $it->program_konsultan_id ?? null,
         'periode_mulai' => $it->periode_mulai ? $it->periode_mulai->toDateString() : null,
         'periode_selesai' => $it->periode_selesai ? $it->periode_selesai->toDateString() : null,
-        'konsultan' => $it->programKonsultan && $it->programKonsultan->konsultan ? ['id' => $it->programKonsultan->konsultan->id, 'nama' => $it->programKonsultan->konsultan->nama, 'spesialisasi' => $it->programKonsultan->konsultan->spesialisasi ?? null] : null,
+        'konsultan' => $konsultanData,
         'is_suggested' => $it->is_suggested ? 1 : 0,
         'created_at' => $it->created_at ? $it->created_at->toDateTimeString() : null,
         'keterangan' => $it->keterangan ?? null,
@@ -593,12 +625,16 @@ class ProgramAnakController extends Controller
       return redirect()->route('program-anak.index')->with('success', 'Rekomendasi psikologi berhasil disimpan');
     }
 
-    // Default flow for non-psikologi konsultan: program_items required
+    // Default flow for non-psikologi konsultan: program_items or manual_program_items required
     $request->validate([
-      'program_items' => 'required|array|min:1',
+      'program_items' => 'nullable|array',
+      'manual_program_items' => 'nullable|array',
     ]);
 
-    $items = $request->input('program_items', []);
+    $items = array_merge($request->input('program_items', []), $request->input('manual_program_items', []));
+    if (empty($items)) {
+      return redirect()->back()->withErrors(['program_items' => 'Silakan tambahkan setidaknya satu program.'])->withInput();
+    }
 
     // collect created kode_program values so we can log a single activity after transaction
     $createdCodes = [];
