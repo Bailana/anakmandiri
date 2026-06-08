@@ -45,6 +45,7 @@
             </div>
             @php
             $isPendidikan = isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw);
+            $isSensoriIntegrasi = isset($currentKonsultanSpesRaw) && preg_match('/sensori integrasi/i', $currentKonsultanSpesRaw);
             @endphp
             <div class="col-md-6">
               <label for="anak_didik_id" class="form-label">Nama Anak Didik</label>
@@ -62,6 +63,12 @@
               <table class="table table-bordered align-middle mb-0" id="programItemsTable" style="table-layout:fixed">
                 <thead class="table-light">
                   <tr>
+                    @if($isSensoriIntegrasi)
+                    <th style="width:24%">Target Area</th>
+                    <th style="width:24%">Aktivitas Sensori</th>
+                    <th style="width:28%">Tujuan</th>
+                    <th style="width:14%">Durasi (Menit)</th>
+                    @else
                     <th style="width:15%">Kode Program</th>
                     <th style="width:20%">Nama Program</th>
                     <th style="width:25%">Tujuan</th>
@@ -69,11 +76,18 @@
                     @if(isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw))
                     <th style="width:12%">Kategori</th>
                     @endif
+                    @endif
                     <th style="width:10%">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="programItemsTbody">
                   <tr>
+                    @if($isSensoriIntegrasi)
+                    <td><input type="text" name="program_items[0][target_area]" class="form-control target-area-input" placeholder="Masukkan target area..."></td>
+                    <td><textarea name="program_items[0][aktivitas_sensori]" class="form-control aktivitas-sensori-input" rows="1" placeholder="Masukkan aktivitas sensori..."></textarea></td>
+                    <td><textarea name="program_items[0][tujuan]" class="form-control tujuan-input" rows="1" placeholder="Masukkan tujuan..."></textarea></td>
+                    <td><input type="number" name="program_items[0][durasi]" class="form-control durasi-input" min="1" step="1" placeholder="Menit"></td>
+                    @else
                     <td>
                       <select name="program_items[0][kode_program]" class="form-select kode-select" data-populated="false"></select>
                       <input type="hidden" name="program_items[0][program_konsultan_id]" class="program-konsultan-id">
@@ -93,12 +107,13 @@
                       </select>
                     </td>
                     @endif
+                    @endif
                     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
                   </tr>
                 </tbody>
                 <!-- Tombol tambah baris di dalam tabel -->
                 <tr>
-                  <td colspan="{{ (isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw)) ? 5 : 4 }}">
+                  <td colspan="{{ $isSensoriIntegrasi ? 5 : ((isset($currentKonsultanSpesRaw) && preg_match('/pendidikan/i', $currentKonsultanSpesRaw)) ? 5 : 4) }}">
                     <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="btnTambahBaris"><i class="ri-add-line"></i> Tambah Baris</button>
                   </td>
                 </tr>
@@ -246,6 +261,17 @@
     <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
   </tr>
 </template>
+@if($isSensoriIntegrasi)
+<template id="siRowTemplate">
+  <tr>
+    <td><input type="text" name="program_items[ROWIDX][target_area]" class="form-control target-area-input" placeholder="Masukkan target area..."></td>
+    <td><textarea name="program_items[ROWIDX][aktivitas_sensori]" class="form-control aktivitas-sensori-input" rows="1" placeholder="Masukkan aktivitas sensori..."></textarea></td>
+    <td><textarea name="program_items[ROWIDX][tujuan]" class="form-control tujuan-input" rows="1" placeholder="Masukkan tujuan..."></textarea></td>
+    <td><input type="number" name="program_items[ROWIDX][durasi]" class="form-control durasi-input" min="1" step="1" placeholder="Menit"></td>
+    <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm btn-hapus-baris"><i class="ri-delete-bin-line"></i></button></td>
+  </tr>
+</template>
+@endif
 <template id="manualRowTemplate">
   <tr>
     <td><input type="text" name="manual_program_items[ROWIDX][nama_program]" class="form-control nama-input" placeholder="Masukkan nama program..."></td>
@@ -277,6 +303,7 @@
   let barisIdx = 1;
   let manualBarisIdx = 1;
   const isPendidikan = @json(isset($currentKonsultanSpesRaw) && (bool) preg_match('/pendidikan/i', $currentKonsultanSpesRaw));
+  const isSensoriIntegrasi = @json(isset($currentKonsultanSpesRaw) && (bool) preg_match('/sensori integrasi/i', $currentKonsultanSpesRaw));
 
   const manualProgramItemsTbody = document.getElementById('manualProgramItemsTbody');
 
@@ -340,7 +367,7 @@
 
   // Clone baris dari <template> (sudah di-parse sekali saat page load, jauh lebih cepat)
   function cloneRowTemplate(idx) {
-    const tmpl = document.getElementById('rowTemplate');
+    const tmpl = isSensoriIntegrasi ? document.getElementById('siRowTemplate') : document.getElementById('rowTemplate');
     const tr = tmpl.content.cloneNode(true).querySelector('tr');
     tr.querySelectorAll('[name]').forEach(el => {
       el.name = el.name.replace(/ROWIDX/g, idx);
@@ -352,9 +379,11 @@
 
   document.getElementById('btnTambahBaris').addEventListener('click', function() {
     const tr = cloneRowTemplate(barisIdx);
-    // Sisipkan kode-select ke elemen detached, lalu append sekali ke DOM (1x reflow)
-    const kodeTd = tr.querySelector('.kode-td');
-    kodeTd.insertBefore(buildKodeSelectEl(barisIdx), kodeTd.firstChild);
+    if (!isSensoriIntegrasi) {
+      // Sisipkan kode-select ke elemen detached, lalu append sekali ke DOM (1x reflow)
+      const kodeTd = tr.querySelector('.kode-td');
+      kodeTd.insertBefore(buildKodeSelectEl(barisIdx), kodeTd.firstChild);
+    }
     programItemsTbody.appendChild(tr);
     // Scroll wrapper ke baris terbaru
     const wrapper = document.getElementById('programTableWrapper');

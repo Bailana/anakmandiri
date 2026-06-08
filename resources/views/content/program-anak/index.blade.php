@@ -346,7 +346,14 @@
           });
         } catch (e) {}
         let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>KATEGORI</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny || canViewAny) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        // detect konsultan spesialisasi to hide kode/kategori for sensori integrasi
+        const _kt = (data.programs[0] && data.programs[0].konsultan && (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type)) ? (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type) : null;
+        const _isSI = _kt && String(_kt).toLowerCase().includes('sensori');
+        if (_isSI) {
+          html += '<thead><tr><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny || canViewAny) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        } else {
+          html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>KATEGORI</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny || canViewAny) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        }
         data.programs.forEach(p => {
           const konsultanName = p.konsultan ? p.konsultan.nama : (group.name || '-');
           // determine if current user may edit/delete or only view this program
@@ -363,20 +370,31 @@
             actionsParts.push(`<button type="button" class="btn btn-sm btn-icon btn-outline-info" title="Lihat" onclick="window.showDetailProgram(${p.id})"><i class="ri-eye-line"></i></button>`);
           }
           if (canEdit) {
-            actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button>`);
+            // pass sensori flag hint so edit modal can hide kode/kategori immediately
+            actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id}, ${_isSI ? 1 : 0})" title="Edit"><i class="ri-edit-line"></i></button>`);
             actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>`);
           }
           const actionsHtml = actionsParts.length ? `<div class="d-flex gap-1 pa-actions">${actionsParts.join('')}</div>` : '';
           const kategoriLabel = p.kategori === 'Perilaku' ? 'Basic Learning' : (p.kategori || '-');
-          html += `<tr>
-            <td>${p.kode_program || '-'}</td>
-            <td>${p.nama_program || '-'}</td>
-            <td>${kategoriLabel}</td>
-            <td>${p.tujuan || '-'}</td>
-            <td>${p.aktivitas || '-'}</td>
-            <td>${konsultanName}</td>`;
-          if (canEditAny || canViewAny) html += `<td>${actionsHtml}</td>`;
-          html += `</tr>`;
+          if (_isSI) {
+            html += `<tr>
+              <td>${p.nama_program || '-'}</td>
+              <td>${p.tujuan || '-'}</td>
+              <td>${p.aktivitas || '-'}</td>
+              <td>${konsultanName}</td>`;
+            if (canEditAny || canViewAny) html += `<td>${actionsHtml}</td>`;
+            html += `</tr>`;
+          } else {
+            html += `<tr>
+              <td>${p.kode_program || '-'}</td>
+              <td>${p.nama_program || '-'}</td>
+              <td>${kategoriLabel}</td>
+              <td>${p.tujuan || '-'}</td>
+              <td>${p.aktivitas || '-'}</td>
+              <td>${konsultanName}</td>`;
+            if (canEditAny || canViewAny) html += `<td>${actionsHtml}</td>`;
+            html += `</tr>`;
+          }
         });
         html += '</tbody></table></div>';
         listDiv.innerHTML = html;
@@ -408,8 +426,8 @@
   // Show programs from a specific konsultan for an anak on a given date (YYYY-MM-DD)
   window.showProgramsByKonsultanAndDate = function(anakDidikId, konsultanId, dateKey, periodMulai, periodSelesai, datesArr) {
     if (!konsultanId) {
-      // fallback: show all programs for anak
-      return window.showAllProgramsForAnak(anakDidikId);
+      alert('Data konsultan tidak tersedia untuk grup ini.');
+      return;
     }
     const modalEl = document.getElementById('programGroupModal');
     const modal = new bootstrap.Modal(modalEl);
@@ -440,10 +458,21 @@
           return;
         }
         // render as table with columns matching 'Semua Program Anak' style
+        // derive an effectiveDateKey: if caller passed 'all', try to infer from returned data
+        let effectiveDateKey = null;
+        try {
+          if (dateKey && dateKey !== 'all') effectiveDateKey = dateKey;
+          else if (Array.isArray(data.programs) && data.programs.length > 0 && data.programs[0].created_at) {
+            effectiveDateKey = (data.programs[0].created_at.indexOf('T') !== -1 ? data.programs[0].created_at.split('T')[0] : (data.programs[0].created_at.split(' ')[0] || null));
+          }
+        } catch (e) {
+          effectiveDateKey = null;
+        }
         window._lastGroup = {
           anakDidikId: anakDidikId,
           konsultanId: konsultanId,
           dateKey: dateKey,
+          effectiveDateKey: effectiveDateKey,
           periodMulai: periodMulai || null,
           periodSelesai: periodSelesai || null
         };
@@ -458,21 +487,29 @@
         }
         // show/hide suggest toggle depending on konsultan spesialisasi (hide for 'pendidikan')
         try {
+          const isValidDateKey = !!(window._lastGroup && window._lastGroup.effectiveDateKey);
           const kt = (data.programs[0] && data.programs[0].konsultan && (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type)) ? (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type) : null;
           const groupSuggestContainer = document.getElementById('groupSuggestContainer');
-          if (groupSuggestContainer) {
-            if (kt && String(kt).toLowerCase().includes('pendidikan')) groupSuggestContainer.style.display = 'none';
-            else groupSuggestContainer.style.display = 'block';
-          }
-        } catch (e) {}
-        // enable/disable toggle depending on current user: only admin or konsultan owner may change
-        try {
           const toggleEl = document.getElementById('groupSuggestToggle');
-          if (toggleEl && window.currentUser) {
-            const isAdmin = (window.currentUser.role === 'admin');
-            const isOwnerKonsultan = (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanId));
-            toggleEl.disabled = !(isAdmin || isOwnerKonsultan);
+          if (groupSuggestContainer) {
+            if (kt && String(kt).toLowerCase().includes('pendidikan')) {
+              groupSuggestContainer.style.display = 'none';
+            } else {
+              groupSuggestContainer.style.display = 'block';
+            }
           }
+          try {
+            if (toggleEl && window.currentUser) {
+              const isAdmin = (window.currentUser.role === 'admin');
+              const isOwnerKonsultan = (window.currentUser.role === 'konsultan' && window.currentUser.konsultanId && parseInt(window.currentUser.konsultanId) === parseInt(konsultanId));
+              toggleEl.disabled = !isValidDateKey || !(isAdmin || isOwnerKonsultan);
+              if (!isValidDateKey) toggleEl.title = 'Saran terapi hanya dapat disimpan untuk tanggal tertentu.';
+              else toggleEl.title = '';
+            } else if (toggleEl) {
+              toggleEl.disabled = !isValidDateKey;
+              if (!isValidDateKey) toggleEl.title = 'Saran terapi hanya dapat disimpan untuk tanggal tertentu.';
+            }
+          } catch (e) {}
         } catch (e) {}
         // determine view/edit permissions for current user
         let canEditAny2 = false;
@@ -486,7 +523,10 @@
             }
           });
         } catch (e) {}
-        const colCount = (canEditAny2 || canViewAny2) ? 7 : 6;
+        // detect konsultan spesialisasi to hide kode/kategori for sensori integrasi
+        const _kt2 = (data.programs[0] && data.programs[0].konsultan && (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type)) ? (data.programs[0].konsultan.spesialisasi || data.programs[0].konsultan.tipe || data.programs[0].konsultan.type) : null;
+        const _isSI2 = _kt2 && String(_kt2).toLowerCase().includes('sensori');
+        const colCount = (_isSI2) ? ((canEditAny2 || canViewAny2) ? 5 : 4) : ((canEditAny2 || canViewAny2) ? 7 : 6);
         // group programs by created_at date
         const dateGroups2 = new Map();
         data.programs.forEach(p => {
@@ -496,7 +536,12 @@
         });
         const sortedDateKeys2 = Array.from(dateGroups2.keys()).sort((a, b) => b.localeCompare(a));
         let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped table-bordered">';
-        html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>KATEGORI</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny2 || canViewAny2) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+
+        if (_isSI2) {
+          html += '<thead><tr><th>NAMA PROGRAM</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny2 || canViewAny2) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        } else {
+          html += '<thead><tr><th>KODE</th><th>NAMA PROGRAM</th><th>KATEGORI</th><th>TUJUAN</th><th>AKTIVITAS</th><th>KONSULTAN</th>' + ((canEditAny2 || canViewAny2) ? '<th>AKSI</th>' : '') + '</tr></thead><tbody>';
+        }
         sortedDateKeys2.forEach(dk => {
           if (dk) {
             const dt = new Date(dk + 'T00:00:00');
@@ -524,20 +569,31 @@
               actionsParts.push(`<button type="button" class="btn btn-sm btn-icon btn-outline-info" title="Lihat" onclick="window.showDetailProgram(${p.id})"><i class="ri-eye-line"></i></button>`);
             }
             if (canEdit) {
-              actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id})" title="Edit"><i class="ri-edit-line"></i></button>`);
+              // pass sensori flag hint so edit modal can hide kode/kategori immediately
+              actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditProgramModal(${p.id}, ${_isSI2 ? 1 : 0})" title="Edit"><i class="ri-edit-line"></i></button>`);
               actionsParts.push(`<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProgramAndRefresh(${p.id})" title="Hapus"><i class="ri-delete-bin-line"></i></button>`);
             }
             const actionsHtml = actionsParts.length ? `<div class="d-flex gap-1 pa-actions">${actionsParts.join('')}</div>` : '';
             const kategoriLabel2 = p.kategori === 'Perilaku' ? 'Basic Learning' : (p.kategori || '-');
-            html += `<tr>
-              <td>${p.kode_program || '-'}</td>
-              <td>${p.nama_program || '-'}</td>
-              <td>${kategoriLabel2}</td>
-              <td>${p.tujuan || '-'}</td>
-              <td>${p.aktivitas || '-'}</td>
-              <td>${konsultanName}</td>`;
-            if (canEditAny2 || canViewAny2) html += `<td>${actionsHtml}</td>`;
-            html += `</tr>`;
+            if (_isSI2) {
+              html += `<tr>
+                <td>${p.nama_program || '-'}</td>
+                <td>${p.tujuan || '-'}</td>
+                <td>${p.aktivitas || '-'}</td>
+                <td>${konsultanName}</td>`;
+              if (canEditAny2 || canViewAny2) html += `<td>${actionsHtml}</td>`;
+              html += `</tr>`;
+            } else {
+              html += `<tr>
+                <td>${p.kode_program || '-'}</td>
+                <td>${p.nama_program || '-'}</td>
+                <td>${kategoriLabel2}</td>
+                <td>${p.tujuan || '-'}</td>
+                <td>${p.aktivitas || '-'}</td>
+                <td>${konsultanName}</td>`;
+              if (canEditAny2 || canViewAny2) html += `<td>${actionsHtml}</td>`;
+              html += `</tr>`;
+            }
           });
         });
         html += '</tbody></table></div>';
@@ -564,7 +620,7 @@
 
     window.currentUser = {
       id: @json(Auth::id()),
-      role: @json(optional(Auth::user())->role),
+      role: @json(optional(Auth::user())-> role),
       konsultanId: @json($currentKonsultanId ?? null)
     };
     window.currentKonsultanSpesRaw = @json($currentKonsultanSpesRaw ?? null);
@@ -573,10 +629,16 @@
       toggle.addEventListener('change', function() {
         window._groupSuggest = !!toggle.checked;
         // if currently viewing a konsultan+date group, persist the change to the server
-        if (window._lastGroup && window._lastGroup.dateKey) {
+        if (window._lastGroup) {
           const anakId = window._lastGroup.anakDidikId;
           const konsultanId = window._lastGroup.konsultanId;
-          const dateKey = window._lastGroup.dateKey;
+          const dateKey = window._lastGroup.effectiveDateKey || window._lastGroup.dateKey;
+          const isValidDateKey = (dateKey && dateKey !== 'all');
+          if (!isValidDateKey) {
+            toggle.checked = !toggle.checked;
+            showToast('Saran terapi hanya dapat disimpan untuk tanggal tertentu.', 'warning');
+            return;
+          }
           const url = `/program-anak/${anakId}/konsultan/${konsultanId}/date/${encodeURIComponent(dateKey)}/suggest`;
           fetch(url, {
             method: 'PUT',
@@ -590,7 +652,11 @@
             })
           }).then(res => res.json()).then(resp => {
             if (resp && resp.success) {
-              showToast('Perubahan saran terapi tersimpan', 'success');
+              if (typeof resp.updated !== 'undefined' && parseInt(resp.updated) === 0) {
+                showToast('Permintaan berhasil tetapi tidak ada program yang diubah untuk tanggal ini.', 'warning');
+              } else {
+                showToast('Perubahan saran terapi tersimpan', 'success');
+              }
               // refresh current group view
               showProgramsByKonsultanAndDate(anakId, konsultanId, dateKey);
               // refresh riwayat modal list if open
@@ -1253,8 +1319,31 @@
 </div>
 
 <script>
-  function openEditProgramModal(id) {
+  function openEditProgramModal(id, isSiHint) {
     const modalEl = document.getElementById('programEditModal');
+    try {
+      if (modalEl) modalEl.dataset.isSi = (isSiHint === 1 || isSiHint === '1' || isSiHint === true) ? '1' : (modalEl.dataset.isSi || '0');
+    } catch (e) {}
+    // if caller hinted this is a sensori program, hide kode/kategori immediately
+    try {
+      if (isSiHint === 1 || isSiHint === '1' || isSiHint === true) {
+        const tmpKode = document.getElementById('editKodeProgram');
+        const tmpParent = tmpKode ? tmpKode.parentElement : null;
+        const tmpKategori = document.getElementById('editKategori');
+        if (tmpParent) {
+          tmpParent.style.display = 'none';
+        }
+        if (tmpKategori && tmpKategori.parentElement) {
+          tmpKategori.parentElement.style.display = 'none';
+        }
+        const tmpNama = document.getElementById('editNamaProgram');
+        const tmpTujuan = document.getElementById('editTujuan');
+        const tmpAktivitas = document.getElementById('editAktivitas');
+        if (tmpNama) tmpNama.disabled = false;
+        if (tmpTujuan) tmpTujuan.disabled = false;
+        if (tmpAktivitas) tmpAktivitas.disabled = false;
+      }
+    } catch (e) {}
     const modal = new bootstrap.Modal(modalEl);
     // If the programGroupModal is currently visible, hide it and restore it when edit modal closes.
     // Otherwise, fall back to hiding/restoring the riwayat modal as before.
@@ -1266,8 +1355,54 @@
     fetch('/program-anak/' + id + '/json')
       .then(res => res.json())
       .then(data => {
-        if (!data.success) return showToast('Gagal mengambil data', 'danger');
+        if (!data.success) {
+          showToast('Gagal mengambil data', 'danger');
+          try {
+            const effectiveIsSi = modalEl && modalEl.dataset && modalEl.dataset.isSi === '1';
+            const kodeEl2 = document.getElementById('editKodeProgram');
+            const parent2 = kodeEl2 ? kodeEl2.parentElement : null;
+            const kategoriEl2 = document.getElementById('editKategori');
+            if (effectiveIsSi) {
+              if (parent2) {
+                parent2.style.display = 'none';
+              }
+              if (kategoriEl2 && kategoriEl2.parentElement) {
+                kategoriEl2.parentElement.style.display = 'none';
+              }
+            }
+            const namaEl2 = document.getElementById('editNamaProgram');
+            const tujuanEl2 = document.getElementById('editTujuan');
+            const aktivitasEl2 = document.getElementById('editAktivitas');
+            if (namaEl2) namaEl2.disabled = false;
+            if (tujuanEl2) tujuanEl2.disabled = false;
+            if (aktivitasEl2) aktivitasEl2.disabled = false;
+          } catch (e) {}
+          try {
+            modal.show();
+          } catch (e) {}
+          return;
+        }
         const p = data.program;
+        const modalEl = document.getElementById('programEditModal');
+        // determine if konsultan is sensori integrasi and store on modal
+        const _tryVals = [];
+        try {
+          if (p.konsultan) {
+            _tryVals.push(p.konsultan.spesialisasi, p.konsultan.tipe, p.konsultan.type, p.konsultan.spes_raw, p.konsultan.spesialisasi_raw);
+          }
+        } catch (e) {}
+        try {
+          _tryVals.push(p.konsultan_spesialisasi, p.konsultanSpesialisasi, p.spesialisasi, p.spes_raw);
+        } catch (e) {}
+        // also use kode_program prefix as fallback (e.g., SI-001)
+        try {
+          if (p.kode_program) _tryVals.push(p.kode_program);
+        } catch (e) {}
+        const konsSpesModal = _tryVals.filter(Boolean).join(' | ');
+        const modalIsSI = konsSpesModal && String(konsSpesModal).toLowerCase().includes('sensori');
+        if (modalEl && modalIsSI) modalEl.dataset.isSi = '1';
+        const effectiveIsSi = (modalEl && modalEl.dataset && modalEl.dataset.isSi === '1') || modalIsSI;
+
         document.getElementById('editProgramId').value = p.id;
         const kodeEl = document.getElementById('editKodeProgram');
         const namaEl = document.getElementById('editNamaProgram');
@@ -1284,6 +1419,42 @@
         // If program has konsultan info, try to load konsultan's master list to populate select
         const konsultanId = p.konsultan && p.konsultan.id ? p.konsultan.id : null;
         const parent = kodeEl.parentElement;
+        // hide/disable kode & kategori fields for sensori integrasi konsultan
+        try {
+          const effectiveIsSi = modalIsSI || (modalEl && modalEl.dataset && modalEl.dataset.isSi === '1');
+          if (effectiveIsSi) {
+            try {
+              if (parent) {
+                parent.style.display = 'none';
+              }
+            } catch (e) {}
+            try {
+              if (kategoriEl && kategoriEl.parentElement) {
+                kategoriEl.parentElement.style.display = 'none';
+              }
+            } catch (e) {}
+            try {
+              if (kodeEl) kodeEl.disabled = true;
+            } catch (e) {}
+            try {
+              if (kategoriEl) kategoriEl.disabled = true;
+            } catch (e) {}
+          } else {
+            try {
+              if (parent) parent.style.display = '';
+            } catch (e) {}
+            try {
+              if (kategoriEl && kategoriEl.parentElement) kategoriEl.parentElement.style.display = '';
+            } catch (e) {}
+            try {
+              if (kodeEl) kodeEl.disabled = false;
+            } catch (e) {}
+            try {
+              if (kategoriEl) kategoriEl.disabled = false;
+            } catch (e) {}
+          }
+        } catch (e) {}
+
         if (konsultanId) {
           // fetch program_konsultan list
           fetch('/program-anak/program-konsultan/konsultan/' + konsultanId + '/list-json')
@@ -1304,6 +1475,9 @@
                 namaEl.disabled = false;
                 tujuanEl.disabled = false;
                 aktivitasEl.disabled = false;
+                try {
+                  if (modalEl && modalEl.dataset.isSi === '1') input.disabled = true;
+                } catch (e) {}
                 return;
               }
               // populate select options
@@ -1330,9 +1504,15 @@
                 namaEl.value = selected.dataset.nama || '';
                 tujuanEl.value = selected.dataset.tujuan || '';
                 aktivitasEl.value = selected.dataset.aktivitas || '';
-                namaEl.disabled = true;
-                tujuanEl.disabled = true;
-                aktivitasEl.disabled = true;
+                if (!effectiveIsSi) {
+                  namaEl.disabled = true;
+                  tujuanEl.disabled = true;
+                  aktivitasEl.disabled = true;
+                } else {
+                  namaEl.disabled = false;
+                  tujuanEl.disabled = false;
+                  aktivitasEl.disabled = false;
+                }
               } else {
                 // no matching: allow editing
                 namaEl.disabled = false;
@@ -1341,15 +1521,24 @@
               }
 
               // on change, update fields to reflect selected kode
+              try {
+                if (modalEl && modalEl.dataset.isSi === '1') sel.disabled = true;
+              } catch (e) {}
               sel.addEventListener('change', function() {
                 const opt = sel.options[sel.selectedIndex];
                 if (opt && opt.dataset) {
                   namaEl.value = opt.dataset.nama || '';
                   tujuanEl.value = opt.dataset.tujuan || '';
                   aktivitasEl.value = opt.dataset.aktivitas || '';
-                  namaEl.disabled = true;
-                  tujuanEl.disabled = true;
-                  aktivitasEl.disabled = true;
+                  if (!effectiveIsSi) {
+                    namaEl.disabled = true;
+                    tujuanEl.disabled = true;
+                    aktivitasEl.disabled = true;
+                  } else {
+                    namaEl.disabled = false;
+                    tujuanEl.disabled = false;
+                    aktivitasEl.disabled = false;
+                  }
                 } else {
                   namaEl.disabled = false;
                   tujuanEl.disabled = false;
@@ -1367,6 +1556,9 @@
                 input.className = 'form-control';
                 input.value = p.kode_program || '';
                 parent.replaceChild(input, sel);
+                try {
+                  if (modalEl && modalEl.dataset.isSi === '1') parent.querySelector('#editKodeProgram').disabled = true;
+                } catch (e) {}
               }
               namaEl.disabled = false;
               tujuanEl.disabled = false;
@@ -1385,7 +1577,32 @@
           tujuanEl.disabled = false;
           aktivitasEl.disabled = false;
         }
-      }).catch(() => showToast('Gagal mengambil data', 'danger'));
+      }).catch(() => {
+        showToast('Gagal mengambil data', 'danger');
+        try {
+          const effectiveIsSi = modalEl && modalEl.dataset && modalEl.dataset.isSi === '1';
+          const kodeEl2 = document.getElementById('editKodeProgram');
+          const parent2 = kodeEl2 ? kodeEl2.parentElement : null;
+          const kategoriEl2 = document.getElementById('editKategori');
+          if (effectiveIsSi) {
+            if (parent2) {
+              parent2.style.display = 'none';
+            }
+            if (kategoriEl2 && kategoriEl2.parentElement) {
+              kategoriEl2.parentElement.style.display = 'none';
+            }
+          }
+          const namaEl2 = document.getElementById('editNamaProgram');
+          const tujuanEl2 = document.getElementById('editTujuan');
+          const aktivitasEl2 = document.getElementById('editAktivitas');
+          if (namaEl2) namaEl2.disabled = false;
+          if (tujuanEl2) tujuanEl2.disabled = false;
+          if (aktivitasEl2) aktivitasEl2.disabled = false;
+        } catch (e) {}
+        try {
+          modal.show();
+        } catch (e) {}
+      });
   }
 
   document.getElementById('btnSaveEditProgram').addEventListener('click', function() {
@@ -1401,15 +1618,20 @@
         kodeVal = kodeEl.value || '';
       }
     }
+    const modalEl = document.getElementById('programEditModal');
+    const isSiModal = modalEl && modalEl.dataset && modalEl.dataset.isSi === '1';
+    // build payload; omit kode_program and kategori for sensori integrasi
     const payload = {
-      kode_program: kodeVal,
       nama_program: document.getElementById('editNamaProgram').value,
       tujuan: document.getElementById('editTujuan').value,
-      aktivitas: document.getElementById('editAktivitas').value,
-      kategori: document.getElementById('editKategori')?.value || ''
+      aktivitas: document.getElementById('editAktivitas').value
     };
+    if (!isSiModal) {
+      payload.kode_program = kodeVal;
+      payload.kategori = document.getElementById('editKategori')?.value || '';
+    }
     // Include program_konsultan_id when a master-list select is used
-    if (kodeEl && kodeEl.tagName && kodeEl.tagName.toLowerCase() === 'select') {
+    if (!isSiModal && kodeEl && kodeEl.tagName && kodeEl.tagName.toLowerCase() === 'select') {
       const selOpt = kodeEl.options[kodeEl.selectedIndex];
       if (selOpt && selOpt.value) payload.program_konsultan_id = selOpt.value;
     }
@@ -1512,10 +1734,13 @@
   }
 </script>
 <script>
-  window.showAllProgramsForAnak = function(anakId) {
+  window.showAllProgramsForAnak = function(anakId, konsultanId = null) {
     if (!anakId) {
       alert('ID anak tidak tersedia');
       return;
+    }
+    if (!konsultanId && window._lastGroup && window._lastGroup.konsultanId) {
+      konsultanId = window._lastGroup.konsultanId;
     }
     const modalEl = document.getElementById('programAllModal');
     const modal = new bootstrap.Modal(modalEl);
@@ -1523,7 +1748,11 @@
     pushModalAndShow(modalEl);
     const target = document.getElementById('programAllContent');
     target.innerHTML = '<div class="text-center text-muted">Memuat data...</div>';
-    fetch('/program-anak/' + anakId + '/all-json')
+    let url = '/program-anak/' + anakId + '/all-json';
+    if (konsultanId) {
+      url += '?konsultan_id=' + encodeURIComponent(konsultanId);
+    }
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         if (!data.success || !Array.isArray(data.programs) || data.programs.length === 0) {
@@ -1648,7 +1877,7 @@
                     editBtnRow.title = 'Edit';
                     if (delBtnRow) delBtnRow.disabled = false;
                     inEdit = false;
-                    showAllProgramsForAnak(anakId);
+                    showAllProgramsForAnak(anakId, window._lastGroup ? window._lastGroup.konsultanId : null);
                     // small safety cleanup in case a backdrop or body.modal-open remains
                     setTimeout(function() {
                       try {
@@ -1677,7 +1906,7 @@
                   }).then(r => r.json()).then(resp => {
                     if (resp && resp.success) {
                       showToast('Terhapus', 'success');
-                      showAllProgramsForAnak(anakId);
+                      showAllProgramsForAnak(anakId, window._lastGroup ? window._lastGroup.konsultanId : null);
                       // ensure any stray backdrops/modal-open state are cleaned up after refresh
                       setTimeout(function() {
                         try {

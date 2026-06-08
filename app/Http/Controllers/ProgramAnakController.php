@@ -82,6 +82,12 @@ class ProgramAnakController extends Controller
     $groups = [];
     foreach ($items as $it) {
       $konsultan = $it->programKonsultan ? $it->programKonsultan->konsultan : null;
+      if (!$konsultan && $it->created_by) {
+        $konsultan = \App\Models\Konsultan::where('user_id', $it->created_by)->first();
+      }
+      if (!$konsultan && $it->created_by_name) {
+        $konsultan = \App\Models\Konsultan::where('nama', $it->created_by_name)->first();
+      }
       $key = $konsultan ? 'konsultan_' . $konsultan->id : 'user_' . ($it->created_by ?? 'system');
       $name = $konsultan ? ($konsultan->nama ?? '-') : ($it->created_by_name ?? '-');
       $spes = $konsultan ? ($konsultan->spesialisasi ?? null) : null;
@@ -281,10 +287,21 @@ class ProgramAnakController extends Controller
     $suggest = $request->input('suggest');
     $suggestFlag = ($suggest == 1 || $suggest === true || $suggest === '1') ? 1 : 0;
 
-    // update ProgramAnak rows that belong to this anak and whose ProgramKonsultan maps to the konsultan
+    // update ProgramAnak rows that belong to this anak and are authored by this konsultan
+    // include both ProgramAnak linked via program_konsultan and those created directly by the konsultan user
+    $konsultanRec = \App\Models\Konsultan::find($konsultanId);
+    $konsultanUserId = $konsultanRec ? $konsultanRec->user_id : null;
+
     $updated = ProgramAnak::where('anak_didik_id', $anakDidikId)
-      ->whereHas('programKonsultan', function ($q) use ($konsultanId) {
-        $q->where('konsultan_id', $konsultanId);
+      ->where(function ($q) use ($konsultanId, $konsultanUserId) {
+        $q->whereHas('programKonsultan', function ($q2) use ($konsultanId) {
+          $q2->where('konsultan_id', $konsultanId);
+        });
+        if ($konsultanUserId) {
+          $q->orWhere(function ($q3) use ($konsultanUserId) {
+            $q3->whereNull('program_konsultan_id')->where('created_by', $konsultanUserId);
+          });
+        }
       })
       ->whereDate('created_at', $dateOnly)
       ->update(['is_suggested' => $suggestFlag]);
@@ -585,8 +602,11 @@ class ProgramAnakController extends Controller
         'program_konsultan_id' => null,
         'kode_program' => null,
         'nama_program' => 'Rekomendasi Psikologi',
+        'target_area' => null,
         'tujuan' => null,
         'aktivitas' => null,
+        'aktivitas_sensori' => null,
+        'durasi' => null,
         'periode_mulai' => $request->input('periode_mulai'),
         'periode_selesai' => $request->input('periode_selesai'),
         'status' => $request->input('status', 'aktif'),
@@ -643,7 +663,7 @@ class ProgramAnakController extends Controller
     \DB::transaction(function () use ($items, $request, $konsultanSpes, &$createdCodes, &$ppiItems) {
       foreach ($items as $it) {
         // basic sanitation / mapping
-        $nama = $it['nama_program'] ?? null;
+        $nama = $it['nama_program'] ?? $it['target_area'] ?? null;
         if (!$nama) continue; // skip empty rows
 
         // try to resolve program_konsultan_id: prefer provided id, fallback to lookup by kode_program
@@ -659,9 +679,12 @@ class ProgramAnakController extends Controller
           'anak_didik_id' => $request->input('anak_didik_id'),
           'program_konsultan_id' => $programKonsultanId,
           'kode_program' => $it['kode_program'] ?? null,
-          'nama_program' => $nama,
+          'nama_program' => $it['nama_program'] ?? $it['target_area'] ?? $nama,
+          'target_area' => $it['target_area'] ?? null,
           'tujuan' => $it['tujuan'] ?? null,
-          'aktivitas' => $it['aktivitas'] ?? null,
+          'aktivitas' => $it['aktivitas'] ?? $it['aktivitas_sensori'] ?? null,
+          'aktivitas_sensori' => $it['aktivitas_sensori'] ?? null,
+          'durasi' => $it['durasi'] ?? null,
           'kategori' => $it['kategori'] ?? null,
           'periode_mulai' => $request->input('periode_mulai'),
           'periode_selesai' => $request->input('periode_selesai'),
@@ -1138,10 +1161,18 @@ class ProgramAnakController extends Controller
    */
   public function showAllForAnak($anakDidikId)
   {
-    $items = ProgramAnak::with(['programKonsultan.konsultan'])
-      ->where('anak_didik_id', $anakDidikId)
-      ->orderByDesc('created_at')
-      ->get();
+    $konsultanId = request('konsultan_id');
+
+    $query = ProgramAnak::with(['programKonsultan.konsultan'])
+      ->where('anak_didik_id', $anakDidikId);
+
+    if (!empty($konsultanId)) {
+      $query->whereHas('programKonsultan', function ($q) use ($konsultanId) {
+        $q->where('konsultan_id', $konsultanId);
+      });
+    }
+
+    $items = $query->orderByDesc('created_at')->get();
 
     $out = [];
     foreach ($items as $it) {
